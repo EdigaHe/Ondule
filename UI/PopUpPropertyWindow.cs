@@ -18,21 +18,19 @@ namespace PluginBar.UI
             trackBar1.Maximum = 30;
         }
 
-        private void trackBar1_ValueChanged(object sender, EventArgs e)
+        private void PropertyWindow_Load(object sender, EventArgs e)
         {
-
+            // Do nothing?
         }
 
-        private void trackBar1_Scroll(object sender, EventArgs e)
-        {
-            lb_coilNum.Text = trackBar1.Value.ToString();
-        }
+        
 
         public void setCoilMaxiumHeight(double height)
         {
             double turnsNum = (height-5) / 0.3;
             trackBar1.Maximum = (int)turnsNum;
         }
+
         public int getCoilPerLayerData()
         {
             return trackBar1.Value;
@@ -48,14 +46,33 @@ namespace PluginBar.UI
             dist = cb_distribution.Checked;
             clockw = cb_clockwise.Checked;
         }
+
         private void btn_OK_Click(object sender, EventArgs e)
         {
-            
+            Rhino.RhinoApp.WriteLine("Coil Diameter: " + lb_coilDiameter.Text + " mm");
+            Rhino.RhinoApp.WriteLine("Pitch: " + lb_pitchValue.Text + " mm");
+            Rhino.RhinoApp.WriteLine("Length: " + lb_length.Text + " cm");
+            Rhino.RhinoApp.WriteLine("Spring Diamter: " + lb_springDiameter.Text + " mm");
+        }
+
+        private void trackBar1_Scroll(object sender, EventArgs e)
+        {
+            lb_coilDiameter.Text = trackBar1.Value.ToString();
         }
 
         private void trackBar2_Scroll(object sender, EventArgs e)
         {
-            lb_layerNum.Text = trackBar2.Value.ToString();
+            lb_pitchValue.Text = trackBar2.Value.ToString();
+        }
+        
+        private void trackBar3_Scroll(object sender, EventArgs e)
+        {
+            lb_length.Text = trackBar3.Value.ToString();
+        }
+
+        private void trackBar4_Scroll(object sender, EventArgs e)
+        {
+            lb_springDiameter.Text = trackBar4.Value.ToString();
         }
     }
 }

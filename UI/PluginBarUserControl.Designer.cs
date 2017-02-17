@@ -35,11 +35,11 @@
             // button1
             // 
             this.button1.BackColor = System.Drawing.SystemColors.Control;
-            this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.875F);
+            this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button1.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button1.Location = new System.Drawing.Point(3, 21);
+            this.button1.Location = new System.Drawing.Point(3, 3);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(178, 62);
+            this.button1.Size = new System.Drawing.Size(150, 50);
             this.button1.TabIndex = 43;
             this.button1.Text = "Popup Window";
             this.button1.UseVisualStyleBackColor = false;
@@ -48,11 +48,11 @@
             // btn_deform
             // 
             this.btn_deform.BackColor = System.Drawing.SystemColors.Control;
-            this.btn_deform.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.875F);
+            this.btn_deform.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btn_deform.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btn_deform.Location = new System.Drawing.Point(229, 21);
+            this.btn_deform.Location = new System.Drawing.Point(159, 3);
             this.btn_deform.Name = "btn_deform";
-            this.btn_deform.Size = new System.Drawing.Size(168, 62);
+            this.btn_deform.Size = new System.Drawing.Size(150, 50);
             this.btn_deform.TabIndex = 47;
             this.btn_deform.Text = "Deform It";
             this.btn_deform.UseVisualStyleBackColor = false;
@@ -63,10 +63,12 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.AutoScroll = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.BackColor = System.Drawing.SystemColors.ButtonShadow;
             this.Controls.Add(this.btn_deform);
             this.Controls.Add(this.button1);
             this.Name = "PluginBarUserControl";
-            this.Size = new System.Drawing.Size(607, 105);
+            this.Size = new System.Drawing.Size(325, 75);
+            this.Load += new System.EventHandler(this.PluginBarUserControl_Load);
             this.ResumeLayout(false);
 
     }

@@ -40,13 +40,12 @@ namespace PluginBar
             Rhino.DocObjects.ObjRef objRef;
 
             Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
-
             
             System.Windows.Forms.DialogResult rst;
             
-            PluginBar.UI.PropertyWindow coilwindow = new UI.PropertyWindow();
+            PluginBar.UI.PropertyWindow springPropWindow = new UI.PropertyWindow();
 
-            rst = coilwindow.ShowDialog(Rhino.RhinoApp.MainWindow());
+            rst = springPropWindow.ShowDialog(Rhino.RhinoApp.MainWindow());
             if(rst == System.Windows.Forms.DialogResult.OK)
             {
         
@@ -68,6 +67,11 @@ namespace PluginBar
                 controller.deformBrep(brepRef);
                 // controller.setObjColor(1, ironObjRef);//1 means iron
             }
+        }
+
+        private void PluginBarUserControl_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

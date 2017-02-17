@@ -34,3 +34,12 @@ C:\Users\MakeabilityLab\Dropbox\Slinky\Code\[new]RhinoPlugin\SlinkyPlugin\obj\De
 C:\Users\MakeabilityLab\Dropbox\Slinky\Code\[new]RhinoPlugin\SlinkyPlugin\obj\Debug\SlinkyPlugin.csproj.GenerateResource.Cache
 C:\Users\MakeabilityLab\Dropbox\Slinky\Code\[new]RhinoPlugin\SlinkyPlugin\obj\Debug\SlinkyPlugin.dll
 C:\Users\MakeabilityLab\Dropbox\Slinky\Code\[new]RhinoPlugin\SlinkyPlugin\obj\Debug\SlinkyPlugin.pdb
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.csprojResolveAssemblyReference.cache
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyBar.Properties.Resources.resources
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\PluginBar.UI.PropertyWindow.resources
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\PluginBar.PluginBarUserControl.resources
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.csproj.GenerateResource.Cache
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.dll
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\bin\SlinkyPlugin.dll
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\bin\SlinkyPlugin.pdb
+C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.pdb
