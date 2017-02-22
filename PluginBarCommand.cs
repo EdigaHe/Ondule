@@ -10,6 +10,7 @@ using RMA.UI;
 namespace PluginBar
 {
     [System.Runtime.InteropServices.Guid("679d72b6-7877-4e1a-8728-650ca4487b48")]
+
     public class PluginBarCommand : Command
     {
         public static Rhino.RhinoDoc rhinoDoc = null;

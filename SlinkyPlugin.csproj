@@ -67,6 +67,7 @@
     <Compile Include="UI\PopUpPropertyWindow.Designer.cs">
       <DependentUpon>PopUpPropertyWindow.cs</DependentUpon>
     </Compile>
+    <Compile Include="PopUpCommand.cs" />
     <Compile Include="View.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\PluginBarUserControl.cs">
