@@ -42,4 +42,3 @@ C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\PluginBar.PluginBarUserCo
 C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.csproj.GenerateResource.Cache
 C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.dll
 C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.pdb
-C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.csprojResolveAssemblyReference.cache

@@ -42,7 +42,6 @@ namespace PluginBar.UI
         {
             //rhinoDoc = doc;
             Rhino.RhinoApp.RunScript("_Helix", false);
-            //lb_coilDiameter.Text = "fire";
             // RhinoApp.WriteLine("The {0} command is under construction", EnglishName);
             return Rhino.Commands.Result.Success;
         }
