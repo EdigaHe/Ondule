@@ -28,30 +28,34 @@ namespace PluginBar
         public PluginBarUserControl()
         {
             InitializeComponent();
-
-
         }
 
 
         private void button1_Click(object sender, EventArgs e)
         {
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Mesh | Rhino.DocObjects.ObjectType.PolysrfFilter | Rhino.DocObjects.ObjectType.Surface | Rhino.DocObjects.ObjectType.Curve;
+            // Limit the types of objects the user can select
+            // const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Mesh | Rhino.DocObjects.ObjectType.PolysrfFilter | Rhino.DocObjects.ObjectType.Surface | Rhino.DocObjects.ObjectType.Curve;
 
-            Rhino.DocObjects.ObjRef objRef;
+            // Declare a variable to hold the selected object
+            // Rhino.DocObjects.ObjRef objRef;
 
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+            // Prompt the user to select an object from the command line
+            // Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
             
-            System.Windows.Forms.DialogResult rst;
+            // Declare a variable to hold the success status if the form is in a modal mode
+            //System.Windows.Forms.DialogResult rst;
             
+            // Initialize a variable to hold the form object
             PluginBar.UI.PropertyWindow springPropWindow = new UI.PropertyWindow();
 
-            rst = springPropWindow.ShowDialog(Rhino.RhinoApp.MainWindow());
-            if(rst == System.Windows.Forms.DialogResult.OK)
-            {
-        
+            // Store the success status of the form if in modal mode
+            //rst = springPropWindow.ShowDialog(Rhino.RhinoApp.MainWindow());
 
-            }
-
+            // Show the form to the user, bring into current focus
+            springPropWindow.Show();
+            
+            // Do something if the form is created successfully in modal mode
+            //if(rst == System.Windows.Forms.DialogResult.OK)
             
         }
 

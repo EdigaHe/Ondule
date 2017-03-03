@@ -1,4 +1,4 @@
-﻿namespace PluginBar.UI
+﻿namespace PluginBar.UI //UI
 {
     partial class PropertyWindow
     {
@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.btn_OK = new System.Windows.Forms.Button();
-            this.cb_vertical = new System.Windows.Forms.CheckBox();
             this.cb_clockwise = new System.Windows.Forms.CheckBox();
             this.label2 = new System.Windows.Forms.Label();
             this.trackBar1 = new System.Windows.Forms.TrackBar();
@@ -64,25 +63,12 @@
             this.btn_OK.UseVisualStyleBackColor = false;
             this.btn_OK.Click += new System.EventHandler(this.btn_OK_Click);
             // 
-            // cb_vertical
-            // 
-            this.cb_vertical.AutoSize = true;
-            this.cb_vertical.Enabled = false;
-            this.cb_vertical.Font = new System.Drawing.Font("Segoe UI Light", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cb_vertical.Location = new System.Drawing.Point(23, 329);
-            this.cb_vertical.Name = "cb_vertical";
-            this.cb_vertical.Size = new System.Drawing.Size(84, 25);
-            this.cb_vertical.TabIndex = 4;
-            this.cb_vertical.Text = "Vertical?";
-            this.cb_vertical.UseVisualStyleBackColor = true;
-            this.cb_vertical.CheckedChanged += new System.EventHandler(this.cb_vertical_CheckedChanged);
-            // 
             // cb_clockwise
             // 
             this.cb_clockwise.AutoSize = true;
             this.cb_clockwise.Enabled = false;
             this.cb_clockwise.Font = new System.Drawing.Font("Segoe UI Light", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cb_clockwise.Location = new System.Drawing.Point(23, 360);
+            this.cb_clockwise.Location = new System.Drawing.Point(23, 329);
             this.cb_clockwise.Name = "cb_clockwise";
             this.cb_clockwise.Size = new System.Drawing.Size(100, 25);
             this.cb_clockwise.TabIndex = 5;
@@ -104,6 +90,7 @@
             // 
             this.trackBar1.Cursor = System.Windows.Forms.Cursors.Hand;
             this.trackBar1.Location = new System.Drawing.Point(27, 40);
+            this.trackBar1.Maximum = 20;
             this.trackBar1.Minimum = 1;
             this.trackBar1.Name = "trackBar1";
             this.trackBar1.Size = new System.Drawing.Size(274, 45);
@@ -127,14 +114,15 @@
             this.label1.Font = new System.Drawing.Font("Segoe UI Semibold", 15F, System.Drawing.FontStyle.Bold);
             this.label1.Location = new System.Drawing.Point(18, 88);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(113, 28);
+            this.label1.Size = new System.Drawing.Size(167, 28);
             this.label1.TabIndex = 6;
-            this.label1.Text = "Pitch (mm)";
+            this.label1.Text = "Number of Turns";
             // 
             // trackBar2
             // 
             this.trackBar2.Cursor = System.Windows.Forms.Cursors.Hand;
             this.trackBar2.Location = new System.Drawing.Point(27, 125);
+            this.trackBar2.Maximum = 20;
             this.trackBar2.Minimum = 1;
             this.trackBar2.Name = "trackBar2";
             this.trackBar2.Size = new System.Drawing.Size(274, 45);
@@ -158,15 +146,15 @@
             this.label4.Font = new System.Drawing.Font("Segoe UI Semibold", 15F, System.Drawing.FontStyle.Bold);
             this.label4.Location = new System.Drawing.Point(18, 173);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(123, 28);
+            this.label4.Size = new System.Drawing.Size(132, 28);
             this.label4.TabIndex = 11;
-            this.label4.Text = "Length (cm)";
+            this.label4.Text = "Length (mm)";
             // 
             // trackBar3
             // 
             this.trackBar3.Cursor = System.Windows.Forms.Cursors.Hand;
             this.trackBar3.Location = new System.Drawing.Point(27, 211);
-            this.trackBar3.Maximum = 30;
+            this.trackBar3.Maximum = 40;
             this.trackBar3.Minimum = 1;
             this.trackBar3.Name = "trackBar3";
             this.trackBar3.Size = new System.Drawing.Size(274, 45);
@@ -219,21 +207,21 @@
             // cb_alongCurve
             // 
             this.cb_alongCurve.AutoSize = true;
-            this.cb_alongCurve.Enabled = false;
             this.cb_alongCurve.Font = new System.Drawing.Font("Segoe UI Light", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cb_alongCurve.Location = new System.Drawing.Point(23, 391);
+            this.cb_alongCurve.Location = new System.Drawing.Point(23, 365);
             this.cb_alongCurve.Name = "cb_alongCurve";
             this.cb_alongCurve.Size = new System.Drawing.Size(174, 25);
             this.cb_alongCurve.TabIndex = 15;
             this.cb_alongCurve.Text = "Along Existing Curve?";
             this.cb_alongCurve.UseVisualStyleBackColor = true;
-            this.cb_alongCurve.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            this.cb_alongCurve.CheckedChanged += new System.EventHandler(this.cb_alongCurve_CheckedChanged);
             // 
             // PropertyWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(374, 433);
+            this.AutoValidate = System.Windows.Forms.AutoValidate.EnableAllowFocusChange;
+            this.ClientSize = new System.Drawing.Size(374, 408);
             this.Controls.Add(this.cb_alongCurve);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.trackBar4);
@@ -245,11 +233,11 @@
             this.Controls.Add(this.lb_pitchValue);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.cb_clockwise);
-            this.Controls.Add(this.cb_vertical);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.lb_coilDiameter);
             this.Controls.Add(this.trackBar1);
             this.Controls.Add(this.btn_OK);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "PropertyWindow";
             this.Text = "Spring Properties";
@@ -269,7 +257,6 @@
         private System.Windows.Forms.TrackBar trackBar1;
         private System.Windows.Forms.Label lb_coilDiameter;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.CheckBox cb_vertical;
         private System.Windows.Forms.CheckBox cb_clockwise;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label lb_pitchValue;

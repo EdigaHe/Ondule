@@ -61,6 +61,12 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="RhinoModel.cs" />
+    <Compile Include="UI\SpringPopUp2.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\SpringPopUp2.Designer.cs">
+      <DependentUpon>SpringPopUp2.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\PopUpPropertyWindow.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -81,6 +87,9 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SpringPopUp2.resx">
+      <DependentUpon>SpringPopUp2.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\PopUpPropertyWindow.resx">
       <DependentUpon>PopUpPropertyWindow.cs</DependentUpon>

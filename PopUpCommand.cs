@@ -9,15 +9,19 @@ using RMA.UI;
 
 namespace PluginBar.UI
 {
-    [
-    System.Runtime.InteropServices.Guid("ebb73a6d-3ce4-4c5b-846b-aea98cb2db38"),
-    Rhino.Commands.CommandStyle(Rhino.Commands.Style.ScriptRunner)
-    ]
+    [System.Runtime.InteropServices.Guid("ebb73a6d-3ce4-4c5b-846b-aea98cb2db38")]
+    //Rhino.Commands.CommandStyle(Rhino.Commands.Style.ScriptRunner)
 
     public class PopUpCommand : Rhino.Commands.Command
     {
-        //public static Rhino.RhinoDoc rhinoDoc = null;
+        public static Rhino.RhinoDoc rhinoDoc = null;
         static PopUpCommand m_thecommand;
+
+        public PropertyWindow Form
+        {
+            get;
+            set;
+        }
 
         public PopUpCommand()
         {
@@ -40,11 +44,23 @@ namespace PluginBar.UI
 
         protected override Rhino.Commands.Result RunCommand(RhinoDoc doc, Rhino.Commands.RunMode mode)
         {
-            //rhinoDoc = doc;
-            Rhino.RhinoApp.RunScript("_Helix", false);
-            // RhinoApp.WriteLine("The {0} command is under construction", EnglishName);
+
+            if (null == Form)
+            {
+                Form = new PropertyWindow();
+                Form.FormClosed += new System.Windows.Forms.FormClosedEventHandler(Form_FormClosed);
+                Form.Show(RhinoApp.MainWindow());
+            }
+
             return Rhino.Commands.Result.Success;
         }
+
+        void Form_FormClosed(object sender, System.Windows.Forms.FormClosedEventArgs e)
+        {
+            Form.Dispose();
+            Form = null;
+        }
+
     }
 }
 
