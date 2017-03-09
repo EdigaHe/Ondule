@@ -10,7 +10,7 @@ using Rhino.UI;
 
 namespace PluginBar
 {
-    public partial class PluginBarUserControl : UserControl, View,  IControllerModelObserver
+    public partial class PluginBarUserControl : UserControl, View, IControllerModelObserver
     {
 
         Controller controller;
@@ -30,6 +30,10 @@ namespace PluginBar
             InitializeComponent();
         }
 
+        private void PluginBarUserControl_Load(object sender, EventArgs e)
+        {
+
+        }
 
         private void button1_Click(object sender, EventArgs e)
         {
@@ -59,23 +63,38 @@ namespace PluginBar
             
         }
 
-        private void btn_deform_Click(object sender, EventArgs e)
-        {
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Brep;
-            Rhino.DocObjects.ObjRef brepRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Brep", false, filter, out brepRef);
+        // Code from Huaishu
+
+        //private void btn_deform_Click(object sender, EventArgs e)
+        //{
+        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Brep;
+        //    Rhino.DocObjects.ObjRef brepRef;
+        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Brep", false, filter, out brepRef);
 
            
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                controller.deformBrep(brepRef);
-                // controller.setObjColor(1, ironObjRef);//1 means iron
-            }
-        }
+        //    if (rc == Rhino.Commands.Result.Success)
+        //    {
+        //        controller.deformBrep(brepRef);
+        //        // controller.setObjColor(1, ironObjRef);//1 means iron
+        //    }
+        //}
 
-        private void PluginBarUserControl_Load(object sender, EventArgs e)
+        private void button2_Click(object sender, EventArgs e)
         {
+            // Initialize a variable to hold the form object
+            PluginBar.UI.SpringPopUp2 springPropWindow = new UI.SpringPopUp2();
 
+            // Send the values from the plugin bar to the pop-up window
+            springPropWindow.type = dd_type.SelectedItem.ToString();
+            springPropWindow.mode = dd_mode.SelectedItem.ToString();
+
+            // Show the form to the user, bring into current focus
+            springPropWindow.Show();
+            
         }
+
+        
+
+        
     }
 }

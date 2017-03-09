@@ -47,12 +47,6 @@ namespace PluginBar.UI //UI
 
         private void btn_OK_Click(object sender, EventArgs e)
         {
-            double force;
-            double springD;
-            int turns;
-            double shearMod;
-            double coilD;
-
             // Create strings to hold input data
             String scriptString = "";
             String start = "0,0,0";

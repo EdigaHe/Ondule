@@ -60,6 +60,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="PopUpCommand2.cs" />
     <Compile Include="RhinoModel.cs" />
     <Compile Include="UI\SpringPopUp2.cs">
       <SubType>Form</SubType>
