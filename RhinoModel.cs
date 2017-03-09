@@ -95,8 +95,8 @@ namespace PluginBar
 
             if (readConverted != string.Empty)
             {
-                int lineCounter = 0;
-                string aLine;
+                //int lineCounter = 0;
+                //string aLine;
                 StringReader strReader = new StringReader(readConverted);
               
                 result += String.Format("G1 B{0} C{1} F500 \n", 0, 0);
