@@ -130,7 +130,7 @@ namespace PluginBar.UI
             // Run the command
             Rhino.RhinoApp.RunScript(scriptString, false); // Send command to command line
             // Bring the pop-up window back into focus
-            this.Focus();
+            //this.Focus();
 
         }
 

@@ -16,6 +16,8 @@ namespace PluginBar
         void printSTL(ObjRef obj, Point3d centerPt);
 
         void deformBrep(ObjRef obj);
+
+        void lineToSpring(ObjRef obj);
     }
 
     public class IncRhinoModel : RhinoModel
@@ -110,7 +112,15 @@ namespace PluginBar
 
         }
 
-        
+        public void lineToSpring(ObjRef obj)
+        {
+            Curve crv = obj.Curve();
+
+            Curve spiralCrv = NurbsCurve.CreateSpiral(crv, crv.Domain.T0, crv.Domain.T1, new Point3d(0, 0, 0), 2, 10, 5, 5, 12);
+
+            myDoc.Objects.AddCurve(spiralCrv);
+            myDoc.Views.Redraw();
+        }
  
     }
 

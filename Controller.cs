@@ -16,6 +16,7 @@ namespace PluginBar
     {
         void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt);
         void deformBrep(Rhino.DocObjects.ObjRef obj);
+        void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj);
     }
 
     public class IncController : Controller
@@ -32,6 +33,10 @@ namespace PluginBar
             view.setController(this);
         }
 
+        public void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj)
+        {
+            rhinoModel.lineToSpring(obj);
+        }
 
         public void deformBrep(Rhino.DocObjects.ObjRef obj)
         {

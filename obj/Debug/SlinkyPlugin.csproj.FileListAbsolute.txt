@@ -44,3 +44,13 @@ C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.dll
 C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.pdb
 C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.csprojResolveAssemblyReference.cache
 C:\Users\MakeabilityLab\Desktop\SlinkyPlugin\obj\Debug\PluginBar.UI.SpringPopUp2.resources
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\bin\SlinkyPlugin.dll
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\bin\SlinkyPlugin.pdb
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyBar.Properties.Resources.resources
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\PluginBar.UI.SpringPopUp2.resources
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\PluginBar.UI.PropertyWindow.resources
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\PluginBar.PluginBarUserControl.resources
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.csproj.GenerateResource.Cache
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.dll
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.pdb
+C:\Users\pengh\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.csprojResolveAssemblyReference.cache
