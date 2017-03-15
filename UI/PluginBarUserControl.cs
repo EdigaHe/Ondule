@@ -75,7 +75,7 @@ namespace PluginBar
         //    if (rc == Rhino.Commands.Result.Success)
         //    {
         //        controller.deformBrep(brepRef);
-        //        // controller.setObjColor(1, ironObjRef);//1 means iron
+        //        controller.setObjColor(1, ironObjRef); // 1 means iron
         //    }
         //}
 

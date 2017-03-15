@@ -12,9 +12,7 @@ namespace PluginBar
 {
     public interface RhinoModel
     {
-
         void printSTL(ObjRef obj, Point3d centerPt);
-
         void deformBrep(ObjRef obj);
     }
 
@@ -23,9 +21,6 @@ namespace PluginBar
 
         RhinoDoc myDoc = null;
 
-
-
-       
         public IncRhinoModel()
         {
             myDoc = PluginBarCommand.rhinoDoc;
@@ -34,7 +29,6 @@ namespace PluginBar
                 myDoc = RhinoDoc.ActiveDoc;
             }
 
-         
             myDoc.Views.Redraw();
 
         }
@@ -42,15 +36,12 @@ namespace PluginBar
         public void deformBrep(ObjRef obj)
         {
             Brep bbox = obj.Brep().GetBoundingBox(true).ToBrep();
-
             myDoc.Objects.AddBrep(bbox);
             myDoc.Views.Redraw();
         }
 
         public void printSTL(ObjRef obj, Point3d centerPt)
         {
-
-
             Mesh meshObj = obj.Mesh();
             
             ObjectAttributes atr = myDoc.CreateDefaultAttributes();
@@ -60,26 +51,21 @@ namespace PluginBar
             myDoc.Objects.AddPoint(ctpt, atr);
             myDoc.Views.Redraw();
 
-
-
             Point3d edpt = ctpt;
 
-
             var rc = Rhino.RhinoApp.RunScript("-Export " + "temp" + ".stl y=n Enter Enter", false);
-
 
             //start python to convert it to new points
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.FileName = "../Slic3r/slic3r.exe";
 
-                p.StartInfo.Arguments = "../ExportSTL/" + "temp" + ".stl" + " --load ../Slic3r/magnetprinter_config.ini  --print-center 0,0";// +offsetX.ToString() + "," + offsetY.ToString();//-4,0"
+            p.StartInfo.Arguments = "../ExportSTL/" + "temp" + ".stl" + " --load ../Slic3r/magnetprinter_config.ini  --print-center 0,0";// +offsetX.ToString() + "," + offsetY.ToString();//-4,0"
             p.Start();
 
             //read in the converted file and save it to the document folder
             int milliseconds = 2500;
             System.Threading.Thread.Sleep(milliseconds);
-
 
             string readConverted = string.Empty;
             try
@@ -110,8 +96,6 @@ namespace PluginBar
 
         }
 
-        
- 
     }
 
 }

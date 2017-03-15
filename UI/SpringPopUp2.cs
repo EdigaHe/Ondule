@@ -18,8 +18,8 @@ namespace PluginBar.UI
         private String force;
         private String disp;
         private String coilD = "1";
-        private String springD = "1";
-        private String turns = "1";
+        private String springD = "3";
+        private String turns = "3";
         private String startPT = "-5,5,0";
 
         public SpringPopUp2()
@@ -48,6 +48,20 @@ namespace PluginBar.UI
             {
                 String scriptString = String.Format("Helix A SelLast T {0} {1} {2}", turns, springD, startPT);
                 Rhino.RhinoApp.RunScript(scriptString, false); // Send command to command line
+                String pipeString = String.Format("SelLast Pipe {0} {1} Enter", coilD, coilD);
+                Rhino.RhinoApp.RunScript(pipeString, false); // Send command to command line
+            }
+            else if (type == "Machined")
+            {
+                String scriptString = String.Format("Helix A SelLast T {0} {1} {2}", turns, springD, startPT);
+                Rhino.RhinoApp.RunScript(scriptString, false); // Send command to command line 
+                String areaString = String.Format("Rectangle Center 0,0,0 2 2 Enter");
+                Rhino.RhinoApp.RunScript(areaString, false); // Send command to command line
+                String sweepString = String.Format("Sweep1");
+                Rhino.RhinoApp.RunScript(sweepString, false); // Send command to command line
+            }
+            else if (type == "Z")
+            {
             }
         }
 
