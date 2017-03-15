@@ -34,6 +34,7 @@
             this.dd_type = new System.Windows.Forms.ComboBox();
             this.lb_type = new System.Windows.Forms.Label();
             this.lb_mode = new System.Windows.Forms.Label();
+            this.btn_LineToSpring = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // button1
@@ -72,7 +73,7 @@
             "Bending"});
             this.dd_mode.Location = new System.Drawing.Point(179, 34);
             this.dd_mode.Name = "dd_mode";
-            this.dd_mode.Size = new System.Drawing.Size(151, 28);
+            this.dd_mode.Size = new System.Drawing.Size(151, 39);
             this.dd_mode.TabIndex = 50;
             // 
             // dd_type
@@ -85,7 +86,7 @@
             "Z"});
             this.dd_type.Location = new System.Drawing.Point(339, 34);
             this.dd_type.Name = "dd_type";
-            this.dd_type.Size = new System.Drawing.Size(151, 28);
+            this.dd_type.Size = new System.Drawing.Size(151, 39);
             this.dd_type.TabIndex = 51;
             // 
             // lb_type
@@ -94,7 +95,7 @@
             this.lb_type.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lb_type.Location = new System.Drawing.Point(355, 11);
             this.lb_type.Name = "lb_type";
-            this.lb_type.Size = new System.Drawing.Size(117, 20);
+            this.lb_type.Size = new System.Drawing.Size(199, 32);
             this.lb_type.TabIndex = 52;
             this.lb_type.Text = "Type of Spring";
             // 
@@ -104,9 +105,19 @@
             this.lb_mode.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lb_mode.Location = new System.Drawing.Point(172, 11);
             this.lb_mode.Name = "lb_mode";
-            this.lb_mode.Size = new System.Drawing.Size(166, 20);
+            this.lb_mode.Size = new System.Drawing.Size(279, 32);
             this.lb_mode.TabIndex = 53;
             this.lb_mode.Text = "Mode of Deformation";
+            // 
+            // btn_LineToSpring
+            // 
+            this.btn_LineToSpring.Location = new System.Drawing.Point(777, 12);
+            this.btn_LineToSpring.Name = "btn_LineToSpring";
+            this.btn_LineToSpring.Size = new System.Drawing.Size(276, 50);
+            this.btn_LineToSpring.TabIndex = 54;
+            this.btn_LineToSpring.Text = "ConvertOneLineToSpring";
+            this.btn_LineToSpring.UseVisualStyleBackColor = true;
+            this.btn_LineToSpring.Click += new System.EventHandler(this.btn_LineToSpring_Click);
             // 
             // PluginBarUserControl
             // 
@@ -114,6 +125,7 @@
             this.AutoScroll = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.BackColor = System.Drawing.SystemColors.ButtonShadow;
+            this.Controls.Add(this.btn_LineToSpring);
             this.Controls.Add(this.lb_mode);
             this.Controls.Add(this.lb_type);
             this.Controls.Add(this.dd_type);
@@ -121,7 +133,7 @@
             this.Controls.Add(this.button2);
             this.Controls.Add(this.button1);
             this.Name = "PluginBarUserControl";
-            this.Size = new System.Drawing.Size(664, 80);
+            this.Size = new System.Drawing.Size(1164, 80);
             this.Load += new System.EventHandler(this.PluginBarUserControl_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -136,6 +148,6 @@
     public System.Windows.Forms.ComboBox dd_type;
     private System.Windows.Forms.Label lb_type;
     private System.Windows.Forms.Label lb_mode;
-    
+        private System.Windows.Forms.Button btn_LineToSpring;
     }
 }

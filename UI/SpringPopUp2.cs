@@ -43,6 +43,11 @@ namespace PluginBar.UI
             Rhino.RhinoApp.WriteLine("Type: " + type);
             Rhino.RhinoApp.WriteLine("Mode: " + mode);
 
+            String snapString = String.Format("Osnap E Enter");
+            Rhino.RhinoApp.RunScript(snapString, false);
+
+            Rhino.RhinoApp.WriteLine("Choose the endpoint of the curve");
+
             // Default parameter. NEED TO EXPAND FOR MORE OPTIONS
             if (type == "Helical")
             {
@@ -55,7 +60,7 @@ namespace PluginBar.UI
             {
                 String scriptString = String.Format("Helix A SelLast T {0} {1} {2}", turns, springD, startPT);
                 Rhino.RhinoApp.RunScript(scriptString, false); // Send command to command line 
-                String areaString = String.Format("Rectangle Center 0,0,0 2 2 Enter");
+                String areaString = String.Format("Rectangle Center Pause 2 2 Enter");
                 Rhino.RhinoApp.RunScript(areaString, false); // Send command to command line
                 String sweepString = String.Format("Sweep1");
                 Rhino.RhinoApp.RunScript(sweepString, false); // Send command to command line
@@ -144,7 +149,7 @@ namespace PluginBar.UI
             // Run the command
             Rhino.RhinoApp.RunScript(scriptString, false); // Send command to command line
             // Bring the pop-up window back into focus
-            this.Focus();
+            //this.Focus();
 
         }
 
