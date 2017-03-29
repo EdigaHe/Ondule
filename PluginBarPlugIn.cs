@@ -55,7 +55,7 @@ namespace PluginBar
         {
             // Create our user control
             DockBarUserControl = new PluginBarUserControl();
-              RhinoModel rhinoModel = new IncRhinoModel();
+            RhinoModel rhinoModel = new IncRhinoModel();
 
             Controller control = new IncController(DockBarUserControl, rhinoModel);
 

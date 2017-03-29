@@ -16,6 +16,10 @@ namespace PluginBar
         void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt);
         void deformBrep(Rhino.DocObjects.ObjRef obj);
         void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj);
+        void curveToSpring(Rhino.DocObjects.ObjRef obj, string type, string mode);
+
+        Guid helicalCurve(Rhino.DocObjects.ObjRef obj, Guid num, double pitch, double turns, double springD);
+        Guid zCurve(Rhino.DocObjects.ObjRef obj, Guid num);
     }
 
     public class IncController : Controller
@@ -32,13 +36,27 @@ namespace PluginBar
             view.setController(this);
         }
 
-//<<<<<<< HEAD
-//=======
         public void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj)
         {
             rhinoModel.lineToSpring(obj);
         }
-//>>>>>>> origin/master
+
+
+        // IN USE
+        public void curveToSpring(Rhino.DocObjects.ObjRef obj, string type, string mode)
+        {
+            rhinoModel.curveToSpring(obj, type, mode);
+        }
+
+        public Guid helicalCurve(Rhino.DocObjects.ObjRef obj, Guid num, double pitch, double turns, double springD)
+        {
+            return rhinoModel.helicalCurve(obj, num, pitch, turns, springD);
+        }
+
+        public Guid zCurve(Rhino.DocObjects.ObjRef obj, Guid num)
+        {
+            return rhinoModel.zCurve(obj, num);
+        }
 
         public void deformBrep(Rhino.DocObjects.ObjRef obj)
         {

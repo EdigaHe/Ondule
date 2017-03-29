@@ -79,35 +79,58 @@ namespace PluginBar
         //    }
         //}
 
+
+        // IN USE
         private void button2_Click(object sender, EventArgs e)
         {
             // Initialize a variable to hold the form object
             PluginBar.UI.SpringPopUp2 springPropWindow = new UI.SpringPopUp2();
 
+            // Check if the type and mode are set by the user. If not, set them to default values
+            if (dd_type.SelectedItem == null)
+            {
+                dd_type.SelectedItem = "Helical";
+            }
+            if (dd_mode.SelectedItem == null)
+            {
+                dd_mode.SelectedItem = "Tension";
+            }
+
             // Send the values from the plugin bar to the pop-up window
             springPropWindow.type = dd_type.SelectedItem.ToString();
             springPropWindow.mode = dd_mode.SelectedItem.ToString();
+            springPropWindow.controller = controller;
+
+            // Ask the user to select a curve and create a default spring object
+            //const Rhino.DocObjects.ObjectType objFilter = Rhino.DocObjects.ObjectType.Curve;
+            //Rhino.DocObjects.ObjRef objRef;
+            //Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Curve", false, objFilter, out objRef);
+
+            //if (rc == Rhino.Commands.Result.Success)
+            //{
+            //    controller.curveToSpring(objRef, dd_type.SelectedItem.ToString(), dd_mode.SelectedItem.ToString());
+            //}
 
             // Show the form to the user, bring into current focus
             springPropWindow.Show();
+
             
         }
 
         private void btn_LineToSpring_Click(object sender, EventArgs e)
         {
+
             const Rhino.DocObjects.ObjectType objFilter = Rhino.DocObjects.ObjectType.Curve;
             Rhino.DocObjects.ObjRef objRef;
             Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Curve", false, objFilter, out objRef);
 
             if (rc == Rhino.Commands.Result.Success)
             {
-                Rhino.RhinoApp.WriteLine("Success");
+                // Rhino.RhinoApp.WriteLine("Success");
                 controller.ConvertLineToSpring(objRef);
             }
-            else
-            {
-                Rhino.RhinoApp.WriteLine("Failed2");
-            }
+            
         }
+
     }
 }

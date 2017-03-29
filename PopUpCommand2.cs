@@ -58,6 +58,12 @@ namespace PluginBar.UI
             Form.Dispose();
             Form = null;
         }
+
+        private void adjust2()
+        {
+          
+
+        }
     }
 }
 
