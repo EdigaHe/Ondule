@@ -117,20 +117,5 @@ namespace PluginBar
             
         }
 
-        private void btn_LineToSpring_Click(object sender, EventArgs e)
-        {
-
-            const Rhino.DocObjects.ObjectType objFilter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Curve", false, objFilter, out objRef);
-
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                // Rhino.RhinoApp.WriteLine("Success");
-                controller.ConvertLineToSpring(objRef);
-            }
-            
-        }
-
     }
 }

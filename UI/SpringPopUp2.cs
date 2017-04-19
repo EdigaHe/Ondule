@@ -22,16 +22,19 @@ namespace PluginBar.UI
 
         public RhinoDoc myDoc;
         public Controller controller;
-        public Guid num = Guid.Empty;
+
+        public Guid numCurve = Guid.Empty;
+        public Guid numPipe = Guid.Empty;
+        public Guid numSweep = Guid.Empty;
         Rhino.DocObjects.ObjRef obj;
 
-        private Boolean alongCurve = false;
-        private String force;
-        private String disp;
+        //private Boolean alongCurve = false;
         private double coilD = 1;
         private double springD = 3;
         private double turns = 3;
         private double pitch = 3;
+        private double width = 2;
+        private double height = 1;
         //private String startPT = "-5,5,0";
 
         public SpringPopUp2()
@@ -54,33 +57,29 @@ namespace PluginBar.UI
             const Rhino.DocObjects.ObjectType objFilter = Rhino.DocObjects.ObjectType.Curve;
             Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Curve", false, objFilter, out obj);
 
-            if (type == "Helical" || type == "Machined")
+            Guid[] numArr = new Guid[2];
+
+            if (type == "Helical")
             {
-                num = controller.helicalCurve(obj, num, pitch, turns, springD);
+                numArr = controller.helicalCurve(obj, numCurve, numPipe, pitch, turns, springD, coilD);
+                numCurve = numArr[0];
+                numPipe = numArr[1];
+            }
+            else if (type == "Machined")
+            {
+                numArr = controller.machineCurve(obj, numCurve, numSweep, pitch, turns, springD, width, height);
+                numCurve = numArr[0];
+                numSweep = numArr[1];
             }
             else if (type == "Z")
             {
-                num = controller.zCurve(obj, num);
+                numArr = controller.zCurve(obj, numCurve, numSweep, width, height);
+                numCurve = numArr[0];
+                numSweep = numArr[1];
             }
 
         }
 
-
-
-        private void cb_alongCurve_CheckedChanged(object sender, EventArgs e)
-        {
-            alongCurve = !alongCurve;
-        }
-
-        private void tb_force_TextChanged(object sender, EventArgs e)
-        {
-            
-        }
-
-        private void tb_disp_TextChanged(object sender, EventArgs e)
-        {
-            
-        }
 
         private void slider_coilD_Scroll(object sender, EventArgs e)
         {
@@ -89,7 +88,7 @@ namespace PluginBar.UI
             // Update class variable as slider is moved
             coilD = slider_coilD.Value;
 
-
+            update();
         }
 
         private void slider_springD_Scroll(object sender, EventArgs e)
@@ -99,15 +98,7 @@ namespace PluginBar.UI
             // Update class variable as slider is moved
             springD = slider_springD.Value;
 
-            if (type == "Helical" || type == "Machined")
-            {
-                controller.helicalCurve(obj, num, pitch, turns, springD);
-            }
-            else if (type == "Z")
-            {
-                controller.zCurve(obj, num);
-            }
-
+            update();
         }
 
         private void slider_turns_Scroll(object sender, EventArgs e)
@@ -117,15 +108,7 @@ namespace PluginBar.UI
             // Update class variable as slider is moved
             turns = slider_turns.Value;
 
-            if (type == "Helical" || type == "Machined")
-            {
-                controller.helicalCurve(obj, num, pitch, turns, springD);
-            }
-            else if (type == "Z")
-            {
-                controller.zCurve(obj, num);
-            }
-            
+            update();
         }
 
         private void button_OK_Click(object sender, EventArgs e)
@@ -133,7 +116,21 @@ namespace PluginBar.UI
             this.Close();
         }
 
-
+        private void update()
+        {
+            if (type == "Helical")
+            {
+                controller.helicalCurve(obj, numCurve, numPipe, pitch, turns, springD, coilD);
+            }
+            else if (type == "Machined")
+            {
+                controller.machineCurve(obj, numCurve, numSweep, pitch, turns, springD, width, height);
+            }
+            else if (type == "Z")
+            {
+                controller.zCurve(obj, numCurve, numSweep, width, height);
+            }
+        }
 
 
 

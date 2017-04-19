@@ -34,7 +34,6 @@
             this.dd_type = new System.Windows.Forms.ComboBox();
             this.lb_type = new System.Windows.Forms.Label();
             this.lb_mode = new System.Windows.Forms.Label();
-            this.btn_LineToSpring = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // button1
@@ -109,23 +108,12 @@
             this.lb_mode.TabIndex = 53;
             this.lb_mode.Text = "Mode of Deformation";
             // 
-            // btn_LineToSpring
-            // 
-            this.btn_LineToSpring.Location = new System.Drawing.Point(777, 12);
-            this.btn_LineToSpring.Name = "btn_LineToSpring";
-            this.btn_LineToSpring.Size = new System.Drawing.Size(276, 50);
-            this.btn_LineToSpring.TabIndex = 54;
-            this.btn_LineToSpring.Text = "ConvertOneLineToSpring";
-            this.btn_LineToSpring.UseVisualStyleBackColor = true;
-            this.btn_LineToSpring.Click += new System.EventHandler(this.btn_LineToSpring_Click);
-            // 
             // PluginBarUserControl
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.AutoScroll = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.BackColor = System.Drawing.SystemColors.ButtonShadow;
-            this.Controls.Add(this.btn_LineToSpring);
             this.Controls.Add(this.lb_mode);
             this.Controls.Add(this.lb_type);
             this.Controls.Add(this.dd_type);
@@ -133,7 +121,7 @@
             this.Controls.Add(this.button2);
             this.Controls.Add(this.button1);
             this.Name = "PluginBarUserControl";
-            this.Size = new System.Drawing.Size(1164, 80);
+            this.Size = new System.Drawing.Size(837, 80);
             this.Load += new System.EventHandler(this.PluginBarUserControl_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -148,6 +136,5 @@
     public System.Windows.Forms.ComboBox dd_type;
     private System.Windows.Forms.Label lb_type;
     private System.Windows.Forms.Label lb_mode;
-        private System.Windows.Forms.Button btn_LineToSpring;
     }
 }

@@ -13,13 +13,11 @@ namespace PluginBar
 
     public interface Controller
     {
-        void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt);
-        void deformBrep(Rhino.DocObjects.ObjRef obj);
-        void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj);
-        void curveToSpring(Rhino.DocObjects.ObjRef obj, string type, string mode);
-
-        Guid helicalCurve(Rhino.DocObjects.ObjRef obj, Guid num, double pitch, double turns, double springD);
-        Guid zCurve(Rhino.DocObjects.ObjRef obj, Guid num);
+        Guid[] helicalCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double coilD);
+        Guid[] machineCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double width, double height);
+        Guid[] zCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numSweep, double width, double height);
+        Guid pipeCurve(Rhino.Geometry.Curve numCurve, Guid numPipe, double coilD);
+        Guid sweepCurve(Rhino.Geometry.Curve numCurve, Guid numPipe, double width, double height);
     }
 
     public class IncController : Controller
@@ -28,7 +26,6 @@ namespace PluginBar
         RhinoModel rhinoModel;
         View view;
 
-
         public IncController(View v,  RhinoModel rm)
         {
             view = v;
@@ -36,36 +33,30 @@ namespace PluginBar
             view.setController(this);
         }
 
-        public void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj)
+        public Guid[] helicalCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double coilD)
         {
-            rhinoModel.lineToSpring(obj);
+            return rhinoModel.helicalCurve(obj, numCurve, numPipe, pitch, turns, springD, coilD);
         }
 
-
-        // IN USE
-        public void curveToSpring(Rhino.DocObjects.ObjRef obj, string type, string mode)
+        public Guid[] machineCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double width, double height)
         {
-            rhinoModel.curveToSpring(obj, type, mode);
+            return rhinoModel.machineCurve(obj, numCurve, numPipe, pitch, turns, springD, width, height);
         }
 
-        public Guid helicalCurve(Rhino.DocObjects.ObjRef obj, Guid num, double pitch, double turns, double springD)
+        public Guid[] zCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numSweep, double width, double height)
         {
-            return rhinoModel.helicalCurve(obj, num, pitch, turns, springD);
+            return rhinoModel.zCurve(obj, numCurve, numSweep, width, height);
         }
 
-        public Guid zCurve(Rhino.DocObjects.ObjRef obj, Guid num)
+        public Guid pipeCurve(Rhino.Geometry.Curve crv, Guid numPipe, double coilD)
         {
-            return rhinoModel.zCurve(obj, num);
+            return rhinoModel.pipeCurve(crv, numPipe, coilD);
         }
 
-        public void deformBrep(Rhino.DocObjects.ObjRef obj)
+        public Guid sweepCurve(Rhino.Geometry.Curve crv, Guid numPipe, double width, double height)
         {
-            rhinoModel.deformBrep(obj);
+            return rhinoModel.sweepCurve(crv, numPipe, width, height);
         }
 
-        public void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt)
-        {
-            rhinoModel.printSTL(obj, pt);
-        }
     }
 }
