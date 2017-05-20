@@ -63,23 +63,6 @@ namespace PluginBar
             
         }
 
-        // Code from Huaishu
-
-        //private void btn_deform_Click(object sender, EventArgs e)
-        //{
-        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Brep;
-        //    Rhino.DocObjects.ObjRef brepRef;
-        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Brep", false, filter, out brepRef);
-
-           
-        //    if (rc == Rhino.Commands.Result.Success)
-        //    {
-        //        controller.deformBrep(brepRef);
-        //        controller.setObjColor(1, ironObjRef); // 1 means iron
-        //    }
-        //}
-
-
         // IN USE
         private void button2_Click(object sender, EventArgs e)
         {
@@ -93,7 +76,7 @@ namespace PluginBar
             }
             if (dd_mode.SelectedItem == null)
             {
-                dd_mode.SelectedItem = "Tension";
+                dd_mode.SelectedItem = "Stretching";
             }
 
             // Send the values from the plugin bar to the pop-up window
