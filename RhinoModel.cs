@@ -13,79 +13,114 @@ namespace PluginBar
 
     public interface RhinoModel
     {
-        Guid[] helicalCurve(ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double coilD);
-        Guid[] machineCurve(ObjRef obj, Guid numCurve, Guid numSweep, double pitch, double turns, double springD, double width, double height);
-        Guid[] zCurve(ObjRef obj, Guid numCurve, Guid numSweep, double width, double height);
+        Guid[] helicalCurve(ObjRef obj, Guid numCurve, Guid numPipe, 
+                            double pitch, double turns, double springD,
+                            double coilD);
+        Guid[] machineCurve(ObjRef obj, Guid numCurve, Guid numSweep, 
+                            double pitch, double turns, double springD, 
+                            double width, double height);
+        Guid[] zCurve(ObjRef obj, Guid numCurve, Guid numSweep, double width, 
+                            double height);
         Guid pipeCurve(Curve crv, Guid numPipe, double coilD);
         Guid sweepCurve(Curve crv, Guid numPipe, double width, double height);
     }
 
     public class IncRhinoModel : RhinoModel
     {
-        
-        RhinoDoc myDoc = null;
 
+        RhinoDoc myDoc;
+
+        // Public constructor
         public IncRhinoModel()
         {
+            // Obtain an instance to the RhinoDoc
             myDoc = PluginBarCommand.rhinoDoc;
-            if (myDoc == null)
-            {
-                myDoc = RhinoDoc.ActiveDoc;
-            }
-
+            if (myDoc == null) myDoc = RhinoDoc.ActiveDoc;
             myDoc.Views.Redraw();
         }
 
+        // CURVE CREATION METHODS
+        // _________________________________________________________________
+
         // Instantiate a helical curve object and add to the viewport
-        public Guid[] helicalCurve(ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double coilD)
+        public Guid[] helicalCurve(ObjRef obj, Guid curveID, Guid pipeID, 
+                                   double pitch, double turns, double springD, 
+                                   double coilD)
         {
-            Curve crv = obj.Curve();
-            Curve spiralCrv = null;
+            // Axis Curve: the axis around which the path will be formed  
+            Curve axisCurve = obj.Curve();
 
-            spiralCrv = NurbsCurve.CreateSpiral(crv, crv.Domain.T0, crv.Domain.T1, new Point3d(0, 0, 0), pitch, turns, springD / 2, springD / 2, 12);
+            // Path Curve: the curve that forms the outline of the spring
+            Curve pathCurve = NurbsCurve.CreateSpiral(axisCurve,
+                                                axisCurve.Domain.T0, 
+                                                axisCurve.Domain.T1, 
+                                                new Point3d(0, 0, 0), 
+                                                pitch, 
+                                                turns, 
+                                                springD / 2,
+                                                springD / 2,
+                                                12);
 
-            if (numCurve.CompareTo(Guid.Empty) == 0)
+            // Assess whether the path curve object has been created
+            // Depending on the answer, create or replace
+            if (curveID.CompareTo(Guid.Empty) == 0)
             {
-                numCurve = myDoc.Objects.AddCurve(spiralCrv); 
+                curveID = myDoc.Objects.AddCurve(pathCurve); 
             }
             else
             {
-                myDoc.Objects.Replace(numCurve, spiralCrv);
+                myDoc.Objects.Replace(curveID, pathCurve);
             }
 
-            numPipe = pipeCurve(spiralCrv, numPipe, coilD);
-
-            myDoc.Views.Redraw();
-            return new Guid[]{numCurve, numPipe};
+			pipeID = pipeCurve(pathCurve, pipeID, coilD);
+			myDoc.Views.Redraw(); // Call the viewport to refresh
+			return new Guid[]{curveID, pipeID};
         }
         
 
         // Instantiate a machined curve object and add to the viewport
-        public Guid[] machineCurve(ObjRef obj, Guid numCurve, Guid numSweep, double pitch, double turns, double springD, double width, double height)
+        public Guid[] machineCurve(ObjRef obj, Guid curveID, Guid sweepID, 
+                                   double pitch, double turns, double springD, 
+                                   double width, double height)
         {
-            Curve crv = obj.Curve();
-            Curve spiralCrv = null;
+			// Axis Curve: the axis around which the path will be formed
+            Curve axisCurve = obj.Curve();
 
-            spiralCrv = NurbsCurve.CreateSpiral(crv, crv.Domain.T0, crv.Domain.T1, new Point3d(0, 0, 0), pitch, turns, springD / 2, springD / 2, 12);
+			// Path Curve: the curve that forms the outline of the spring
+            Curve pathCurve = null;
 
-            if (numCurve.CompareTo(Guid.Empty) == 0)
+			// Assess whether the path curve object has been created
+			// Depending on the answer, create or replace
+			pathCurve = NurbsCurve.CreateSpiral(axisCurve,
+                                                axisCurve.Domain.T0,
+                                                axisCurve.Domain.T1, 
+                                                new Point3d(0, 0, 0), 
+                                                pitch, 
+                                                turns, 
+                                                springD / 2,
+                                                springD / 2, 
+                                                12);
+
+			// Assess whether the path curve object has been created
+			// Depending on the answer, create or replace
+			if (curveID.CompareTo(Guid.Empty) == 0)
             {
-                numCurve = myDoc.Objects.AddCurve(spiralCrv);
+                curveID = myDoc.Objects.AddCurve(pathCurve);
             }
             else
             {
-                myDoc.Objects.Replace(numCurve, spiralCrv);
+                myDoc.Objects.Replace(curveID, pathCurve);
             }
 
-            numSweep = sweepCurve(spiralCrv, numSweep, width, height);
-
-            myDoc.Views.Redraw();
-            return new Guid[] { numCurve, numSweep };
+            sweepID = sweepCurve(pathCurve, sweepID, width, height);
+			myDoc.Views.Redraw(); // Call the viewport to refresh
+			return new Guid[] { curveID, sweepID };
         }
 
 
         // Instantiate a polyline object and add to the viewport
-        public Guid[] zCurve(ObjRef obj, Guid numCurve, Guid numSweep, double width, double height)
+        public Guid[] zCurve(ObjRef obj, Guid numCurve, Guid numSweep, 
+                             double width, double height)
         {
             Curve crv = obj.Curve();
             Polyline zCrv = new Polyline();
@@ -145,17 +180,24 @@ namespace PluginBar
             return new Guid[] { numCurve, numSweep };
         }
 
+		// CROSS-SECTION --> VOLUME METHODS
+		// _________________________________________________________________
 
+		// Creates a 3D curve from a 1D path & circular cross section)
+        public Guid pipeCurve(Curve pathCurve, Guid numPipe, double coilD)
+        {			
+            // Create the 3D geometry
+			Brep[] pipe = Brep.CreatePipe(pathCurve, 
+                                          coilD / 2,
+                                          false, 
+                                          PipeCapMode.Flat, 
+                                          false, 
+                                          0.1, 
+                                          0.1);
 
-
-        public Guid pipeCurve(Curve crv, Guid numPipe, double coilD)
-        {
-            Brep[] pipe = null;
-            PipeCapMode cap = PipeCapMode.Flat;
-
-            pipe = Brep.CreatePipe(crv, coilD / 2, false, cap, false, 0.1, 0.1);
-
-            if (numPipe.CompareTo(Guid.Empty) == 0)
+			// Assess whether the area curve object has been created
+			// Depending on the answer, create or replace
+			if (numPipe.CompareTo(Guid.Empty) == 0)
             {
                 numPipe = myDoc.Objects.AddBrep(pipe[0]);
             }
@@ -167,69 +209,35 @@ namespace PluginBar
             return numPipe;
         }
 
-        public Guid sweepCurve(Curve crv, Guid numSweep, double width, double height)
+		// Creates a 3D geometry from a 1D path & rectangular cross section
+        public Guid sweepCurve(Curve pathCurve, Guid sweepID, double width, double height)
         {
-            Brep[] sweep = null;
-            SweepOneRail sweepOne = new SweepOneRail();
-            Polyline rect = new Polyline();
+            // Access location and orientation characteristics of the path curve
+            Point3d startPoint = pathCurve.PointAtStart;
+            Vector3d startVector = pathCurve.TangentAtStart;
 
-            Point3d startPoint = crv.PointAtStart;
-            Vector3d startVector = crv.TangentAtStart;
-
+            // Acquire reference to the plane orthogonal to the start of the
+            // path curve, and create a rectangle on that plane
             Plane norm = new Plane(startPoint, startVector);
-            Rectangle3d rect2 = new Rectangle3d(norm, width, height);
+            Rectangle3d rectangle = new Rectangle3d(norm, width, height);
+            Curve rectCurve = rectangle.ToNurbsCurve();
 
-            //double xPos = startPoint.X + width / 2;
-            //double xNeg = startPoint.X - width / 2;
-            //double yPos = startPoint.Y + height / 2;
-            //double yNeg = startPoint.Y - height / 2;
+            // Create the 3D geometry
+            SweepOneRail sweepObject = new SweepOneRail();
+            Brep[] sweep = sweepObject.PerformSweep(pathCurve, rectCurve);
 
-            //double sum = startVector.X*startPoint.X + startVector.Y*startPoint.Y + startVector.Z*startPoint.Z;
-
-            //double x0 = startVector.X * xPos; // ++
-            //double x1 = startVector.X * xNeg; // -+
-            //double x2 = startVector.X * xNeg; // --
-            //double x3 = startVector.X * xPos; // +-
-            //double x4 = startVector.X * xPos; // ++
-
-            //double y0 = startVector.Y * yPos; // ++
-            //double y1 = startVector.Y * yPos; // -+
-            //double y2 = startVector.Y * yNeg; // --
-            //double y3 = startVector.Y * yNeg; // +-
-            //double y4 = startVector.Y * yPos; // ++
-
-            //double z0 = (sum - x0 - y0) / startVector.Z; // ++
-            //double z1 = (sum - x1 - y1) / startVector.Z; // -+
-            //double z2 = (sum - x2 - y2) / startVector.Z; // --
-            //double z3 = (sum - x3 - y3) / startVector.Z; // +-
-            //double z4 = (sum - x4 - y4) / startVector.Z; // ++
-
-            //rect.Add(x0, y0, z0);
-            //rect.Add(x1, y1, z1);
-            //rect.Add(x2, y2, z2);
-            //rect.Add(x3, y3, z3);
-            //rect.Add(x4, y4, z4);
-
-            //rect.Add(width/2,0,height/2);
-            //rect.Add(-width / 2, 0, height / 2);
-            //rect.Add(-width / 2, 0, -height / 2);
-            //rect.Add(width / 2, 0, -height / 2);
-            //rect.Add(width / 2, 0, height / 2);
-
-            Curve rectCrv = rect2.ToNurbsCurve();
-
-            sweep = sweepOne.PerformSweep(crv, rectCrv);
-
-            if (numSweep.CompareTo(Guid.Empty) == 0)
+			// Assess whether the area curve object has been created
+			// Depending on the answer, create or replace
+			if (sweepID.CompareTo(Guid.Empty) == 0)
             {
-                numSweep = myDoc.Objects.AddBrep(sweep[0]);
+                sweepID = myDoc.Objects.AddBrep(sweep[0]);
             }
             else
             {
-                myDoc.Objects.Replace(numSweep, sweep[0]);
+                myDoc.Objects.Replace(sweepID, sweep[0]);
             }
 
-            return numSweep;
+            return sweepID;
         }
 
     }

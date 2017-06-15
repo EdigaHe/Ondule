@@ -28,7 +28,8 @@ namespace PluginBar.UI
         public Guid numSweep = Guid.Empty;
         Rhino.DocObjects.ObjRef obj;
 
-        // Quantitative characteristics
+        // QUANTITATIVE CHARACTERISTICS
+        // Simple variables
         private double coilD = 1;
         private double springD = 3;
         private double turns = 3;
@@ -37,23 +38,25 @@ namespace PluginBar.UI
         private double height = 1;
         private double length;
         private double G = 1.287e9;
+		// Complex variables
+		private double[] kRange = { 9.31e4, 2.5602e5, 4.1895e5, 5.8187e5, 7.4479e5 };
+		private double k;
+		private double kCoeff;
+		private double C;
+		private double S;
 
-        // Qualitative characteristics
+        // QUALITATIVE CHARACTERISTICS
         private double relStiffness = 3;
         private double springIndex = 3;
         private double slendernessRatio = 9;
-        private double [] kRange = {9.31e4, 2.5602e5, 4.1895e5, 5.8187e5, 7.4479e5};
-        private double k;
-        private double kCoeff;
-        private double C;
-        private double S;
 
+        // Public constructor
         public SpringPopUp2()
         {
             InitializeComponent();
         }
 
-
+        // Run when the plugin is selected by the user
         private void SpringPopUp2_Load(object sender, EventArgs e)
         {
 
@@ -61,16 +64,21 @@ namespace PluginBar.UI
             Rhino.RhinoApp.WriteLine("Type: " + type);
             Rhino.RhinoApp.WriteLine("Mode: " + mode);
             
-            // Activate the Osnap functionality
+            // Activate the Osnap functionality (optional)
             String snapString = String.Format("Osnap E Enter");
             Rhino.RhinoApp.RunScript(snapString, false);
 
+            // Restrict the user's selection to a curve
             const Rhino.DocObjects.ObjectType objFilter = Rhino.DocObjects.ObjectType.Curve;
+
+            // Instruct the user to select a curve with the cursor
             Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Curve", false, objFilter, out obj);
 
+            // Create an array to hold ID values for the path curve and the cross-sectional area curve
             Guid[] numArr = new Guid[2];
             length = obj.Curve().GetLength();
 
+            // Execute different commands depending on the type of spring desired
             if (type == "Helical")
             {
                 numArr = controller.helicalCurve(obj, numCurve, numPipe, pitch, turns, springD, coilD);
@@ -92,77 +100,62 @@ namespace PluginBar.UI
 
         }
 
-        // SLIDERS
+		// SLIDERS
+		// _________________________________________________________________
 
-        private void slider_coilD_Scroll(object sender, EventArgs e)
+		private void slider_coilD_Scroll(object sender, EventArgs e)
         {
-            // Update label as slider is moved
-            lb_coilDVal.Text = slider_coilD.Value.ToString();
-            // Update class variable as slider is moved
-            coilD = slider_coilD.Value;
-
-            update();
+            lb_coilDVal.Text = slider_coilD.Value.ToString(); // Update label as slider is moved
+			coilD = slider_coilD.Value; // Update class variable as slider is moved
+			update();
         }
 
         private void slider_springD_Scroll(object sender, EventArgs e)
         {
-            // Update label as slider is moved
-            lb_springDVal.Text = slider_springD.Value.ToString();
-            // Update class variable as slider is moved
-            springD = slider_springD.Value;
-
-            update();
+            lb_springDVal.Text = slider_springD.Value.ToString(); // Update label as slider is moved						  
+			springD = slider_springD.Value; // Update class variable as slider is moved
+			update();
         }
 
         private void slider_turns_Scroll(object sender, EventArgs e)
         {
-            // Update label as slider is moved
-            lb_turnsVal.Text = slider_turns.Value.ToString();
-            // Update class variable as slider is moved
-            turns = slider_turns.Value;
-
-            // update();
-            update2();
+            lb_turnsVal.Text = slider_turns.Value.ToString(); // Update label as slider is moved
+			turns = slider_turns.Value; // Update class variable as slider is moved
+			update2();
         }
 
         private void slider_stiffness_Scroll(object sender, EventArgs e)
         {
-            // Update label as slider is moved
-            lb_stiffnessVal.Text = slider_stiffness.Value.ToString();
-            // Update class variable as slider is moved
-            relStiffness = slider_turns.Value;
-
+            lb_stiffnessVal.Text = slider_stiffness.Value.ToString();  // Update label as slider is moved
+			relStiffness = slider_turns.Value; // Update class variable as slider is moved
             update2();
         }
 
         private void slider_slenderness_Scroll(object sender, EventArgs e)
         {
-            // Update label as slider is moved
-            lb_slendernessVal.Text = slider_slenderness.Value.ToString();
-            // Update class variable as slider is moved
-            slendernessRatio = slider_slenderness.Value;
-
-            update2();
+            lb_slendernessVal.Text = slider_slenderness.Value.ToString(); // Update label as slider is moved											  
+			slendernessRatio = slider_slenderness.Value; // Update class variable as slider is moved
+			update2();
         }
 
         private void slider_index_Scroll(object sender, EventArgs e)
         {
-            // Update label as slider is moved
-            lb_indexVal.Text = (slider_index.Value / 2).ToString();
-            // Update class variable as slider is moved
-            springIndex = slider_index.Value / 2;
-
-            update2();
+            lb_indexVal.Text = (slider_index.Value / 2).ToString(); // Update label as slider is moved
+			springIndex = slider_index.Value / 2; // Update class variable as slider is moved
+			update2();
         }
 
 
         // OK & UPDATE
+        // _______________________________________________________________
 
         private void button_OK_Click(object sender, EventArgs e)
         {
             this.Close();
         }
 
+        // The purpose of this method is to administer real time updates by
+        // calling external methods to reflect the changes in the viewport
         private void update()
         {
             if (type == "Helical")
@@ -179,6 +172,8 @@ namespace PluginBar.UI
             }
         }
 
+        // An unfinished modification to the original update method that would 
+        // incorporate complex variables 
         private void update2()
         {
             if (type == "Helical")
@@ -191,54 +186,11 @@ namespace PluginBar.UI
 
                 k = coilD * G / (8 * Math.Pow(C,3) * turns); 
 
-                kRange = 
+                // kRange = 
 
-                controller.helicalCurve(obj, numCurve, numPipe, pitch, turns, springD, coilD);
+                // controller.helicalCurve(obj, numCurve, numPipe, pitch, turns, springD, coilD);
             }
         }
-
-
-
-
-
-
-        // OLD CODE
-        /*
-         Default parameter. NEED TO EXPAND FOR MORE OPTIONS
-        if (type == "Helical")
-        {
-            String scriptString = String.Format("Helix A SelLast T {0} {1} {2}", turns, springD, startPT);
-            Rhino.RhinoApp.RunScript(scriptString, false); // Send command to command line
-            String pipeString = String.Format("SelLast Pipe {0} {1} Enter", coilD, coilD);
-            Rhino.RhinoApp.RunScript(pipeString, false); // Send command to command line
-        }
-        else if (type == "Machined")
-        {
-            String scriptString = String.Format("Helix A SelLast T {0} {1} {2}", turns, springD, startPT);
-            Rhino.RhinoApp.RunScript(scriptString, false); // Send command to command line 
-            String areaString = String.Format("Rectangle Center Pause 2 2 Enter");
-            Rhino.RhinoApp.RunScript(areaString, false); // Send command to command line
-            String sweepString = String.Format("Sweep1");
-            Rhino.RhinoApp.RunScript(sweepString, false); // Send command to command line
-        }
-        else if (type == "Z")
-        {
-        }
-
-         THIS IS THE SOURCE OF REFRESHING ERRORS
-        private void adjust()
-        {
-            // Delete the last helix
-            Rhino.RhinoApp.RunScript("SelLast Delete", false);
-            // Create a new helix with updated characteristics
-            String scriptString = String.Format("Helix A SelCrv T {0} {1} {2}", turns, springD, startPT);
-            // Run the command
-            Rhino.RhinoApp.RunScript(scriptString, false); // Send command to command line
-            // Bring the pop-up window back into focus
-            //this.Focus();
-
-        }
-        */
     }
 }
 

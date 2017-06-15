@@ -59,11 +59,6 @@ namespace PluginBar.UI
             Form = null;
         }
 
-        private void adjust2()
-        {
-          
-
-        }
     }
 }
 

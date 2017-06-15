@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +10,7 @@ namespace PluginBar
     {
 
     }
-
+     
     public interface Controller
     {
         Guid[] helicalCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double coilD);
@@ -33,12 +33,15 @@ namespace PluginBar
             view.setController(this);
         }
 
-        public Guid[] helicalCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double coilD)
+        // These methods pass the parameter values to identical methods in the RhinoModel class
+        public Guid[] helicalCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, 
+                                   Guid numPipe, double pitch, double turns, double springD, double coilD)
         {
             return rhinoModel.helicalCurve(obj, numCurve, numPipe, pitch, turns, springD, coilD);
         }
 
-        public Guid[] machineCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve, Guid numPipe, double pitch, double turns, double springD, double width, double height)
+        public Guid[] machineCurve(Rhino.DocObjects.ObjRef obj, Guid numCurve,
+                                   Guid numPipe, double pitch, double turns, double springD, double width, double height)
         {
             return rhinoModel.machineCurve(obj, numCurve, numPipe, pitch, turns, springD, width, height);
         }
