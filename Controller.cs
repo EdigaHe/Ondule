@@ -12,7 +12,6 @@ namespace PluginBar
 
     }
 
-
     public interface Controller
     {
         void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt);
@@ -37,7 +36,13 @@ namespace PluginBar
             view.setController(this);
         }
 
+<<<<<<< HEAD
         public void linearDeform(ObjRef objRef)
+=======
+//<<<<<<< HEAD
+//=======
+        public void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj)
+>>>>>>> origin/master
         {
             rhinoModel.linearDeform(objRef);
         }
@@ -51,11 +56,13 @@ namespace PluginBar
         {
             rhinoModel.wireframeAll();
         }
+//>>>>>>> origin/master
 
         public void deformBrep(Rhino.DocObjects.ObjRef obj)
         {
             rhinoModel.deformBrep(obj);
         }
+
         public void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt)
         {
             rhinoModel.printSTL(obj, pt);

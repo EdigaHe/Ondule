@@ -12,9 +12,7 @@ namespace PluginBar
 {
     public interface RhinoModel
     {
-
         void printSTL(ObjRef obj, Point3d centerPt);
-
         void deformBrep(ObjRef obj);
 
         void wireframeAll();
@@ -51,6 +49,7 @@ namespace PluginBar
 
         RhinoDoc myDoc = null;
 
+<<<<<<< HEAD
         List<Point3d> wireframePtList = new List<Point3d>();
 
         List<Point3d> dyndrawLst = new List<Point3d>();
@@ -61,6 +60,8 @@ namespace PluginBar
         Curve centerCrv = null;
         Point3d centerPt;
 
+=======
+>>>>>>> origin/master
         public IncRhinoModel()
         {
             myDoc = PluginBarCommand.rhinoDoc;
@@ -69,6 +70,7 @@ namespace PluginBar
                 myDoc = RhinoDoc.ActiveDoc;
             }
 
+<<<<<<< HEAD
             int redIndex = myDoc.Materials.Add();
             Rhino.DocObjects.Material redMat = myDoc.Materials[redIndex];
             redMat.DiffuseColor = System.Drawing.Color.Red;
@@ -232,6 +234,8 @@ namespace PluginBar
 
             myDoc.Objects.AddBrep(capped);
 
+=======
+>>>>>>> origin/master
             myDoc.Views.Redraw();
 
             // offset the surface?
@@ -307,7 +311,6 @@ namespace PluginBar
         public void deformBrep(ObjRef obj)
         {
             Brep bbox = obj.Brep().GetBoundingBox(true).ToBrep();
-
             myDoc.Objects.AddBrep(bbox);
             myDoc.Views.Redraw();
         }
@@ -374,8 +377,6 @@ namespace PluginBar
 
         public void printSTL(ObjRef obj, Point3d centerPt)
         {
-
-
             Mesh meshObj = obj.Mesh();
             
             ObjectAttributes atr = myDoc.CreateDefaultAttributes();
@@ -385,26 +386,21 @@ namespace PluginBar
             myDoc.Objects.AddPoint(ctpt, atr);
             myDoc.Views.Redraw();
 
-
-
             Point3d edpt = ctpt;
 
-
             var rc = Rhino.RhinoApp.RunScript("-Export " + "temp" + ".stl y=n Enter Enter", false);
-
 
             //start python to convert it to new points
             System.Diagnostics.Process p = new System.Diagnostics.Process();
             p.StartInfo.UseShellExecute = false;
             p.StartInfo.FileName = "../Slic3r/slic3r.exe";
 
-                p.StartInfo.Arguments = "../ExportSTL/" + "temp" + ".stl" + " --load ../Slic3r/magnetprinter_config.ini  --print-center 0,0";// +offsetX.ToString() + "," + offsetY.ToString();//-4,0"
+            p.StartInfo.Arguments = "../ExportSTL/" + "temp" + ".stl" + " --load ../Slic3r/magnetprinter_config.ini  --print-center 0,0";// +offsetX.ToString() + "," + offsetY.ToString();//-4,0"
             p.Start();
 
             //read in the converted file and save it to the document folder
             int milliseconds = 2500;
             System.Threading.Thread.Sleep(milliseconds);
-
 
             string readConverted = string.Empty;
             try
@@ -435,8 +431,29 @@ namespace PluginBar
 
         }
 
+<<<<<<< HEAD
         
+=======
+//<<<<<<< HEAD
+//=======
+        public void lineToSpring(ObjRef obj)
+        {
+            Curve crv = obj.Curve();
+
+            Curve spiralCrv = NurbsCurve.CreateSpiral(crv, crv.Domain.T0, crv.Domain.T1, new Point3d(0, 0, 0), 2, 10, 5, 5, 12);
+            if (spiralCrv == null)
+            {
+                Rhino.RhinoApp.WriteLine("Failed");
+            }
+
+            Guid num = Guid.NewGuid();
+            num = myDoc.Objects.AddCurve(spiralCrv); 
+            
+            myDoc.Views.Redraw();
+        }
+>>>>>>> origin/master
  
+//>>>>>>> origin/master
     }
 
 }
