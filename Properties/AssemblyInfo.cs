@@ -8,12 +8,12 @@ using Rhino.PlugIns;
 // These will show in Rhino's option dialog, in the tab Plug-ins
 //[assembly: PlugInDescription(DescriptionType.Address, "")]
 [assembly: PlugInDescription(DescriptionType.Country, "United States")]
-[assembly: PlugInDescription(DescriptionType.Email, "joshland96@gmail.com")]
+[assembly: PlugInDescription(DescriptionType.Email, "penghuaishu@gmail.com")]
 //[assembly: PlugInDescription(DescriptionType.Phone, "")]
 //[assembly: PlugInDescription(DescriptionType.Fax, "")]
-[assembly: PlugInDescription(DescriptionType.Organization, "UMD HCIL Makeability Lab")]
-//[assembly: PlugInDescription(DescriptionType.UpdateUrl, "")]
-[assembly: PlugInDescription(DescriptionType.WebSite, "https://makeabilitylab.umiacs.umd.edu/")]
+[assembly: PlugInDescription(DescriptionType.Organization, "Huaishu Peng")]
+[assembly: PlugInDescription(DescriptionType.UpdateUrl, "")]
+[assembly: PlugInDescription(DescriptionType.WebSite, "u")]
 
 
 // General Information about an assembly is controlled through the following 
@@ -22,7 +22,7 @@ using Rhino.PlugIns;
 [assembly: AssemblyTitle("Plugin")] // Plug-In title is extracted from this
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("UMD HCIL Makeability Lab")]
+[assembly: AssemblyCompany("Huaishu Peng")]
 [assembly: AssemblyProduct("Plugin")]
 //[assembly: AssemblyCopyright("Copyright © 2014, Cornell University")]
 [assembly: AssemblyTrademark("")]

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Timers;
+using Rhino.DocObjects;
 
 namespace PluginBar
 {
@@ -16,7 +17,9 @@ namespace PluginBar
     {
         void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt);
         void deformBrep(Rhino.DocObjects.ObjRef obj);
-        void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj);
+        void wireframe();
+        void selection();
+        void linearDeform(ObjRef obj);
     }
 
     public class IncController : Controller
@@ -25,6 +28,7 @@ namespace PluginBar
         RhinoModel rhinoModel;
         View view;
 
+        
 
         public IncController(View v,  RhinoModel rm)
         {
@@ -33,9 +37,19 @@ namespace PluginBar
             view.setController(this);
         }
 
-        public void ConvertLineToSpring(Rhino.DocObjects.ObjRef obj)
+        public void linearDeform(ObjRef objRef)
         {
-            rhinoModel.lineToSpring(obj);
+            rhinoModel.linearDeform(objRef);
+        }
+
+        public void selection()
+        {
+            rhinoModel.selection();
+        }
+
+        public void wireframe()
+        {
+            rhinoModel.wireframeAll();
         }
 
         public void deformBrep(Rhino.DocObjects.ObjRef obj)
