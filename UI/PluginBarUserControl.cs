@@ -62,16 +62,6 @@ namespace PluginBar
             controller.selection();
         }
 
-<<<<<<< HEAD
-=======
-           
-        //    if (rc == Rhino.Commands.Result.Success)
-        //    {
-        //        controller.deformBrep(brepRef);
-        //        controller.setObjColor(1, ironObjRef); // 1 means iron
-        //    }
-        //}
->>>>>>> origin/master
 
         private void mt_LinearDeform_Click(object sender, EventArgs e)
         {
@@ -91,24 +81,8 @@ namespace PluginBar
 
         private void mt_wireFrame_Click(object sender, EventArgs e)
         {
-<<<<<<< HEAD
 
             controller.wireframe();
-=======
-            const Rhino.DocObjects.ObjectType objFilter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one Curve", false, objFilter, out objRef);
-
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                Rhino.RhinoApp.WriteLine("Success");
-                controller.ConvertLineToSpring(objRef);
-            }
-            else
-            {
-                Rhino.RhinoApp.WriteLine("Failed2");
-            }
->>>>>>> origin/master
         }
     }
 }
