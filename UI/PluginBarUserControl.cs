@@ -65,12 +65,14 @@ namespace PluginBar
 
         private void mt_LinearDeform_Click(object sender, EventArgs e)
         {
+            // ask the user to select the medium axis
             const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
             Rhino.DocObjects.ObjRef objRef;
             Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
 
             if (rc == Rhino.Commands.Result.Success)
             {
+                // send the object reference to the rhinomodel basically
                 controller.linearDeform(objRef);
             }
 
