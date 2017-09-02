@@ -28,7 +28,6 @@
     /// </summary>
     private void InitializeComponent()
     {
-            this.button1 = new System.Windows.Forms.Button();
             this.mt_Select = new MetroFramework.Controls.MetroTile();
             this.mt_LinearDeform = new MetroFramework.Controls.MetroTile();
             this.mt_wireFrame = new MetroFramework.Controls.MetroTile();
@@ -40,19 +39,6 @@
             this.TwistBend = new System.Windows.Forms.Button();
             this.MedialAxisGeneration = new System.Windows.Forms.Button();
             this.SuspendLayout();
-            // 
-            // button1
-            // 
-            this.button1.BackColor = System.Drawing.SystemColors.Control;
-            this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.875F);
-            this.button1.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.button1.Location = new System.Drawing.Point(1840, 63);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(178, 62);
-            this.button1.TabIndex = 43;
-            this.button1.Text = "Popup Window";
-            this.button1.UseVisualStyleBackColor = false;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // mt_Select
             // 
@@ -166,7 +152,6 @@
             this.Controls.Add(this.mt_wireFrame);
             this.Controls.Add(this.mt_LinearDeform);
             this.Controls.Add(this.mt_Select);
-            this.Controls.Add(this.button1);
             this.Name = "PluginBarUserControl";
             this.Size = new System.Drawing.Size(2030, 332);
             this.ResumeLayout(false);
@@ -174,8 +159,6 @@
     }
 
     #endregion
-
-    private System.Windows.Forms.Button button1;
         private MetroFramework.Controls.MetroTile mt_Select;
         private MetroFramework.Controls.MetroTile mt_LinearDeform;
         private MetroFramework.Controls.MetroTile mt_wireFrame;
