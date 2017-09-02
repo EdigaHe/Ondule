@@ -20,6 +20,14 @@ namespace PluginBar
         void wireframe();
         void selection();
         void linearDeform(ObjRef obj);
+        void twistDeform(ObjRef obj);
+        void bendDeform(ObjRef obj);
+        void linearTwistDeform(ObjRef obj);
+        void linearBendDeform(ObjRef obj);
+        void twistBendDeform(ObjRef obj);
+        void allDeform(ObjRef obj);
+        void medialAxisTransform();
+
     }
 
     public class IncController : Controller
@@ -42,6 +50,30 @@ namespace PluginBar
             rhinoModel.linearDeform(objRef);
         }
 
+        public void twistDeform(ObjRef objRef)
+        {
+            rhinoModel.twistDeform(objRef);
+        }
+        public void bendDeform(ObjRef objRef)
+        {
+            rhinoModel.bendDeform(objRef);
+        }
+        public void linearTwistDeform(ObjRef objRef)
+        {
+            rhinoModel.linearTwistDeform(objRef);
+        }
+        public void linearBendDeform(ObjRef objRef)
+        {
+            rhinoModel.linearBendDeform(objRef);
+        }
+        public void twistBendDeform(ObjRef objRef)
+        {
+            rhinoModel.twistBendDeform(objRef);
+        }
+        public void allDeform(ObjRef objRef)
+        {
+            rhinoModel.allDeform(objRef);
+        }
         public void selection()
         {
             rhinoModel.selection();
@@ -59,6 +91,10 @@ namespace PluginBar
         public void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt)
         {
             rhinoModel.printSTL(obj, pt);
+        }
+        public void medialAxisTransform()
+        {
+            rhinoModel.medialAxisTransform();
         }
     }
 }

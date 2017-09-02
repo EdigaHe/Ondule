@@ -86,5 +86,94 @@ namespace PluginBar
 
             controller.wireframe();
         }
+
+        private void Twist_Click(object sender, EventArgs e)
+        {
+            // ask the user to select the medium axis
+            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+            Rhino.DocObjects.ObjRef objRef;
+            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+
+            if (rc == Rhino.Commands.Result.Success)
+            {
+                // send the object reference to the rhinomodel basically
+                controller.twistDeform(objRef);
+            }
+        }
+
+        private void Bend_Click(object sender, EventArgs e)
+        {
+            // ask the user to select the medium axis
+            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+            Rhino.DocObjects.ObjRef objRef;
+            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+
+            if (rc == Rhino.Commands.Result.Success)
+            {
+                // send the object reference to the rhinomodel basically
+                controller.bendDeform(objRef);
+            }
+        }
+
+        private void LinearTwist_Click(object sender, EventArgs e)
+        {
+            // ask the user to select the medium axis
+            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+            Rhino.DocObjects.ObjRef objRef;
+            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+
+            if (rc == Rhino.Commands.Result.Success)
+            {
+                // send the object reference to the rhinomodel basically
+                controller.linearTwistDeform(objRef);
+            }
+        }
+
+        private void LinearBend_Click(object sender, EventArgs e)
+        {
+            // ask the user to select the medium axis
+            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+            Rhino.DocObjects.ObjRef objRef;
+            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+
+            if (rc == Rhino.Commands.Result.Success)
+            {
+                // send the object reference to the rhinomodel basically
+                controller.linearBendDeform(objRef);
+            }
+        }
+
+        private void LinearTwistBend_Click(object sender, EventArgs e)
+        {
+            // ask the user to select the medium axis
+            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+            Rhino.DocObjects.ObjRef objRef;
+            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+
+            if (rc == Rhino.Commands.Result.Success)
+            {
+                // send the object reference to the rhinomodel basically
+                controller.allDeform(objRef);
+            }
+        }
+
+        private void TwistBend_Click(object sender, EventArgs e)
+        {
+            // ask the user to select the medium axis
+            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+            Rhino.DocObjects.ObjRef objRef;
+            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+
+            if (rc == Rhino.Commands.Result.Success)
+            {
+                // send the object reference to the rhinomodel basically
+                controller.twistBendDeform(objRef);
+            }
+        }
+
+        private void MedialAxisGeneration_Click(object sender, EventArgs e)
+        {
+            controller.medialAxisTransform();
+        }
     }
 }
