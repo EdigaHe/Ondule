@@ -45,14 +45,14 @@ C:\Users\pengh\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.csproj.GenerateResour
 C:\Users\pengh\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.dll
 C:\Users\pengh\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.pdb
 C:\Users\pengh\Desktop\SlinkyPlugin\obj\Debug\SlinkyPlugin.csprojResolveAssemblyReference.cache
-C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\bin\SlinkyPlugin.dll
-C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\bin\SlinkyPlugin.pdb
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\bin\MetroFramework.dll
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\bin\MetroFramework.Fonts.dll
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyBar.Properties.Resources.resources
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\PluginBar.UI.PropertyWindow.resources
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\PluginBar.PluginBarUserControl.resources
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.csproj.GenerateResource.Cache
+C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\bin\SlinkyPlugin.dll
+C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\bin\SlinkyPlugin.pdb
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.dll
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.pdb
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.csprojResolveAssemblyReference.cache
