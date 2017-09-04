@@ -303,6 +303,7 @@ namespace PluginBar
             double compressCrvPara = 0;
             compressCrv.ClosestPoint(centerPt, out compressCrvPara);
             Curve[] splitCrvs = compressCrv.Split(compressCrvPara);
+            // compressCrv is the trajectory of compression
             compressCrv = splitCrvs[1];
             Curve pressCrv = splitCrvs[0];
             myDoc.Objects.AddCurve(compressCrv, greenAttribute);
@@ -319,6 +320,7 @@ namespace PluginBar
             double stretchCrvPara = 0;
             stretchCrv.ClosestPoint(centerPt, out stretchCrvPara);
             Curve[] splitCrvsStretch = stretchCrv.Split(stretchCrvPara);
+            // stretchCrv is the trajectory of stretching
             stretchCrv = splitCrvsStretch[1];
             Point3d railEnd = splitCrvsStretch[0].PointAtEnd;
 
@@ -361,7 +363,8 @@ namespace PluginBar
                 Vector3d v2 = bcenter - startPln.Origin;
                 if(v1 * v2 >0)
                 {
-                    finalPreservedBrepList.Add(b);
+                    Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                    finalPreservedBrepList.Add(temp);
                 }
 
             }
