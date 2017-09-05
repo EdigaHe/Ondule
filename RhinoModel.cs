@@ -178,7 +178,7 @@ namespace PluginBar
 
         }
 
-        private void springGeneration(Curve centerCrv, Brep surfaceBrep, double pitch)
+        private Curve springGeneration(Curve centerCrv, Brep surfaceBrep, double pitch)
         {
             //DEBUG: Currently the bug is the center curve is only cut when there is a discontinuity, this is not good enough to have a nice spring approximation to the outer shell's shape.
             #region 1. Find center curve's discontinuity
@@ -247,10 +247,12 @@ namespace PluginBar
                 foreach (Brep b in breps)
                 {
                     cappedSpring.Add(b.CapPlanarHoles(myDoc.ModelRelativeTolerance));
-                    myDoc.Objects.AddBrep(b.CapPlanarHoles(myDoc.ModelRelativeTolerance));
+                    //myDoc.Objects.AddBrep(b.CapPlanarHoles(myDoc.ModelRelativeTolerance));
                 }
             }
             #endregion
+
+            return startCircle.ToNurbsCurve();
         }
         /// <summary>
         /// This method generates linear deformation structure. Currently support generating compression
@@ -335,7 +337,7 @@ namespace PluginBar
             #endregion
 
             #region generating the outer spring
-            springGeneration(centerCrv, surfaceBrep, 5);
+            Curve sideCrv = springGeneration(centerCrv, surfaceBrep, 5);
             #endregion
 
             #region delete the part that spring will replaced
@@ -355,7 +357,9 @@ namespace PluginBar
                 splitsurf.AddRange(test);
                 splitsurf.Add(firstSplit[0]);
             }
+
             List<Brep> finalPreservedBrepList = new List<Brep>();
+
             foreach(Brep b in splitsurf)
             {
                 Point3d bcenter = b.GetBoundingBox(true).Center;
@@ -378,11 +382,18 @@ namespace PluginBar
             #endregion
 
             #region Generate support structure
-            generateLinearSupport(startPln, endPln, centerCrv, compressCrv, pressCrv, stretchCrv, railEnd, stopperPln);
+            Brep prism, stopper;
+            generateLinearSupport(startPln, endPln, centerCrv, compressCrv, pressCrv, stretchCrv, railEnd, stopperPln, out stopper, out prism);
             #endregion
 
             myDoc.Objects.Hide(sufObjId, true);// hide the original shell
             myDoc.Views.Redraw();
+
+            List<Brep> top = new List<Brep>();
+            top.Add(finalPreservedBrepList[1]);
+            top.Add(prism);
+            top.Add(stopper);
+            compressAnimation(centerCrv, compressCrv, sideCrv, top);
         }
 
         /// <summary>
@@ -915,6 +926,110 @@ namespace PluginBar
             #endregion
 
             myDoc.Objects.Hide(sufObjId, true);// hide the original shell
+            myDoc.Views.Redraw();
+
+
+        }
+
+        public void compressAnimation(Curve longCurve, Curve  shortCurve, Curve sideCrv, List<Brep> top)
+        {
+            double[] dividedParameter = shortCurve.DivideByCount(10, true);
+            double[] longCrvDividedPar = longCurve.DivideByCount(10, true);
+            double targetLength = longCurve.Split(longCrvDividedPar[1])[0].GetLength();
+
+            List<Point3d> ptOnCrv = new List<Point3d>();
+            foreach (double d in dividedParameter)
+            {
+                ptOnCrv.Add(shortCurve.PointAt(d));
+            }
+            List<Line> lines = new List<Line>();
+            var Goals = new List<KangarooSolver.IGoal>();
+            for (int i = 0; i < ptOnCrv.Count - 1; i++)
+            {
+                Line l = new Line(ptOnCrv[i], ptOnCrv[i + 1]);
+                lines.Add(l);
+                KangarooSolver.GoalObject springGoal = new KangarooSolver.Goals.Spring(l, targetLength, 10000);
+                Goals.Add(springGoal);
+
+            }
+
+            var goal_OnCurve = new KangarooSolver.Goals.OnCurve(ptOnCrv, longCurve, 10000);
+            var goal_Anchor = new KangarooSolver.Goals.Anchor(longCurve.PointAtStart, 100000);
+            Goals.Add(goal_OnCurve);
+            Goals.Add(goal_Anchor);
+
+            var PS = new KangarooSolver.PhysicalSystem();
+
+            foreach (var g in Goals)
+                PS.AssignPIndex(g, 0.01);
+
+            int counter = 0;
+            double threshold = 1e-9;
+            Guid id;
+            List<Guid> topId = new List<Guid>();
+            Curve joined;
+            Curve spiral;
+            double endPara;
+            List<Brep> newtop = new List<Brep>();
+            Guid sweepId;
+
+            SweepOneRail sweep = new SweepOneRail();
+            sweep.SetToRoadlikeTop();
+            Brep sweepBrep;
+            List<Brep> sweepBrepList = new List<Brep>();
+
+            do
+            {
+                //PS.SimpleStep(Goals);
+                //PS.Step(Goals, true, threshold); // The step will iterate until either reaching 15ms or the energy threshold
+                PS.MomentumStep(Goals, 0.98, counter);
+                counter++;
+                List<Object> output = PS.GetOutput(Goals);
+                List<Curve> cvs = new List<Curve>();
+                for (int i = 0; i < output.Count; i++)
+                {
+                    if (output[i] != null)
+                    {
+                        Line l = (Line)Convert.ChangeType(output[i], typeof(Line));
+                        cvs.Add(l.ToNurbsCurve());
+                    }
+
+                }
+                joined = Curve.JoinCurves(cvs)[0];
+                joined.LengthParameter(joined.GetLength(), out endPara);
+                spiral = NurbsCurve.CreateSpiral(joined, 0, endPara, new Point3d(0, 0, 0), 5, 0, 15, 15, 5);
+                //sweepCrv = spiral;
+                //drawCircle = new Circle(new Plane(joined.PointAtEnd, joined.TangentAtEnd), joined.PointAtEnd, 20);
+
+
+                //sweepBrep = sweep.PerformSweep(spiral, sideCrv)[0];
+                //sweepBrepList.Add(sweepBrep);
+
+                Vector3d vec = new Vector3d(joined.PointAtStart - longCurve.PointAtStart);
+                Transform trans = Transform.Translation(vec);
+
+                newtop.Clear();
+                topId.Clear();
+                foreach (Brep b in top)
+                {
+                    Brep newb = b.DuplicateBrep();
+                    newb.Transform(trans);
+                    newtop.Add(newb);
+                    Guid newbid = myDoc.Objects.Add(newb);
+                    topId.Add(newbid);
+                }
+                id = myDoc.Objects.AddCurve(spiral);
+                //sweepId = myDoc.Objects.AddBrep(sweepBrep);
+                myDoc.Views.Redraw();
+                System.Threading.Thread.Sleep(10);
+                myDoc.Objects.Delete(id, true);
+                myDoc.Objects.Delete(topId, true);
+                //myDoc.Objects.Delete(sweepId, true);
+            } while (counter < 30);
+
+            //myDoc.Objects.AddBrep(newtop);
+            myDoc.Objects.AddCurve(spiral);
+            //myDoc.Objects.AddBrep(sweepBrep);
             myDoc.Views.Redraw();
         }
         /// <summary>
@@ -1507,7 +1622,7 @@ namespace PluginBar
         /// <param name="centerCrv">Center axis</param>
         /// <param name="compressCrv">Compression curve, which is one side of the centerCrve splited by the user's control point input</param>
         /// <param name="pressCrv">the other side of the center curve split</param>
-        private void generateLinearSupport(Plane startSuf, Plane endSuf, Curve centerCrv, Curve compressCrv, Curve pressCrv, Curve stretchCrv, Point3d railEnd, Plane stopperPlnOrig)
+        private void generateLinearSupport(Plane startSuf, Plane endSuf, Curve centerCrv, Curve compressCrv, Curve pressCrv, Curve stretchCrv, Point3d railEnd, Plane stopperPlnOrig, out Brep stopperBrep, out Brep prismBrep)
         {
             // create sweep function
             var sweep = new Rhino.Geometry.SweepOneRail();
@@ -1653,7 +1768,7 @@ namespace PluginBar
             cornerPt[3].Transform(txp); cornerPt[3].Transform(tyn);
             cornerPt[4] = cornerPt[0];
             Curve prismCrv = new Polyline(cornerPt).ToNurbsCurve();
-            Brep prismBrep = sweep.PerformSweep(pressCrv, prismCrv)[0];
+            prismBrep = sweep.PerformSweep(pressCrv, prismCrv)[0];
             prismBrep = prismBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
             myDoc.Objects.AddBrep(prismBrep);
             myDoc.Views.Redraw();
@@ -1666,7 +1781,7 @@ namespace PluginBar
             compressCrv.LengthParameter(3, out t);
             Curve stopperCrv = compressCrv.Split(t)[0];
 
-            var stopperBrep = sweep.PerformSweep(stopperCrv, stopperCir.ToNurbsCurve())[0];
+            stopperBrep = sweep.PerformSweep(stopperCrv, stopperCir.ToNurbsCurve())[0];
             stopperBrep = stopperBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
             myDoc.Objects.AddCurve(stopperCrv);
@@ -1713,7 +1828,6 @@ namespace PluginBar
 
             myDoc.Views.Redraw();
         }
-
         private void generateLinearBendSupport(Plane startSuf, Plane endSuf, Curve centerCrv, Curve compressCrv, Curve pressCrv, Curve stretchCrv, Point3d railEnd, Plane stopperPlnOrig, List<bend_info> bendInfoList, Point3d startPt, Point3d endPt, bool isStart)
         {
             foreach (bend_info b in bendInfoList)
@@ -2397,8 +2511,6 @@ namespace PluginBar
 
             myDoc.Views.Redraw();
         }
-
-
         private void generateLinearTwistSupport(Plane startSuf, Plane endSuf, Curve centerCrv, Curve compressCrv, Curve pressCrv, Curve stretchCrv, Point3d railEnd, Plane stopperPlnOrig)
         {
             // create sweep function
@@ -2580,7 +2692,6 @@ namespace PluginBar
 
             myDoc.Views.Redraw();
         }
-
         private void generateTwistSupport(Plane startSuf, Plane endSuf, Curve centerCrv)
         {
             // create sweep function
@@ -3590,7 +3701,6 @@ namespace PluginBar
 
             myDoc.Views.Redraw();
         }
-
         private void generateBendSupport(Plane startSuf, Plane endSuf, Curve centerCrv, List<bend_info> bendInfoList, Point3d startPt, Point3d endPt, bool isStart)
         {
             foreach(bend_info b in bendInfoList)
@@ -4066,15 +4176,12 @@ namespace PluginBar
                 centerPt = centerCrv.PointAtStart;
             }
         }
-
         private double distanceBtwTwoPts(Point3d pt1, Point3d pt2)
         {
             double dis = 0;
             dis = Math.Sqrt(Math.Pow(pt1.X - pt2.X, 2) + Math.Pow(pt1.Y - pt2.Y, 2) + Math.Pow(pt1.Z - pt2.Z, 2));
             return dis;
         }
-
-
         private void Gp_BendAngleSelMouseMove(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
         {
             
@@ -4087,7 +4194,6 @@ namespace PluginBar
             // to be added: draw the sphere around the circle to indicate the direction
             e.Display.DrawSphere(new Sphere(this.bendCtrlPt, 2), Color.White);
         }
-
         private void Gp_BendStrengthSelMouseMove(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
         {
             // to be added: compute the distance from the selected point
@@ -4132,7 +4238,6 @@ namespace PluginBar
                 centerPt = centerCrv.PointAt(ptPara);
             }
         }
-
         private void Gp_AnglePlnMouseMove(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
         {
             // get the projected point of the cursor point on the angle control plane 
@@ -4172,12 +4277,10 @@ namespace PluginBar
         {
             e.Display.DrawSphere(new Sphere(centerPt, 2), System.Drawing.Color.Azure);
         }
-
         private void Gp_CurveDynamicDrawStretch(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
         {
             e.Display.DrawSphere(new Sphere(centerPt, 2), System.Drawing.Color.BlueViolet);
         }
-
         public void selection()
         {
             Rhino.Input.Custom.GetPoint gp = new Rhino.Input.Custom.GetPoint();
@@ -4196,7 +4299,6 @@ namespace PluginBar
             
 
         }
-
         private void Gp_SelectionMouseMove(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
         {
             if(e.ShiftKeyDown == true)
@@ -4218,12 +4320,10 @@ namespace PluginBar
                     myDoc.Objects.Hide(id, true);
             }
         }
-
         private void Gp_SelectionDynamicDraw(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
         {
             e.Display.DrawPoints(dyndrawLst, Rhino.Display.PointStyle.Simple, 10, System.Drawing.Color.Red);
         }
-
         public void deformBrep(ObjRef obj)
         {
             Brep bbox = obj.Brep().GetBoundingBox(true).ToBrep();
@@ -4231,7 +4331,6 @@ namespace PluginBar
             myDoc.Objects.AddBrep(bbox);
             myDoc.Views.Redraw();
         }
-
         public void wireframeAll()
         {
             String scriptString = "";
@@ -4290,7 +4389,6 @@ namespace PluginBar
             myDoc.Views.Redraw();
 
         }
-
         public void printSTL(ObjRef obj, Point3d centerPt)
         {
 
@@ -4353,7 +4451,6 @@ namespace PluginBar
             }
 
         }
-
         #region Medial axis generation
 
         float compute_radius(Vector3d p, Vector3d n, Vector3d q)
