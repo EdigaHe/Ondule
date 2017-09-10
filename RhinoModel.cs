@@ -118,6 +118,8 @@ namespace PluginBar
         Circle angleCircle;
         double twistAngle = 0;
 
+        bool isBendLinear = false;
+
         List<bend_info> bendInfoList = new List<bend_info>();
 
         bool is_BendStart = false;
@@ -498,7 +500,8 @@ namespace PluginBar
                 Vector3d v2 = bcenter - startPln.Origin;
                 if (v1 * v2 > 0)
                 {
-                    finalPreservedBrepList.Add(b);
+                    Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                    finalPreservedBrepList.Add(temp);
                 }
 
             }
@@ -640,7 +643,8 @@ namespace PluginBar
                     Vector3d v2 = bcenter - startPln.Origin;
                     if (v1 * v2 > 0)
                     {
-                        finalPreservedBrepList.Add(b);
+                        Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                        finalPreservedBrepList.Add(temp);
                     }
 
                 }
@@ -735,7 +739,8 @@ namespace PluginBar
                     Vector3d v2 = bcenter - startPln.Origin;
                     if (v1 * v2 > 0)
                     {
-                        finalPreservedBrepList.Add(b);
+                        Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                        finalPreservedBrepList.Add(temp);
                     }
 
                 }
@@ -908,7 +913,8 @@ namespace PluginBar
                 Vector3d v2 = bcenter - startPln.Origin;
                 if (v1 * v2 > 0)
                 {
-                    finalPreservedBrepList.Add(b);
+                    Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                    finalPreservedBrepList.Add(temp);
                 }
 
             }
@@ -930,7 +936,13 @@ namespace PluginBar
 
 
         }
-
+        /// <summary>
+        /// Simulation of linear deformation
+        /// </summary>
+        /// <param name="longCurve"></param>
+        /// <param name="shortCurve"></param>
+        /// <param name="sideCrv"></param>
+        /// <param name="top"></param>
         public void compressAnimation(Curve longCurve, Curve  shortCurve, Curve sideCrv, List<Brep> top)
         {
             double[] dividedParameter = shortCurve.DivideByCount(10, true);
@@ -1032,6 +1044,8 @@ namespace PluginBar
             //myDoc.Objects.AddBrep(sweepBrep);
             myDoc.Views.Redraw();
         }
+
+
         /// <summary>
         /// This method generates linear (compress & stretch) + bend deformation structure.
         /// </summary>
@@ -1137,7 +1151,8 @@ namespace PluginBar
                 Vector3d v2 = bcenter - startPln.Origin;
                 if (v1 * v2 > 0)
                 {
-                    finalPreservedBrepList.Add(b);
+                    Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                    finalPreservedBrepList.Add(temp);
                 }
 
             }
@@ -1158,6 +1173,7 @@ namespace PluginBar
             attributes.ObjectColor = Color.White;
             attributes.ColorSource = ObjectColorSource.ColorFromObject;
 
+            isBendLinear = true;
             // listen to the user's selected sphere: either at the start or at the end sphere
             Rhino.Input.Custom.GetPoint gp_pt = new Rhino.Input.Custom.GetPoint();
             gp_pt.DynamicDraw += Gp_sphereSelDynamicDraw;
@@ -1277,13 +1293,18 @@ namespace PluginBar
                 // Clear the bend information list
                 bendInfoList.Clear();
             }
+            isBendLinear = false;
+            #endregion
 
+            #region generating the outer spring
+            springGeneration(centerCrv, surfaceBrep, 5);
             #endregion
 
             myDoc.Objects.Hide(sufObjId, true);// hide the original shell
             myDoc.Views.Redraw();
 
         }
+
         /// <summary>
         /// This method generates twist + bend deformation structure.
         /// </summary>
@@ -1385,7 +1406,8 @@ namespace PluginBar
                 Vector3d v2 = bcenter - startPln.Origin;
                 if (v1 * v2 > 0)
                 {
-                    finalPreservedBrepList.Add(b);
+                    Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                    finalPreservedBrepList.Add(temp);
                 }
 
             }
@@ -1596,7 +1618,8 @@ namespace PluginBar
                 Vector3d v2 = bcenter - startPln.Origin;
                 if (v1 * v2 > 0)
                 {
-                    finalPreservedBrepList.Add(b);
+                    Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                    finalPreservedBrepList.Add(temp);
                 }
 
             }
@@ -1612,7 +1635,6 @@ namespace PluginBar
             myDoc.Objects.Hide(sufObjId, true);// hide the original shell
             myDoc.Views.Redraw();
         }
-
 
         /// <summary>
         /// This function generate support structure for compression
@@ -1832,14 +1854,19 @@ namespace PluginBar
         {
             foreach (bend_info b in bendInfoList)
             {
+                var attributes = new ObjectAttributes();
+                attributes.ObjectColor = Color.Yellow;
+                attributes.ColorSource = ObjectColorSource.ColorFromObject;
+
                 Vector3d newDir = b.dir;
                 Point3d p_end = endPt + newDir;
                 p_end = endSuf.ClosestPoint(p_end);
                 newDir = (Vector3d)(p_end - endPt);
 
+
                 Vector3d normal_dir = newDir;
                 Vector3d axis= -endSuf.Normal;
-
+                
                 #region linear part
                 // create sweep function
                 var sweep = new Rhino.Geometry.SweepOneRail();
@@ -1854,31 +1881,44 @@ namespace PluginBar
 
                 Curve linearCrv = Curve.JoinCurves(crves)[0];
 
-                // base structure 2 bars
+                #region base structure 2 bars
+                var baseStructureDisToCenter = 4;
                 Curve baseStructureCrv1 = linearCrv.DuplicateCurve();
                 Curve baseStructureCrv2 = linearCrv.DuplicateCurve();
+                normal_dir.Rotate(Math.PI / 2, axis);
+                p_end = endPt + normal_dir;
+                p_end = endSuf.ClosestPoint(p_end);
+                normal_dir = (Vector3d)(p_end - endPt);
                 baseStructureCrv1.Translate(4/normal_dir.Length * normal_dir);
                 normal_dir.Rotate(Math.PI, axis);
-                baseStructureCrv2.Translate(4/normal_dir.Length * normal_dir);
+                p_end = endPt + normal_dir;
+                p_end = endSuf.ClosestPoint(p_end);
+                normal_dir = (Vector3d)(p_end - endPt);
+                baseStructureCrv2.Translate(4 / normal_dir.Length * normal_dir);
 
-                var attributes = new ObjectAttributes();
-                attributes.ObjectColor = Color.Yellow;
-                attributes.ColorSource = ObjectColorSource.ColorFromObject;
-                myDoc.Objects.AddCurve(baseStructureCrv1, attributes);
-                myDoc.Objects.AddCurve(baseStructureCrv2, attributes);
+                //myDoc.Objects.AddCurve(baseStructureCrv1, attributes);
+                //myDoc.Views.Redraw();
+                //myDoc.Objects.AddCurve(baseStructureCrv2, attributes);
+                //myDoc.Views.Redraw();
 
-                
                 Point3d[] guider1CornerPt = new Point3d[5];
                 Point3d[] guider2CornerPt = new Point3d[5];
+                Point3d[] guiderOuter1Pt = new Point3d[5];
+                Point3d[] guiderOuter2Pt = new Point3d[5];
                 Point3d[] cornerPt = new Point3d[5];
+
+                Transform txp = Transform.Translation(1.5 / normal_dir.Length * normal_dir);
+                Transform txp_big = Transform.Translation(1.5 / normal_dir.Length * normal_dir);
                 normal_dir.Rotate(Math.PI / 2, axis);
-                Transform txp = Transform.Translation(3/normal_dir.Length * normal_dir);
+                Transform tyn = Transform.Translation(0.75 / normal_dir.Length * normal_dir);
+                Transform tyn_big = Transform.Translation(2.5 / normal_dir.Length * normal_dir);
                 normal_dir.Rotate(Math.PI / 2, axis);
-                Transform tyn = Transform.Translation(0.75/normal_dir.Length * normal_dir);
-                normal_dir.Rotate(Math.PI / 2, axis);
-                Transform txn = Transform.Translation(3 / normal_dir.Length * normal_dir);
+                Transform txn = Transform.Translation(1.5 / normal_dir.Length * normal_dir);
+                Transform txn_big = Transform.Translation(1.5 / normal_dir.Length * normal_dir);
                 normal_dir.Rotate(Math.PI / 2, axis);
                 Transform typ = Transform.Translation(0.75 / normal_dir.Length * normal_dir);
+                Transform typ_big = Transform.Translation(2.5 / normal_dir.Length * normal_dir);
+
                 cornerPt[0] = baseStructureCrv1.PointAtEnd;
                 cornerPt[1] = baseStructureCrv1.PointAtEnd;
                 cornerPt[2] = baseStructureCrv1.PointAtEnd;
@@ -1894,15 +1934,15 @@ namespace PluginBar
                 guider1CornerPt[2] = cornerPt[2];
                 guider1CornerPt[3] = cornerPt[3];
                 guider1CornerPt[4] = cornerPt[4];
-                
+
                 cornerPt[0] = baseStructureCrv2.PointAtEnd;
                 cornerPt[1] = baseStructureCrv2.PointAtEnd;
                 cornerPt[2] = baseStructureCrv2.PointAtEnd;
                 cornerPt[3] = baseStructureCrv2.PointAtEnd;
-                cornerPt[2].Transform(txp); cornerPt[2].Transform(typ); cornerPt[2] = endSuf.ClosestPoint(cornerPt[2]);
-                cornerPt[3].Transform(txn); cornerPt[3].Transform(typ); cornerPt[3] = endSuf.ClosestPoint(cornerPt[3]);
-                cornerPt[0].Transform(txn); cornerPt[0].Transform(tyn); cornerPt[0] = endSuf.ClosestPoint(cornerPt[0]);
-                cornerPt[1].Transform(txp); cornerPt[1].Transform(tyn); cornerPt[1] = endSuf.ClosestPoint(cornerPt[1]);
+                cornerPt[0].Transform(txp); cornerPt[0].Transform(typ); cornerPt[0] = endSuf.ClosestPoint(cornerPt[0]);
+                cornerPt[1].Transform(txn); cornerPt[1].Transform(typ); cornerPt[1] = endSuf.ClosestPoint(cornerPt[1]);
+                cornerPt[2].Transform(txn); cornerPt[2].Transform(tyn); cornerPt[2] = endSuf.ClosestPoint(cornerPt[2]);
+                cornerPt[3].Transform(txp); cornerPt[3].Transform(tyn); cornerPt[3] = endSuf.ClosestPoint(cornerPt[3]);
                 cornerPt[4] = cornerPt[0];
 
                 guider2CornerPt[0] = cornerPt[0];
@@ -1910,7 +1950,7 @@ namespace PluginBar
                 guider2CornerPt[2] = cornerPt[2];
                 guider2CornerPt[3] = cornerPt[3];
                 guider2CornerPt[4] = cornerPt[4];
-                
+
                 Curve guiderRectCrv1 = new Polyline(guider1CornerPt).ToNurbsCurve();
                 Curve guiderRectCrv2 = new Polyline(guider2CornerPt).ToNurbsCurve();
 
@@ -1924,18 +1964,65 @@ namespace PluginBar
                 //myDoc.Objects.AddBrep(rect1);
                 //myDoc.Objects.AddBrep(rect2);
 
-                List<Point3d> baseVertexList = new List<Point3d>();
+                // calculate outer sweeps
+                cornerPt[0] = baseStructureCrv1.PointAtEnd;
+                cornerPt[1] = baseStructureCrv1.PointAtEnd;
+                cornerPt[2] = baseStructureCrv1.PointAtEnd;
+                cornerPt[3] = baseStructureCrv1.PointAtEnd;
 
-                Rhino.Geometry.Collections.BrepVertexList vertexList1 = rect1.Vertices;
-                if (vertexList1 != null && vertexList1.Count > 0)
+                cornerPt[0].Transform(txp_big); cornerPt[0].Transform(typ_big); cornerPt[0] = endSuf.ClosestPoint(cornerPt[0]);
+                cornerPt[1].Transform(txn_big); cornerPt[1].Transform(typ_big); cornerPt[1] = endSuf.ClosestPoint(cornerPt[1]);
+                cornerPt[2].Transform(txn_big); cornerPt[2].Transform(tyn_big); cornerPt[2] = endSuf.ClosestPoint(cornerPt[2]);
+                cornerPt[3].Transform(txp_big); cornerPt[3].Transform(tyn_big); cornerPt[3] = endSuf.ClosestPoint(cornerPt[3]);
+                cornerPt[4] = cornerPt[0];
+
+                guiderOuter1Pt[0] = cornerPt[0];
+                guiderOuter1Pt[1] = cornerPt[1];
+                guiderOuter1Pt[2] = cornerPt[2];
+                guiderOuter1Pt[3] = cornerPt[3];
+                guiderOuter1Pt[4] = cornerPt[4];
+
+                cornerPt[0] = baseStructureCrv2.PointAtEnd;
+                cornerPt[1] = baseStructureCrv2.PointAtEnd;
+                cornerPt[2] = baseStructureCrv2.PointAtEnd;
+                cornerPt[3] = baseStructureCrv2.PointAtEnd;
+                cornerPt[0].Transform(txp_big); cornerPt[0].Transform(typ_big); cornerPt[0] = endSuf.ClosestPoint(cornerPt[0]);
+                cornerPt[1].Transform(txn_big); cornerPt[1].Transform(typ_big); cornerPt[1] = endSuf.ClosestPoint(cornerPt[1]);
+                cornerPt[2].Transform(txn_big); cornerPt[2].Transform(tyn_big); cornerPt[2] = endSuf.ClosestPoint(cornerPt[2]);
+                cornerPt[3].Transform(txp_big); cornerPt[3].Transform(tyn_big); cornerPt[3] = endSuf.ClosestPoint(cornerPt[3]);
+                cornerPt[4] = cornerPt[0];
+
+                guiderOuter2Pt[0] = cornerPt[0];
+                guiderOuter2Pt[1] = cornerPt[1];
+                guiderOuter2Pt[2] = cornerPt[2];
+                guiderOuter2Pt[3] = cornerPt[3];
+                guiderOuter2Pt[4] = cornerPt[4];
+
+                Curve guiderOuterRectCrv1 = new Polyline(guiderOuter1Pt).ToNurbsCurve();
+                Curve guiderOuterRectCrv2 = new Polyline(guiderOuter2Pt).ToNurbsCurve();
+
+                var outRect1 = sweep.PerformSweep(linearCrv, guiderOuterRectCrv1)[0];
+                var outRect2 = sweep.PerformSweep(linearCrv, guiderOuterRectCrv2)[0];
+
+                outRect1 = outRect1.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                outRect2 = outRect2.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+
+                //myDoc.Objects.AddBrep(outRect1);
+                //myDoc.Objects.AddBrep(outRect2);
+                //myDoc.Views.Redraw();
+
+                List<Point3d> baseVertexList = new List<Point3d>();
+                
+                Rhino.Geometry.Collections.BrepVertexList vertexList = outRect1.Vertices;
+                if (vertexList != null && vertexList.Count > 0)
                 {
-                    foreach (var v in vertexList1)
+                    foreach (var v in vertexList)
                     {
                         baseVertexList.Add(v.Location);
                     }
                 }
 
-                Rhino.Geometry.Collections.BrepVertexList vertexList2 = rect2.Vertices;
+                Rhino.Geometry.Collections.BrepVertexList vertexList2 = outRect2.Vertices;
                 if (vertexList2 != null && vertexList2.Count > 0)
                 {
                     foreach (var v in vertexList2)
@@ -1946,6 +2033,8 @@ namespace PluginBar
 
                 Plane guiderPln = new Plane(linearCrv.PointAtEnd, linearCrv.TangentAtEnd);
                 PlaneSurface guiderPlnSuf = new PlaneSurface(guiderPln, new Interval(-30, 30), new Interval(-30, 30));
+                myDoc.Objects.AddSurface(guiderPlnSuf);
+                myDoc.Views.Redraw();
                 List<Point3d> guiderPointsList = new List<Point3d>();
                 foreach (Point3d p in baseVertexList)
                 {
@@ -1969,9 +2058,12 @@ namespace PluginBar
 
                 guiderPointsList.Add(guiderPointsList[0]);
                 Curve guiderTopCrv = new Polyline(guiderPointsList).ToNurbsCurve();
+                attributes.ObjectColor = Color.Red;
+                myDoc.Objects.AddCurve(guiderTopCrv, attributes);
+                myDoc.Views.Redraw();
+                #endregion
 
-
-                //prismic structure that limits rotation
+                #region prismic structure that limits rotation
                 normal_dir = newDir;
                 Point3d centerPrismPt = centerCrv.PointAtStart;
                 double primBaseSideHalfLength = 0.75;
@@ -1994,9 +2086,9 @@ namespace PluginBar
                 prismBrep = prismBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
                 myDoc.Objects.AddBrep(prismBrep);
                 myDoc.Views.Redraw();
+                #endregion
 
-
-                // stopper (disc)
+                #region stopper (disc)
                 Plane stopperPln = new Plane(pressCrv.PointAtEnd, pressCrv.TangentAtEnd);
                 Circle stopperCir = new Circle(stopperPln, pressCrv.PointAtEnd, 2);
                 double t;
@@ -2009,10 +2101,11 @@ namespace PluginBar
                 myDoc.Objects.AddCurve(stopperCrv);
                 myDoc.Objects.AddBrep(stopperBrep);
                 myDoc.Views.Redraw();
+                #endregion
 
                 // guider hole
                 Point3d guiderPt = railEnd;
-                double guiderPtGap = 0.2;
+                double guiderPtGap = 0.5;
 
                 txp = Transform.Translation(stopperPlnOrig.XAxis * (primBaseSideHalfLength + guiderPtGap));
                 typ = Transform.Translation(stopperPlnOrig.YAxis * (primBaseSideHalfLength + guiderPtGap));
@@ -2045,35 +2138,31 @@ namespace PluginBar
                 var guiderFinal = Brep.CreateBooleanDifference(guiderCenter, outerGuider, myDoc.ModelRelativeTolerance)[0];
                 myDoc.Objects.Add(guiderFinal);
 
+
                 #endregion
 
-               // #region bend part
-                normal_dir = newDir;
-
+                #region bend part
                 #region construct the outer rectangle of each hinge
-
+                normal_dir = newDir;
                 normal_dir.Rotate(Math.PI / 2, axis);
                 Point3d base1Pt = endSuf.ClosestPoint(baseStructureCrv1.PointAtEnd);
-                attributes.ObjectColor = Color.Red;
-                myDoc.Objects.AddPoint(base1Pt, attributes);
-                myDoc.Views.Redraw();
                 Point3d hingePt1 = base1Pt + normal_dir / 3;
                 Point3d hingeInnerPt1 = base1Pt + normal_dir / 5;
                 normal_dir.Rotate(Math.PI, axis);
-                Point3d hingePt2 = base1Pt + normal_dir / 3;
-                Point3d hingeInnerPt2 = base1Pt + normal_dir / 5;
-                double scale = (baseStructureCrv1.GetLength() / 5/ 2) / axis.Length;   // 5 is the number of hinge
+                Point3d hingePt2 = base1Pt;
+                Point3d hingeInnerPt2 = base1Pt + 4 / normal_dir.Length * normal_dir;
+                double scale = (linearCrv.GetLength() / 5 / 2) / axis.Length;   // 5 is the number of hinge
                 Point3d hingePt3 = hingePt1 + axis * scale;
                 Point3d hingePt4 = hingePt2 + axis * scale;
 
                 normal_dir = newDir;
-                normal_dir.Rotate(Math.PI / 2, axis);
+                normal_dir.Rotate(-Math.PI / 2, axis);
                 Point3d base2Pt = endSuf.ClosestPoint(baseStructureCrv2.PointAtEnd);
                 Point3d hingePt5 = base2Pt + normal_dir / 3;
                 Point3d hingeInnerPt5 = base2Pt + normal_dir / 5;
-                normal_dir.Rotate(Math.PI, axis);
-                Point3d hingePt6 = base2Pt + normal_dir / 3;
-                Point3d hingeInnerPt6 = base2Pt + normal_dir / 5;
+                normal_dir.Rotate(-Math.PI, axis);
+                Point3d hingePt6 = base2Pt;
+                Point3d hingeInnerPt6 = base2Pt + 4 / normal_dir.Length * normal_dir;
                 Point3d hingePt7 = hingePt5 + axis * scale;
                 Point3d hingePt8 = hingePt6 + axis * scale;
 
@@ -2092,12 +2181,9 @@ namespace PluginBar
                 hingeOuterCornerPt2[3] = hingePt7;
                 hingeOuterCornerPt2[4] = hingePt5;
                 Curve hingeOuterRectCrv2 = new Polyline(hingeOuterCornerPt2).ToNurbsCurve();
-
                 #endregion
 
-
                 #region construct the inner rectangle of each hinge
-
                 double scale1 = scale * 3 / 4;
                 double scale2 = scale / 4;
                 double scale3 = scale / 2;
@@ -2116,77 +2202,31 @@ namespace PluginBar
                 hingeInnerCornerPt2[3] = hingeInnerPt5 + axis * scale1;
                 hingeInnerCornerPt2[4] = hingeInnerPt5 + axis * scale2;
                 Curve hingeInnerRectCrv2 = new Polyline(hingeInnerCornerPt2).ToNurbsCurve();
-
-                attributes.ObjectColor = Color.Purple;
-                myDoc.Objects.AddCurve(hingeOuterRectCrv1, attributes);
-                myDoc.Objects.AddCurve(hingeOuterRectCrv2, attributes);
-                myDoc.Objects.AddCurve(hingeInnerRectCrv1, attributes);
-                myDoc.Objects.AddCurve(hingeInnerRectCrv2, attributes);
-                myDoc.Views.Redraw();
-
                 #endregion
 
-                //#region Array all outer and inner rectangles of the hinge along the curve
+                #region Array all outer and inner rectangles of the hinge along the curve
 
                 #region Divide the curve by N points
 
                 // front and rear portions that need to be removed from the center curve
                 double frontPara;
-                baseStructureCrv1.LengthParameter(baseStructureCrv1.GetLength(), out frontPara);
-                Point3d front1 = baseStructureCrv1.PointAt(frontPara);
+                linearCrv.LengthParameter(0, out frontPara);
+                Point3d front1 = linearCrv.PointAt(frontPara);
                 double endPara;
-                baseStructureCrv1.LengthParameter(2*scale1, out endPara);
-                Point3d end1 = baseStructureCrv1.PointAt(endPara);
-
-                //double frontCrvPara1 = 0;
-                //baseStructureCrv1.ClosestPoint(front1, out frontCrvPara1);
-                //Curve[] splitCrvs1 = baseStructureCrv1.Split(frontCrvPara1);
-                //double endCrvPara1 = 0;
-                //splitCrvs1[0].ClosestPoint(end1, out endCrvPara1);
-                //Curve[] splitCrvs11 = splitCrvs1[0].Split(endCrvPara1);
-                //Curve divideCrv1 = splitCrvs11[1];
+                linearCrv.LengthParameter(linearCrv.GetLength()-2 * scale1, out endPara);
+                Point3d end1 = linearCrv.PointAt(endPara);
 
                 double endCrvPara1 = 0;
-                baseStructureCrv1.ClosestPoint(end1, out endCrvPara1);
-                Curve[] splitCrvs11 = baseStructureCrv1.Split(endCrvPara1);
-                Curve divideCrv1 = splitCrvs11[1];
-
-                baseStructureCrv2.LengthParameter(baseStructureCrv2.GetLength(), out frontPara);
-                Point3d front2 = baseStructureCrv2.PointAt(frontPara);
-                baseStructureCrv2.LengthParameter(2*scale1, out endPara);
-                Point3d end2 = baseStructureCrv2.PointAt(endPara);
-                //double frontCrvPara2 = 0;
-                //baseStructureCrv2.ClosestPoint(front2, out frontCrvPara2);
-                //Curve[] splitCrvs2 = baseStructureCrv2.Split(frontCrvPara2);
-                //double endCrvPara2 = 0;
-                //splitCrvs2[0].ClosestPoint(end2, out endCrvPara2);
-                //Curve[] splitCrvs21 = splitCrvs2[0].Split(endCrvPara2);
-                //Curve divideCrv2 = splitCrvs21[1];
-
-                double endCrvPara2 = 0;
-                baseStructureCrv2.ClosestPoint(end2, out endCrvPara2);
-                Curve[] splitCrvs21 = baseStructureCrv2.Split(endCrvPara2);
-                Curve divideCrv2 = splitCrvs21[1];
+                linearCrv.ClosestPoint(end1, out endCrvPara1);
+                Curve[] splitCrvs11 = linearCrv.Split(endCrvPara1);
+                Curve divideCrv1 = splitCrvs11[0];
 
                 attributes.ObjectColor = Color.Yellow;
 
                 // store all curve segments
-                Point3d[] ps1;
-                List<Point3d> points1 = new List<Point3d>();
-                divideCrv1.DivideByCount(5, true, out ps1); // 5 is the number of hinge
-                for (int j = ps1.Count() - 1; j >= 0; j--)
-                {
-                    points1.Add(ps1[j]);
-                }
-
-                Point3d[] ps2;
-                List<Point3d> points2 = new List<Point3d>();
-                divideCrv2.DivideByCount(5, true, out ps2); // 5 is the number of hinge
-                for (int j = ps2.Count() - 1; j >= 0; j--)
-                {
-                    points2.Add(ps2[j]);
-                }
-
+                Point3d[] points1;
+                divideCrv1.DivideByCount(5, true, out points1); // 5 is the number of hinge
+                
                 // store tangent vectors at each point
                 List<Vector3d> tangents1 = new List<Vector3d>();
                 foreach (Point3d p in points1)
@@ -2194,15 +2234,6 @@ namespace PluginBar
                     double para = 0;
                     divideCrv1.ClosestPoint(p, out para);
                     tangents1.Add(divideCrv1.TangentAt(para) * (-1));
-                    //myDoc.Objects.AddPoint(p, attributes);
-                }
-
-                List<Vector3d> tangents2 = new List<Vector3d>();
-                foreach (Point3d p in points2)
-                {
-                    double para = 0;
-                    divideCrv2.ClosestPoint(p, out para);
-                    tangents2.Add(divideCrv2.TangentAt(para) * (-1));
                     //myDoc.Objects.AddPoint(p, attributes);
                 }
 
@@ -2219,21 +2250,6 @@ namespace PluginBar
                     tr.Add(translate);
                     tr.Add(rotate);
                     trans1.Add(tr);
-                    idx++;
-                }
-
-                List<List<Transform>> trans2 = new List<List<Transform>>();
-                Vector3d v0_2 = tangents2[0];
-                Point3d p0_2 = points2[0];
-                idx = 0;
-                foreach (Vector3d v1 in tangents2)
-                {
-                    Transform translate = Transform.Translation(points2.ElementAt(idx) - p0_2);
-                    Transform rotate = Transform.Rotation(v0_2, v1, points2.ElementAt(idx));
-                    List<Transform> tr = new List<Transform>();
-                    tr.Add(translate);
-                    tr.Add(rotate);
-                    trans2.Add(tr);
                     idx++;
                 }
 
@@ -2260,7 +2276,7 @@ namespace PluginBar
                     //myDoc.Views.Redraw();
                 }
 
-                foreach (List<Transform> tr in trans2)
+                foreach (List<Transform> tr in trans1)
                 {
                     Curve tempOuterCrv = hingeOuterRectCrv2.DuplicateCurve();
                     tempOuterCrv.Transform(tr.ElementAt(0));
@@ -2276,63 +2292,13 @@ namespace PluginBar
                     //myDoc.Objects.AddCurve(tempInnerCrv, attributes);
                     //myDoc.Views.Redraw();
                 }
-
-                //myDoc.Views.Redraw();
-                //#endregion
+                #endregion
 
                 #region extrude the arrays of rectangles toward both sides
                 List<Brep> outerBreps_base1 = new List<Brep>();
                 List<Brep> innerBreps_base1 = new List<Brep>();
                 List<Brep> outerBreps_base2 = new List<Brep>();
                 List<Brep> innerBreps_base2 = new List<Brep>();
-                //List<Brep> innerBrepsDup = new List<Brep>();
-
-                //for (int crvIdx = 0; crvIdx < innerCrvs_base1.Count(); crvIdx++)
-                //{
-                //    Surface surf = Brep.CreatePlanarBreps(outerCrvs_base1[crvIdx])[0].Faces[0];
-                //    double wde;
-                //    double hgt;
-                //    surf.GetSurfaceSize(out wde, out hgt);
-
-                //    Vector3d hinge_normal = surf.NormalAt(wde / 2, hgt / 2);
-                //    double s = 1 / hinge_normal.Length; // 3 is the thickness of the hinge 
-                //    double ss = 3 / hinge_normal.Length;
-                //    Transform rectTrans1 = Transform.Translation(hinge_normal * s);
-                //    Transform rectTrans2 = Transform.Translation(hinge_normal * ss);
-                //    outerCrvs_base1[crvIdx].Transform(rectTrans1);
-                //    innerCrvs_base1[crvIdx].Transform(rectTrans2);
-
-                //    Brep brep1 = Brep.CreateFromSurface(Surface.CreateExtrusion(outerCrvs_base1[crvIdx], -2 * hinge_normal * s));
-                //    brep1 = brep1.CapPlanarHoles(myDoc.ModelRelativeTolerance);
-                //    Brep brep2 = Brep.CreateFromSurface(Surface.CreateExtrusion(innerCrvs_base1[crvIdx], -2 * hinge_normal * ss));
-                //    brep2 = brep2.CapPlanarHoles(myDoc.ModelRelativeTolerance);
-
-                //    outerBreps_base1.Add(brep1);
-                //    innerBreps_base1.Add(brep2);
-
-
-                //    Surface surf_other = Brep.CreatePlanarBreps(outerCrvs_base2[crvIdx])[0].Faces[0];
-                //    double wde_other;
-                //    double hgt_other;
-                //    surf_other.GetSurfaceSize(out wde_other, out hgt_other);
-
-                //    Vector3d hinge_normal_other = surf_other.NormalAt(wde_other/ 2, hgt_other/ 2);
-                //    double s_other = 1 / hinge_normal_other.Length; // 3 is the thickness of the hinge 
-                //    double ss_other = 3 / hinge_normal_other.Length;
-                //    Transform rectTrans1_other = Transform.Translation(hinge_normal_other * s_other);
-                //    Transform rectTrans2_other = Transform.Translation(hinge_normal_other * ss_other);
-                //    outerCrvs_base2[crvIdx].Transform(rectTrans1_other);
-                //    innerCrvs_base2[crvIdx].Transform(rectTrans2_other);
-
-                //    Brep brep1_other = Brep.CreateFromSurface(Surface.CreateExtrusion(outerCrvs_base2[crvIdx], -2 * hinge_normal_other * s_other));
-                //    brep1_other = brep1_other.CapPlanarHoles(myDoc.ModelRelativeTolerance);
-                //    Brep brep2_other = Brep.CreateFromSurface(Surface.CreateExtrusion(innerCrvs_base2[crvIdx], -2 * hinge_normal_other * ss_other));
-                //    brep2_other = brep2_other.CapPlanarHoles(myDoc.ModelRelativeTolerance);
-
-                //    outerBreps_base2.Add(brep1_other);
-                //    innerBreps_base2.Add(brep2_other);
-
-                //}
 
                 attributes.ObjectColor = Color.Red;
 
@@ -2362,7 +2328,7 @@ namespace PluginBar
                     double hgt;
                     surf.GetSurfaceSize(out wde, out hgt);
                     Vector3d hinge_normal = surf.NormalAt(wde / 2, hgt / 2);
-                    double s = 3 / hinge_normal.Length; // 3 is the thickness of the hinge 
+                    double s = 4 / hinge_normal.Length; // 3 is the thickness of the hinge 
                     Transform rectTrans = Transform.Translation(hinge_normal * s);
                     c.Transform(rectTrans);
 
@@ -2398,7 +2364,7 @@ namespace PluginBar
                     double hgt;
                     surf.GetSurfaceSize(out wde, out hgt);
                     Vector3d hinge_normal = surf.NormalAt(wde / 2, hgt / 2);
-                    double s = 3 / hinge_normal.Length; // 3 is the thickness of the hinge 
+                    double s = 4 / hinge_normal.Length; // 3 is the thickness of the hinge 
                     Transform rectTrans = Transform.Translation(hinge_normal * s);
                     c.Transform(rectTrans);
 
@@ -2407,22 +2373,9 @@ namespace PluginBar
 
                     innerBreps_base2.Add(brep);
                 }
-
-
                 #endregion
 
                 #endregion
-
-                //myDoc.Objects.AddBrep(innerBreps_base1[0], attributes);
-                //attributes.ObjectColor = Color.Blue;
-                //myDoc.Objects.AddBrep(outerBreps_base1[0], attributes);
-                //myDoc.Views.Redraw();
-
-                //Brep firstHinge1 = Brep.CreateBooleanDifference(innerBreps_base1[0], outerBreps_base1[0], myDoc.ModelRelativeTolerance)[0];
-                //myDoc.Objects.AddBrep(firstHinge1, attributes);
-                //myDoc.Views.Redraw();
-
-
 
                 #region boolean difference
                 // generate the central connections
@@ -2432,7 +2385,7 @@ namespace PluginBar
                 for (int id = 0; id < innerBreps_base1.Count(); id++)
                 {
                     var tempB = Brep.CreateBooleanDifference(innerBreps_base1[id], prev_brep, myDoc.ModelRelativeTolerance);
-                    if(tempB != null)
+                    if (tempB != null)
                     {
                         if (tempB.Count() > 1)
                         {
@@ -2469,13 +2422,13 @@ namespace PluginBar
                             tempB[0].Flip();
                             prev_brep = tempB[0];
                         }
-                    }           
+                    }
                 }
                 myDoc.Objects.AddBrep(prev_brep, attributes);
 
                 // generate the hinges
                 var firstHinge1 = Brep.CreateBooleanDifference(innerBreps_base1[0], outerBreps_base1[0], myDoc.ModelRelativeTolerance);
-                
+
                 myDoc.Objects.AddBrep(firstHinge1[0], attributes);
                 myDoc.Views.Redraw();
 
@@ -2494,9 +2447,9 @@ namespace PluginBar
                 myDoc.Objects.AddBrep(firstHinge2[0], attributes);
                 myDoc.Views.Redraw();
 
-                foreach (List<Transform> tt in trans2)
+                foreach (List<Transform> tt in trans1)
                 {
-                    if (trans2.IndexOf(tt) != 0)
+                    if (trans1.IndexOf(tt) != 0)
                     {
                         Brep tempBrep = firstHinge2[0].DuplicateBrep();
                         tempBrep.Transform(tt.ElementAt(0));
@@ -2505,6 +2458,7 @@ namespace PluginBar
                     }
                 }
 
+                #endregion
                 #endregion
 
             }
@@ -4213,21 +4167,36 @@ namespace PluginBar
         }
         private void Gp_sphereSelDynamicDraw(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
         {
-            if(distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 2)
+            if (isBendLinear)
             {
-                // highlight the start sphere
-                e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtStart, 2), Color.Yellow);
-            }   
-            else if(distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 2)
-            {
-                // hightlight the end sphere
-                e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.Yellow);
+                if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 2)
+                {
+                    // hightlight the end sphere
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.Yellow);
+                }
+                else
+                {
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.White);
+                }
             }
             else
             {
-                e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtStart, 2), Color.White);
-                e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.White);
-            }
+                if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 2)
+                {
+                    // highlight the start sphere
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtStart, 2), Color.Yellow);
+                }
+                else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 2)
+                {
+                    // hightlight the end sphere
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.Yellow);
+                }
+                else
+                {
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtStart, 2), Color.White);
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.White);
+                }
+            } 
         }
         private void Gp_CurveMouseMoveStretch(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
         {
@@ -4281,6 +4250,8 @@ namespace PluginBar
         {
             e.Display.DrawSphere(new Sphere(centerPt, 2), System.Drawing.Color.BlueViolet);
         }
+
+
         public void selection()
         {
             Rhino.Input.Custom.GetPoint gp = new Rhino.Input.Custom.GetPoint();
@@ -4296,8 +4267,6 @@ namespace PluginBar
                 myDoc.Objects.AddPoints(dyndrawLst);
                 myDoc.Views.Redraw();
             }
-            
-
         }
         private void Gp_SelectionMouseMove(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
         {
@@ -4451,6 +4420,8 @@ namespace PluginBar
             }
 
         }
+
+
         #region Medial axis generation
 
         float compute_radius(Vector3d p, Vector3d n, Vector3d q)
