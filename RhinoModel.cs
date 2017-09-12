@@ -85,9 +85,10 @@ namespace PluginBar
             return hCode.GetHashCode();
         }
     }
+
     public class IncRhinoModel : RhinoModel
     {
-
+        #region declarations of local variables for all features
         RhinoDoc myDoc = null;
 
         List<Point3d> wireframePtList = new List<Point3d>();
@@ -123,6 +124,7 @@ namespace PluginBar
         List<bend_info> bendInfoList = new List<bend_info>();
 
         bool is_BendStart = false;
+        #endregion
 
         public IncRhinoModel()
         {
@@ -180,9 +182,24 @@ namespace PluginBar
 
         }
 
-        private Curve springGeneration(Curve centerCrv, Brep surfaceBrep, double pitch)
+        /// <summary>
+        /// Generation of the helical spring. By default, spring index (C) is 9 (C ~ (6-12))
+        /// Calaculate the smallest D in this part and if the computed smallest d is less than printable min diameter (2mm),
+        /// use min printable diameter (2mm), if C falls out of the suggested range, report a warning. Otherwise, print C and d.
+        /// </summary>
+        /// <param name="centerCrv"> The central curve</param>
+        /// <param name="surfaceBrep"> Outer surface</param>
+        /// <param name="pitch"> Computed pitch based on the user's input tight level of the spring</param>
+        /// <param name="designType">The design of the spring-based structure</param>
+        /// <param name="K"> stiffness of the generated spring</param>
+        /// <returns></returns>
+        private Curve springGeneration(Curve centerCrv, Brep surfaceBrep, double pitch, int designType, out double K)
         {
             //DEBUG: Currently the bug is the center curve is only cut when there is a discontinuity, this is not good enough to have a nice spring approximation to the outer shell's shape.
+            // Record the diameters of all segments in the selected part
+            List<double> DiameterList = new List<double>();
+            double minDiameter = 1000000000;
+
             #region 1. Find center curve's discontinuity
 
             double lengthPara;
@@ -220,7 +237,21 @@ namespace PluginBar
                     double r1 = 5, r2 = 5;
                     r1 = surfaceBrep.ClosestPoint(crv.PointAtStart).DistanceTo(crv.PointAtStart);
                     r2 = surfaceBrep.ClosestPoint(crv.PointAtEnd).DistanceTo(crv.PointAtEnd);
-                    NurbsCurve spiralCrv = NurbsCurve.CreateSpiral(crv, 0, endPara, spiralStartPt, pitch, 0, r1, r2, 12);
+                    DiameterList.Add(r1);
+                    DiameterList.Add(r2);
+                    if (r1 <= minDiameter) minDiameter = r1;
+                    if (r2 <= minDiameter) minDiameter = r2;
+
+                    // test if pitch is greater than coild diameter + 0.8mm (test result)
+                    double initDia = (r1<r2?r1:r2) / 12;
+                    if (initDia < 1.6)
+                    {
+                        initDia = 1.6;
+                    }
+
+                    while (pitch <= initDia + 0.8) { pitch += 0.2; }
+
+                    NurbsCurve spiralCrv = NurbsCurve.CreateSpiral(crv, 0, endPara, spiralStartPt, pitch, 0, r1-1, r2-1, 12);
                     spiralStartPt = spiralCrv.PointAtEnd;
                     spiralCrvList.Add(spiralCrv);
                 }
@@ -229,14 +260,33 @@ namespace PluginBar
             Curve joinedSpiral = Curve.JoinCurves(spiralCrvList)[0];
             if (joinedSpiral != null)
             {
-                myDoc.Objects.AddCurve(joinedSpiral);
+                //myDoc.Objects.AddCurve(joinedSpiral);
             }
             #endregion
 
             #region 3. sweep section to create spring solid
 
             Plane spiralStartPln = new Plane(joinedSpiral.PointAtStart, joinedSpiral.TangentAtStart);
-            Circle startCircle = new Circle(spiralStartPln, joinedSpiral.PointAtStart, 1); //spring's cross section's radius is currently 1. This should be tuned based on the shape the user selected and also the test limit we have.
+
+            // compute the coild diameter, must be greater than 2mm (test result)
+            double C = 12;
+            double mindia = minDiameter / C;
+            if(mindia >= 1.6)
+            {
+                RhinoApp.WriteLine("coil diameter is: " + mindia);
+            }
+            else
+            {
+                double newMinDia = 1.6;
+                if (minDiameter / newMinDia < 6)
+                {
+                    // warning!!
+                    RhinoApp.WriteLine("The spring index (C) is less than 6. Anyways, coild diameter is set to 2mm.");
+                }
+                mindia = newMinDia;
+            }
+
+            Circle startCircle = new Circle(spiralStartPln, joinedSpiral.PointAtStart, mindia); //spring's cross section's radius is currently 1. This should be tuned based on the shape the user selected and also the test limit we have.
             var sweep = new Rhino.Geometry.SweepOneRail();
             sweep.AngleToleranceRadians = myDoc.ModelAngleToleranceRadians;
             sweep.ClosedSweep = false;
@@ -249,9 +299,23 @@ namespace PluginBar
                 foreach (Brep b in breps)
                 {
                     cappedSpring.Add(b.CapPlanarHoles(myDoc.ModelRelativeTolerance));
-                    //myDoc.Objects.AddBrep(b.CapPlanarHoles(myDoc.ModelRelativeTolerance));
+                    myDoc.Objects.AddBrep(b.CapPlanarHoles(myDoc.ModelRelativeTolerance));
                 }
             }
+            #endregion
+
+            #region compute the spring stiffness K = (d^4 * G) / (8 * (D_avg/d)^3 * (L/Pitch))
+            double G = 2.4;     // PLA's shear modulus is 2.4GPa (0.35 * 10E6 psi)
+            double D_avg = 0;
+            foreach(double r in DiameterList)
+            {
+                D_avg += r;
+            }
+            D_avg = D_avg / DiameterList.Count();
+
+            double L = centerCrv.GetLength();
+            K = (Math.Pow(mindia, 4) * G) / (8 * Math.Pow((D_avg / mindia), 3) * (L / pitch));
+
             #endregion
 
             return startCircle.ToNurbsCurve();
@@ -288,9 +352,9 @@ namespace PluginBar
             Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
             Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-25, 25), new Interval(-25, 25));// convert the plane object to an actual surface so that we can draw it in the rhino doc
             Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-25, 25), new Interval(-25, 25));// 15 is a random number. It should actually be the ourter shell's radius or larger.
-            myDoc.Objects.AddSurface(startPlnSuf);
-            myDoc.Objects.AddSurface(endPlnSuf);
-            myDoc.Views.Redraw();
+            //myDoc.Objects.AddSurface(startPlnSuf);
+            //myDoc.Objects.AddSurface(endPlnSuf);
+            //myDoc.Views.Redraw();
             #endregion
 
             // use Rhino's GetPoint function to dynamically draw the a sphere and find the control point
@@ -339,7 +403,9 @@ namespace PluginBar
             #endregion
 
             #region generating the outer spring
-            Curve sideCrv = springGeneration(centerCrv, surfaceBrep, 5);
+            double K;
+            Curve sideCrv = springGeneration(centerCrv, surfaceBrep, 8, 1, out K);
+            RhinoApp.WriteLine("The K value of the generated soring is: " + K);
             #endregion
 
             #region delete the part that spring will replaced
@@ -390,7 +456,9 @@ namespace PluginBar
 
             myDoc.Objects.Hide(sufObjId, true);// hide the original shell
             myDoc.Views.Redraw();
-
+            
+            // Animation part
+            // Debug: the prismatic joint is not moving along the central curve
             List<Brep> top = new List<Brep>();
             top.Add(finalPreservedBrepList[1]);
             top.Add(prism);
@@ -428,8 +496,8 @@ namespace PluginBar
             Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
             Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-25, 25), new Interval(-25, 25));// convert the plane object to an actual surface so that we can draw it in the rhino doc
             Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-25, 25), new Interval(-25, 25));// 15 is a random number. It should actually be the ourter shell's radius or larger.
-            myDoc.Objects.AddSurface(startPlnSuf);
-            myDoc.Objects.AddSurface(endPlnSuf);
+            //myDoc.Objects.AddSurface(startPlnSuf);
+            //myDoc.Objects.AddSurface(endPlnSuf);
             #endregion
 
             #region get midpoint of the medial axis and control points for adjusting the rotation angle
@@ -442,7 +510,7 @@ namespace PluginBar
             this.middlePt = middlePt;
             this.angleCtrlPt = middlePt;
 
-            Rhino.Geometry.Sphere sphere = new Rhino.Geometry.Sphere(middlePt, 2);
+            Rhino.Geometry.Sphere sphere = new Rhino.Geometry.Sphere(middlePt, 1.5);
             Rhino.Geometry.PlaneSurface middlePlnSurf = new PlaneSurface(anglePln, new Interval(-25, 25), new Interval(-25, 25));
             //myDoc.Objects.AddSurface(middlePlnSurf);
 
@@ -458,7 +526,7 @@ namespace PluginBar
             gp.MouseMove += Gp_AnglePlnMouseMove;// this is called everymoment before the user click the left button to draw sphere
             gp.Get(true);
 
-            sphere = new Rhino.Geometry.Sphere(this.angleCtrlPt, 2);
+            sphere = new Rhino.Geometry.Sphere(this.angleCtrlPt, 1.5);
             Guid sId = myDoc.Objects.AddSphere(sphere, attributes);
             myDoc.Views.Redraw();
 
@@ -472,7 +540,9 @@ namespace PluginBar
             #endregion
 
             #region generate the outer spring
-            springGeneration(centerCrv, surfaceBrep, 5);
+            double K;
+            springGeneration(centerCrv, surfaceBrep, 5, 2, out K);
+            RhinoApp.WriteLine("The K value of the generated soring is: " + K);
             #endregion
 
             #region delete the part that spring will replaced
@@ -514,11 +584,18 @@ namespace PluginBar
 
             #endregion
             #region generate the central support structure
-            generateTwistSupport(startPln, endPln, centerCrv);
+            Brep stopper, cylind;
+            generateTwistSupport(startPln, endPln, centerCrv, out stopper, out cylind);
             #endregion
 
             myDoc.Objects.Hide(sufObjId, true);// hide the original shell
             myDoc.Views.Redraw();
+
+            // Animation
+            List<Brep> animList = new List<Brep>();
+            animList.Add(finalPreservedBrepList[1]);
+            animList.Add(cylind);
+            animList.Add(stopper);
 
         }
         /// <summary>
@@ -552,8 +629,8 @@ namespace PluginBar
             Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
             Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-50, 50), new Interval(-50, 50));// convert the plane object to an actual surface so that we can draw it in the rhino doc
             Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-50, 50), new Interval(-50, 50));// 15 is a random number. It should actually be the ourter shell's radius or larger.
-            myDoc.Objects.AddSurface(startPlnSuf);
-            myDoc.Objects.AddSurface(endPlnSuf);
+            //myDoc.Objects.AddSurface(startPlnSuf);
+            //myDoc.Objects.AddSurface(endPlnSuf);
             #endregion
 
             #region get the anchor control points for deciding the bending direction
@@ -568,11 +645,11 @@ namespace PluginBar
             gp_pt.MouseMove += Gp_sphereSelMouseMove;
             gp_pt.Get(true);
 
-            if(distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 2)
+            if(distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 1.5)
             {
                 // selected the start sphere
-                Rhino.Geometry.Sphere startSphere = new Rhino.Geometry.Sphere(startPt, 2);
-                myDoc.Objects.AddSphere(startSphere, attributes);
+                Rhino.Geometry.Sphere startSphere = new Rhino.Geometry.Sphere(startPt, 1.5);
+                Guid sphId = myDoc.Objects.AddSphere(startSphere, attributes);
                 Plane anglePln = new Plane(startPt, centerCrv.TangentAt(startPara)); // the plane at the starting plane of the central curve
                 this.bendPlane = anglePln;
                 
@@ -580,7 +657,7 @@ namespace PluginBar
                 Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(anglePln, startPt, 20);
                 this.angleCircle = dirCircle;
 
-                myDoc.Objects.AddCircle(dirCircle);
+                Guid sId = myDoc.Objects.AddCircle(dirCircle);
                 myDoc.Views.Redraw();
 
                 // start the command 
@@ -609,13 +686,19 @@ namespace PluginBar
                     tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
 
                     // add current bending information in the bending list
-                    RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
-                    RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
+                    //RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
+                    //RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
                     bendInfoList.Add(tempBendInfo);
                 }
 
+                myDoc.Objects.Delete(sId, false);
+                myDoc.Objects.Delete(sphId, false);
+                myDoc.Views.Redraw();
+
                 #region generating the outer spring
-                springGeneration(centerCrv, surfaceBrep, 5);
+                double K;
+                springGeneration(centerCrv, surfaceBrep, 5, 3, out K);
+                RhinoApp.WriteLine("The K value of the generated soring is: " + K);
                 #endregion
 
                 #region delete the part that spring will replaced
@@ -658,17 +741,32 @@ namespace PluginBar
                 #endregion
 
                 // generate the bend support structure
-                generateBendSupport(startPln, endPln, this.centerCrv, bendInfoList, startPt, endPt, true);
+                List<Brep> centrShaft = new List<Brep>();
+                List<Brep> hinges = new List<Brep>();
+                generateBendSupport(startPln, endPln, this.centerCrv, bendInfoList, startPt, endPt, true, out centrShaft, out hinges);
 
                 // Clear the bend information list
                 bendInfoList.Clear();
-               
+
+                // Animation
+                List<Brep> animList = new List<Brep>();
+                animList.Add(finalPreservedBrepList[1]);
+
+                // add all breps of the central connector and all hinges
+                foreach (Brep s in centrShaft)
+                {
+                    animList.Add(s);
+                }
+                foreach(Brep h in hinges)
+                {
+                    animList.Add(h);
+                }
             }
-            else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 2)
+            else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 1.5)
             {
                 // selected the end sphere
-                Rhino.Geometry.Sphere endSphere = new Rhino.Geometry.Sphere(endPt, 2);
-                myDoc.Objects.AddSphere(endSphere, attributes);
+                Rhino.Geometry.Sphere endSphere = new Rhino.Geometry.Sphere(endPt, 1.5);
+                Guid sphId = myDoc.Objects.AddSphere(endSphere, attributes);
                 Plane anglePln = new Plane(endPt, centerCrv.TangentAt(endPara)); // the plane at the end plane of the central curve
                 this.bendPlane = anglePln;
 
@@ -676,7 +774,7 @@ namespace PluginBar
                 Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(anglePln, endPt, 20);
                 this.angleCircle = dirCircle;
 
-                myDoc.Objects.AddCircle(dirCircle);
+                Guid sId = myDoc.Objects.AddCircle(dirCircle);
                 myDoc.Views.Redraw();
 
                 // start the command 
@@ -709,9 +807,14 @@ namespace PluginBar
                     RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
                     bendInfoList.Add(tempBendInfo);
                 }
+                myDoc.Objects.Delete(sId, false);
+                myDoc.Objects.Delete(sphId, false);
+                myDoc.Views.Redraw();
 
                 #region generating the outer spring
-                springGeneration(centerCrv, surfaceBrep, 5);
+                double K;
+                springGeneration(centerCrv, surfaceBrep, 5, 3, out K);
+                RhinoApp.WriteLine("The K value of the generated soring is: " + K);
                 #endregion
 
                 #region delete the part that spring will replaced
@@ -754,16 +857,33 @@ namespace PluginBar
                 #endregion
 
                 // generate the bend support structure
-                generateBendSupport(startPln, endPln, this.centerCrv, bendInfoList, startPt, endPt, false);
+                List<Brep> centrShaft = new List<Brep>();
+                List<Brep> hinges = new List<Brep>();
+                generateBendSupport(startPln, endPln, this.centerCrv, bendInfoList, startPt, endPt, false, out centrShaft, out hinges);
 
                 // Clear the bend information list
                 bendInfoList.Clear();
+
+                // Animation
+                List<Brep> animList = new List<Brep>();
+                animList.Add(finalPreservedBrepList[1]);
+
+                // add all breps of the central connector and all hinges
+                foreach (Brep s in centrShaft)
+                {
+                    animList.Add(s);
+                }
+                foreach (Brep h in hinges)
+                {
+                    animList.Add(h);
+                }
             }
 
             #endregion
 
             myDoc.Objects.Hide(sufObjId, true);// hide the original shell
             myDoc.Views.Redraw();
+
         }
         /// <summary>
         /// This method generates linear (compress & stretch) + twist deformation structure.
@@ -797,9 +917,9 @@ namespace PluginBar
             Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
             Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-25, 25), new Interval(-25, 25));// convert the plane object to an actual surface so that we can draw it in the rhino doc
             Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-25, 25), new Interval(-25, 25));// 15 is a random number. It should actually be the ourter shell's radius or larger.
-            myDoc.Objects.AddSurface(startPlnSuf);
-            myDoc.Objects.AddSurface(endPlnSuf);
-            myDoc.Views.Redraw();
+            //myDoc.Objects.AddSurface(startPlnSuf);
+            //myDoc.Objects.AddSurface(endPlnSuf);
+            //myDoc.Views.Redraw();
             #endregion
 
             // use Rhino's GetPoint function to dynamically draw the a sphere and find the control point
@@ -818,8 +938,8 @@ namespace PluginBar
             Curve[] splitCrvs = compressCrv.Split(compressCrvPara);
             compressCrv = splitCrvs[1];
             Curve pressCrv = splitCrvs[0];
-            myDoc.Objects.AddCurve(compressCrv, greenAttribute);
-            myDoc.Views.Redraw();
+            //myDoc.Objects.AddCurve(compressCrv, greenAttribute);
+            //myDoc.Views.Redraw();
             #endregion
 
             #region stretch part
@@ -841,8 +961,8 @@ namespace PluginBar
 
             Rhino.DocObjects.ObjectAttributes attr = new Rhino.DocObjects.ObjectAttributes();
             attr.LayerIndex = 6;
-            myDoc.Objects.AddCurve(stretchCrv, attr);
-            myDoc.Views.Redraw();
+           // myDoc.Objects.AddCurve(stretchCrv, attr);
+           // myDoc.Views.Redraw();
             #endregion
 
             #region get midpoint of the medial axis and control points for adjusting the rotation angle
@@ -885,7 +1005,9 @@ namespace PluginBar
             #endregion
 
             #region generating the outer spring
-            springGeneration(centerCrv, surfaceBrep, 5);
+            double K;
+            springGeneration(centerCrv, surfaceBrep, 5, 4, out K);
+            RhinoApp.WriteLine("The K value of the generated soring is: " + K);
             #endregion
 
             #region delete the part that spring will replaced
@@ -1078,9 +1200,9 @@ namespace PluginBar
             Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
             Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-25, 25), new Interval(-25, 25));// convert the plane object to an actual surface so that we can draw it in the rhino doc
             Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-25, 25), new Interval(-25, 25));// 15 is a random number. It should actually be the ourter shell's radius or larger.
-            myDoc.Objects.AddSurface(startPlnSuf);
-            myDoc.Objects.AddSurface(endPlnSuf);
-            myDoc.Views.Redraw();
+            //myDoc.Objects.AddSurface(startPlnSuf);
+            //myDoc.Objects.AddSurface(endPlnSuf);
+            //myDoc.Views.Redraw();
             #endregion
 
             // use Rhino's GetPoint function to dynamically draw the a sphere and find the control point
@@ -1099,8 +1221,8 @@ namespace PluginBar
             Curve[] splitCrvs = compressCrv.Split(compressCrvPara);
             compressCrv = splitCrvs[1];
             Curve pressCrv = splitCrvs[0];
-            myDoc.Objects.AddCurve(compressCrv, greenAttribute);
-            myDoc.Views.Redraw();
+            //myDoc.Objects.AddCurve(compressCrv, greenAttribute);
+            //myDoc.Views.Redraw();
             #endregion
 
             #region stretch part
@@ -1122,8 +1244,8 @@ namespace PluginBar
 
             Rhino.DocObjects.ObjectAttributes attr = new Rhino.DocObjects.ObjectAttributes();
             attr.LayerIndex = 6;
-            myDoc.Objects.AddCurve(stretchCrv, attr);
-            myDoc.Views.Redraw();
+            //myDoc.Objects.AddCurve(stretchCrv, attr);
+            //myDoc.Views.Redraw();
             #endregion
 
             #region delete the part that spring will replaced
@@ -1180,11 +1302,11 @@ namespace PluginBar
             gp_pt.MouseMove += Gp_sphereSelMouseMove;
             gp_pt.Get(true);
 
-            if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 2)
+            if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 1.5)
             {
                 // selected the start sphere
-                Rhino.Geometry.Sphere startSphere = new Rhino.Geometry.Sphere(startPt, 2);
-                myDoc.Objects.AddSphere(startSphere, attributes);
+                Rhino.Geometry.Sphere startSphere = new Rhino.Geometry.Sphere(startPt, 1.5);
+                Guid sphId = myDoc.Objects.AddSphere(startSphere, attributes);
                 Plane bendAnglePln = new Plane(startPt, centerCrv.TangentAt(startPara)); // the plane at the starting plane of the central curve
                 this.bendPlane = bendAnglePln;
 
@@ -1192,7 +1314,7 @@ namespace PluginBar
                 Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(bendAnglePln, startPt, 20);
                 this.angleCircle = dirCircle;
 
-                myDoc.Objects.AddCircle(dirCircle);
+                Guid sId = myDoc.Objects.AddCircle(dirCircle);
                 myDoc.Views.Redraw();
 
                 // start the command 
@@ -1221,13 +1343,18 @@ namespace PluginBar
                     tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
 
                     // add current bending information in the bending list
-                    RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
-                    RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
+                    //RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
+                    //RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
                     bendInfoList.Add(tempBendInfo);
                 }
+                myDoc.Objects.Delete(sId, false);
+                myDoc.Objects.Delete(sphId, false);
+                myDoc.Views.Redraw();
 
                 #region generate the outer spring
-                springGeneration(centerCrv, surfaceBrep, 5);
+                double K;
+                springGeneration(centerCrv, surfaceBrep, 5, 5, out K);
+                RhinoApp.WriteLine("The K value of the generated soring is: " + K);
                 #endregion
 
                 // generate the bend support structure
@@ -1237,11 +1364,11 @@ namespace PluginBar
                 bendInfoList.Clear();
 
             }
-            else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 2)
+            else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 1.5)
             {
                 // selected the end sphere
-                Rhino.Geometry.Sphere endSphere = new Rhino.Geometry.Sphere(endPt, 2);
-                myDoc.Objects.AddSphere(endSphere, attributes);
+                Rhino.Geometry.Sphere endSphere = new Rhino.Geometry.Sphere(endPt, 1.5);
+                Guid sphId = myDoc.Objects.AddSphere(endSphere, attributes);
                 Plane bendAnglePln = new Plane(endPt, centerCrv.TangentAt(endPara)); // the plane at the end plane of the central curve
                 this.bendPlane = bendAnglePln;
 
@@ -1249,7 +1376,7 @@ namespace PluginBar
                 Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(bendAnglePln, endPt, 20);
                 this.angleCircle = dirCircle;
 
-                myDoc.Objects.AddCircle(dirCircle);
+                Guid sId = myDoc.Objects.AddCircle(dirCircle);
                 myDoc.Views.Redraw();
 
                 // start the command 
@@ -1278,13 +1405,18 @@ namespace PluginBar
                     tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
 
                     // add current bending information in the bending list
-                    RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
-                    RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
+                    //RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
+                    //RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
                     bendInfoList.Add(tempBendInfo);
                 }
+                myDoc.Objects.Delete(sId, false);
+                myDoc.Objects.Delete(sphId, false);
+                myDoc.Views.Redraw();
 
                 #region generate the outer spring
-                springGeneration(centerCrv, surfaceBrep, 5);
+                double K;
+                springGeneration(centerCrv, surfaceBrep, 5, 5, out K);
+                RhinoApp.WriteLine("The K value of the generated soring is: " + K);
                 #endregion
 
                 // generate the bend support structure
@@ -1294,10 +1426,6 @@ namespace PluginBar
                 bendInfoList.Clear();
             }
             isBendLinear = false;
-            #endregion
-
-            #region generating the outer spring
-            springGeneration(centerCrv, surfaceBrep, 5);
             #endregion
 
             myDoc.Objects.Hide(sufObjId, true);// hide the original shell
@@ -1338,8 +1466,8 @@ namespace PluginBar
             Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
             Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-25, 25), new Interval(-25, 25));// convert the plane object to an actual surface so that we can draw it in the rhino doc
             Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-25, 25), new Interval(-25, 25));// 15 is a random number. It should actually be the ourter shell's radius or larger.
-            myDoc.Objects.AddSurface(startPlnSuf);
-            myDoc.Objects.AddSurface(endPlnSuf);
+            //myDoc.Objects.AddSurface(startPlnSuf);
+            //myDoc.Objects.AddSurface(endPlnSuf);
             #endregion
 
             #region get midpoint of the medial axis and control points for adjusting the rotation angle
@@ -1432,11 +1560,11 @@ namespace PluginBar
             gp_pt.MouseMove += Gp_sphereSelMouseMove;
             gp_pt.Get(true);
 
-            if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 2)
+            if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 1.5)
             {
                 // selected the start sphere
-                Rhino.Geometry.Sphere startSphere = new Rhino.Geometry.Sphere(startPt, 2);
-                myDoc.Objects.AddSphere(startSphere, attributes);
+                Rhino.Geometry.Sphere startSphere = new Rhino.Geometry.Sphere(startPt, 1.5);
+                Guid sphId = myDoc.Objects.AddSphere(startSphere, attributes);
                 Plane bendAnglePln = new Plane(startPt, centerCrv.TangentAt(startPara)); // the plane at the starting plane of the central curve
                 this.bendPlane = bendAnglePln;
 
@@ -1444,7 +1572,7 @@ namespace PluginBar
                 Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(bendAnglePln, startPt, 20);
                 this.angleCircle = dirCircle;
 
-                myDoc.Objects.AddCircle(dirCircle);
+                Guid ssId = myDoc.Objects.AddCircle(dirCircle);
                 myDoc.Views.Redraw();
 
                 // start the command 
@@ -1473,13 +1601,19 @@ namespace PluginBar
                     tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
 
                     // add current bending information in the bending list
-                    RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
-                    RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
+                    //RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
+                    //RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
                     bendInfoList.Add(tempBendInfo);
                 }
 
+                myDoc.Objects.Delete(ssId, false);
+                myDoc.Objects.Delete(sphId, false);
+                myDoc.Views.Redraw();
+
                 #region generate the outer spring
-                springGeneration(centerCrv, surfaceBrep, 5);
+                double K;
+                springGeneration(centerCrv, surfaceBrep, 5, 6, out K);
+                RhinoApp.WriteLine("The K value of the generated soring is: " + K);
                 #endregion
 
                 // generate the bend support structure
@@ -1489,11 +1623,11 @@ namespace PluginBar
                 bendInfoList.Clear();
 
             }
-            else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 2)
+            else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 1.5)
             {
                 // selected the end sphere
-                Rhino.Geometry.Sphere endSphere = new Rhino.Geometry.Sphere(endPt, 2);
-                myDoc.Objects.AddSphere(endSphere, attributes);
+                Rhino.Geometry.Sphere endSphere = new Rhino.Geometry.Sphere(endPt, 1.5);
+                Guid sphId = myDoc.Objects.AddSphere(endSphere, attributes);
                 Plane bendAnglePln = new Plane(endPt, centerCrv.TangentAt(endPara)); // the plane at the end plane of the central curve
                 this.bendPlane = bendAnglePln;
 
@@ -1501,7 +1635,7 @@ namespace PluginBar
                 Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(bendAnglePln, endPt, 20);
                 this.angleCircle = dirCircle;
 
-                myDoc.Objects.AddCircle(dirCircle);
+                Guid ssId = myDoc.Objects.AddCircle(dirCircle);
                 myDoc.Views.Redraw();
 
                 // start the command 
@@ -1530,13 +1664,19 @@ namespace PluginBar
                     tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
 
                     // add current bending information in the bending list
-                    RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
-                    RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
+                    // RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
+                    // RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
                     bendInfoList.Add(tempBendInfo);
                 }
 
+                myDoc.Objects.Delete(ssId, false);
+                myDoc.Objects.Delete(sphId, false);
+                myDoc.Views.Redraw();
+
                 #region generate the outer spring
-                springGeneration(centerCrv, surfaceBrep, 5);
+                double K;
+                springGeneration(centerCrv, surfaceBrep, 5, 6, out K);
+                RhinoApp.WriteLine("The K value of the generated soring is: " + K);
                 #endregion
 
                 // generate the bend support structure
@@ -1585,12 +1725,14 @@ namespace PluginBar
             Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
             Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-25, 25), new Interval(-25, 25));// convert the plane object to an actual surface so that we can draw it in the rhino doc
             Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-25, 25), new Interval(-25, 25));// 15 is a random number. It should actually be the ourter shell's radius or larger.
-            myDoc.Objects.AddSurface(startPlnSuf);
-            myDoc.Objects.AddSurface(endPlnSuf);
+            //myDoc.Objects.AddSurface(startPlnSuf);
+            //myDoc.Objects.AddSurface(endPlnSuf);
             #endregion
 
             #region generate the outer spring
-            springGeneration(centerCrv, surfaceBrep, 5);
+            double K;
+            springGeneration(centerCrv, surfaceBrep, 5, 7, out K);
+            RhinoApp.WriteLine("The K value of the generated soring is: " + K);
             #endregion
 
             #region delete the part that spring will replaced
@@ -1659,9 +1801,8 @@ namespace PluginBar
            
             Curve linearCrv = Curve.JoinCurves(crves)[0];
 
-
             // base structure 2 bars
-            double baseStructureDisToCenter = 4;
+            double baseStructureDisToCenter = 3.3;
             Curve baseStructureCrv1 = linearCrv.DuplicateCurve();
             Curve baseStructureCrv2 = linearCrv.DuplicateCurve();
             baseStructureCrv1.Translate(endSuf.YAxis * baseStructureDisToCenter);
@@ -1669,10 +1810,10 @@ namespace PluginBar
             Point3d[] guiderOuterCornerPt = new Point3d[5];
             Point3d[] guiderInnerCornerPt = new Point3d[5];
             Point3d[] cornerPt = new Point3d[5];
-            Transform txp = Transform.Translation(endSuf.XAxis * 3);
-            Transform typ = Transform.Translation(endSuf.YAxis * 1);
-            Transform txn = Transform.Translation(endSuf.XAxis * -3);
-            Transform tyn = Transform.Translation(endSuf.YAxis * -1);
+            Transform txp = Transform.Translation(endSuf.XAxis * 2.8);
+            Transform typ = Transform.Translation(endSuf.YAxis * 0.5);
+            Transform txn = Transform.Translation(endSuf.XAxis * -2.8);
+            Transform tyn = Transform.Translation(endSuf.YAxis * -0.5);
             cornerPt[0] = baseStructureCrv1.PointAtEnd;
             cornerPt[1] = baseStructureCrv1.PointAtEnd;
             cornerPt[2] = baseStructureCrv1.PointAtEnd;
@@ -1681,7 +1822,6 @@ namespace PluginBar
             cornerPt[1].Transform(txn); cornerPt[1].Transform(typ);
             cornerPt[2].Transform(txn); cornerPt[2].Transform(tyn);
             cornerPt[3].Transform(txp); cornerPt[3].Transform(tyn);
-
 
             guiderOuterCornerPt[0] = cornerPt[0];
             guiderOuterCornerPt[1] = cornerPt[1];
@@ -1714,11 +1854,11 @@ namespace PluginBar
             guiderInnerCornerPt[3].Transform(txn);
             guiderInnerCornerPt[4].Transform(txn);
 
-            foreach(var p in guiderInnerCornerPt)
-            {
-                myDoc.Objects.AddPoint(p);
-                myDoc.Views.Redraw();
-            }
+            //foreach(var p in guiderInnerCornerPt)
+            //{
+            //    myDoc.Objects.AddPoint(p);
+            //    myDoc.Views.Redraw();
+            //}
             Curve guiderOuterRectCrv = new Polyline(guiderOuterCornerPt).ToNurbsCurve();
             Curve guiderInnerRectCrv = new Polyline(guiderInnerCornerPt).ToNurbsCurve();
 
@@ -1774,7 +1914,7 @@ namespace PluginBar
 
             //prismic structure that limits rotation
             Point3d centerPrismPt = centerCrv.PointAtStart;
-            double primBaseSideHalfLength = 1;
+            double primBaseSideHalfLength = 1.5;
             txp = Transform.Translation(startSuf.XAxis * primBaseSideHalfLength);
             typ = Transform.Translation(startSuf.YAxis * primBaseSideHalfLength);
             txn = Transform.Translation(startSuf.XAxis * -primBaseSideHalfLength);
@@ -1793,28 +1933,28 @@ namespace PluginBar
             prismBrep = sweep.PerformSweep(pressCrv, prismCrv)[0];
             prismBrep = prismBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
             myDoc.Objects.AddBrep(prismBrep);
-            myDoc.Views.Redraw();
+            //myDoc.Views.Redraw();
 
 
             // stopper (disc)
             Plane stopperPln = new Plane(pressCrv.PointAtEnd, pressCrv.TangentAtEnd);
-            Circle stopperCir = new Circle(stopperPln, pressCrv.PointAtEnd, 2);
+            Circle stopperCir = new Circle(stopperPln, pressCrv.PointAtEnd, 2.3);
             double t;
-            compressCrv.LengthParameter(3, out t);
+            compressCrv.LengthParameter(2, out t);          // the thickness of the stopper (disc)
             Curve stopperCrv = compressCrv.Split(t)[0];
 
             stopperBrep = sweep.PerformSweep(stopperCrv, stopperCir.ToNurbsCurve())[0];
             stopperBrep = stopperBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-            myDoc.Objects.AddCurve(stopperCrv);
+            //myDoc.Objects.AddCurve(stopperCrv);
             myDoc.Objects.AddBrep(stopperBrep);
-            myDoc.Views.Redraw();
+            //myDoc.Views.Redraw();
             
             
             // guider hole
 
             Point3d guiderPt = railEnd;
-            double guiderPtGap = 0.2;
+            double guiderPtGap = 0.5;
 
             txp = Transform.Translation(stopperPlnOrig.XAxis * (primBaseSideHalfLength + guiderPtGap));
             typ = Transform.Translation(stopperPlnOrig.YAxis * (primBaseSideHalfLength + guiderPtGap));
@@ -1834,7 +1974,7 @@ namespace PluginBar
 
             pressCrv.ClosestPoint(railEnd, out t);
             var splitedLeftOver = pressCrv.Split(t);
-            splitedLeftOver[0].LengthParameter(splitedLeftOver[0].GetLength() - 3, out t);
+            splitedLeftOver[0].LengthParameter(splitedLeftOver[0].GetLength() - 4, out t);
             
             var splitedLeftCrvs = splitedLeftOver[0].Split(t);
             Brep guiderCenter = sweep.PerformSweep(splitedLeftCrvs[1], guiderCrv)[0];
@@ -1847,7 +1987,7 @@ namespace PluginBar
             var guiderFinal = Brep.CreateBooleanDifference(guiderCenter, outerGuider,myDoc.ModelRelativeTolerance)[0];
             myDoc.Objects.Add(guiderFinal);
 
-
+            // Only refresh once
             myDoc.Views.Redraw();
         }
         private void generateLinearBendSupport(Plane startSuf, Plane endSuf, Curve centerCrv, Curve compressCrv, Curve pressCrv, Curve stretchCrv, Point3d railEnd, Plane stopperPlnOrig, List<bend_info> bendInfoList, Point3d startPt, Point3d endPt, bool isStart)
@@ -1862,7 +2002,6 @@ namespace PluginBar
                 Point3d p_end = endPt + newDir;
                 p_end = endSuf.ClosestPoint(p_end);
                 newDir = (Vector3d)(p_end - endPt);
-
 
                 Vector3d normal_dir = newDir;
                 Vector3d axis= -endSuf.Normal;
@@ -1882,7 +2021,7 @@ namespace PluginBar
                 Curve linearCrv = Curve.JoinCurves(crves)[0];
 
                 #region base structure 2 bars
-                var baseStructureDisToCenter = 4;
+                //var baseStructureDisToCenter = 4;
                 Curve baseStructureCrv1 = linearCrv.DuplicateCurve();
                 Curve baseStructureCrv2 = linearCrv.DuplicateCurve();
                 normal_dir.Rotate(Math.PI / 2, axis);
@@ -2033,8 +2172,8 @@ namespace PluginBar
 
                 Plane guiderPln = new Plane(linearCrv.PointAtEnd, linearCrv.TangentAtEnd);
                 PlaneSurface guiderPlnSuf = new PlaneSurface(guiderPln, new Interval(-30, 30), new Interval(-30, 30));
-                myDoc.Objects.AddSurface(guiderPlnSuf);
-                myDoc.Views.Redraw();
+                //myDoc.Objects.AddSurface(guiderPlnSuf);
+                //myDoc.Views.Redraw();
                 List<Point3d> guiderPointsList = new List<Point3d>();
                 foreach (Point3d p in baseVertexList)
                 {
@@ -2059,8 +2198,8 @@ namespace PluginBar
                 guiderPointsList.Add(guiderPointsList[0]);
                 Curve guiderTopCrv = new Polyline(guiderPointsList).ToNurbsCurve();
                 attributes.ObjectColor = Color.Red;
-                myDoc.Objects.AddCurve(guiderTopCrv, attributes);
-                myDoc.Views.Redraw();
+                //myDoc.Objects.AddCurve(guiderTopCrv, attributes);
+                //myDoc.Views.Redraw();
                 #endregion
 
                 #region prismic structure that limits rotation
@@ -2085,7 +2224,7 @@ namespace PluginBar
                 Brep prismBrep = sweep.PerformSweep(pressCrv, prismCrv)[0];
                 prismBrep = prismBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
                 myDoc.Objects.AddBrep(prismBrep);
-                myDoc.Views.Redraw();
+                //myDoc.Views.Redraw();
                 #endregion
 
                 #region stopper (disc)
@@ -2098,9 +2237,9 @@ namespace PluginBar
                 var stopperBrep = sweep.PerformSweep(stopperCrv, stopperCir.ToNurbsCurve())[0];
                 stopperBrep = stopperBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-                myDoc.Objects.AddCurve(stopperCrv);
+                //myDoc.Objects.AddCurve(stopperCrv);
                 myDoc.Objects.AddBrep(stopperBrep);
-                myDoc.Views.Redraw();
+                //myDoc.Views.Redraw();
                 #endregion
 
                 // guider hole
@@ -2430,7 +2569,7 @@ namespace PluginBar
                 var firstHinge1 = Brep.CreateBooleanDifference(innerBreps_base1[0], outerBreps_base1[0], myDoc.ModelRelativeTolerance);
 
                 myDoc.Objects.AddBrep(firstHinge1[0], attributes);
-                myDoc.Views.Redraw();
+                //myDoc.Views.Redraw();
 
                 foreach (List<Transform> tt in trans1)
                 {
@@ -2445,7 +2584,7 @@ namespace PluginBar
 
                 var firstHinge2 = Brep.CreateBooleanDifference(innerBreps_base2[0], outerBreps_base2[0], myDoc.ModelRelativeTolerance);
                 myDoc.Objects.AddBrep(firstHinge2[0], attributes);
-                myDoc.Views.Redraw();
+                //myDoc.Views.Redraw();
 
                 foreach (List<Transform> tt in trans1)
                 {
@@ -2534,11 +2673,11 @@ namespace PluginBar
             guiderInnerCornerPt[3].Transform(txn);
             guiderInnerCornerPt[4].Transform(txn);
 
-            foreach (var p in guiderInnerCornerPt)
-            {
-                myDoc.Objects.AddPoint(p);
-                myDoc.Views.Redraw();
-            }
+            //foreach (var p in guiderInnerCornerPt)
+            //{
+            //    myDoc.Objects.AddPoint(p);
+            //    myDoc.Views.Redraw();
+            //}
             Curve guiderOuterRectCrv = new Polyline(guiderOuterCornerPt).ToNurbsCurve();
             Curve guiderInnerRectCrv = new Polyline(guiderInnerCornerPt).ToNurbsCurve();
 
@@ -2601,7 +2740,7 @@ namespace PluginBar
             Brep cylinBrep = sweep.PerformSweep(pressCrv, cylinCrv)[0];
             cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
             myDoc.Objects.AddBrep(cylinBrep);
-            myDoc.Views.Redraw();
+            //myDoc.Views.Redraw();
 
             // stopper (disc)
             Plane stopperPln = new Plane(pressCrv.PointAtEnd, pressCrv.TangentAtEnd);
@@ -2613,9 +2752,9 @@ namespace PluginBar
             var stopperBrep = sweep.PerformSweep(stopperCrv, stopperCir.ToNurbsCurve())[0];
             stopperBrep = stopperBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-            myDoc.Objects.AddCurve(stopperCrv);
+            //myDoc.Objects.AddCurve(stopperCrv);
             myDoc.Objects.AddBrep(stopperBrep);
-            myDoc.Views.Redraw();
+            //myDoc.Views.Redraw();
 
 
             // guider hole
@@ -2627,7 +2766,7 @@ namespace PluginBar
             var attributes = new ObjectAttributes();
             attributes.ObjectColor = Color.Yellow;
             attributes.ColorSource = ObjectColorSource.ColorFromObject;
-            myDoc.Objects.AddCurve(guiderCrv, attributes);
+            //myDoc.Objects.AddCurve(guiderCrv, attributes);
 
             pressCrv.ClosestPoint(railEnd, out t);
             var splitedLeftOver = pressCrv.Split(t);
@@ -2646,7 +2785,7 @@ namespace PluginBar
 
             myDoc.Views.Redraw();
         }
-        private void generateTwistSupport(Plane startSuf, Plane endSuf, Curve centerCrv)
+        private void generateTwistSupport(Plane startSuf, Plane endSuf, Curve centerCrv, out Brep StopperBlock, out Brep cylindShaft)
         {
             // create sweep function
             var sweep = new Rhino.Geometry.SweepOneRail();
@@ -2656,7 +2795,7 @@ namespace PluginBar
 
             // compute the base height and generate the guide curves
             double t;
-            centerCrv.LengthParameter(centerCrv.GetLength() - 5, out t);  // the height is currently 10. It should be confined with the limit from the test
+            centerCrv.LengthParameter(centerCrv.GetLength() - 3, out t);  // the height is currently 10. It should be confined with the limit from the test
             Curve guiderCrv = centerCrv.Split(t)[1];
             Curve cylinCrv = centerCrv.Split(t)[0];
             guiderCrv.LengthParameter(0.5, out t);
@@ -2673,7 +2812,7 @@ namespace PluginBar
             //attributes1.ColorSource = ObjectColorSource.ColorFromObject;
             //myDoc.Objects.AddCurve(guiderCrvLeftover, attributes1);
 
-            myDoc.Views.Redraw();
+            //myDoc.Views.Redraw();
 
             List<Curve> cylinCrvList = new List<Curve>();
             cylinCrvList.Add(cylinCrv);
@@ -2681,7 +2820,7 @@ namespace PluginBar
             Curve cylinCrvAll = Curve.JoinCurves(cylinCrvList)[0];
 
             // base structure 2 bars
-            double baseStructureDisToCenter = 4;
+            double baseStructureDisToCenter = 3.3;
             Curve baseStructureCrv1 = guiderCrv.DuplicateCurve();
             Curve baseStructureCrv2 = guiderCrv.DuplicateCurve();
             baseStructureCrv1.Translate(endSuf.YAxis * baseStructureDisToCenter);
@@ -2689,10 +2828,10 @@ namespace PluginBar
             Point3d[] guiderOuterCornerPt = new Point3d[5];
             Point3d[] guiderInnerCornerPt = new Point3d[5];
             Point3d[] cornerPt = new Point3d[5];
-            Transform txp = Transform.Translation(endSuf.XAxis * 3);
-            Transform typ = Transform.Translation(endSuf.YAxis * 1);
-            Transform txn = Transform.Translation(endSuf.XAxis * -3);
-            Transform tyn = Transform.Translation(endSuf.YAxis * -1);
+            Transform txp = Transform.Translation(endSuf.XAxis * 2.8);
+            Transform typ = Transform.Translation(endSuf.YAxis * 0.5);
+            Transform txn = Transform.Translation(endSuf.XAxis * -2.8);
+            Transform tyn = Transform.Translation(endSuf.YAxis * -0.5);
             cornerPt[0] = baseStructureCrv1.PointAtEnd;
             cornerPt[1] = baseStructureCrv1.PointAtEnd;
             cornerPt[2] = baseStructureCrv1.PointAtEnd;
@@ -2734,11 +2873,11 @@ namespace PluginBar
             guiderInnerCornerPt[3].Transform(txn);
             guiderInnerCornerPt[4].Transform(txn);
 
-            foreach (var p in guiderInnerCornerPt)
-            {
-                myDoc.Objects.AddPoint(p);
-                myDoc.Views.Redraw();
-            }
+            //foreach (var p in guiderInnerCornerPt)
+            //{
+            //    myDoc.Objects.AddPoint(p);
+            //    myDoc.Views.Redraw();
+            //}
             Curve guiderOuterRectCrv = new Polyline(guiderOuterCornerPt).ToNurbsCurve();
             Curve guiderInnerRectCrv = new Polyline(guiderInnerCornerPt).ToNurbsCurve();
 
@@ -2794,36 +2933,40 @@ namespace PluginBar
 
             //cylindral structure that enables rotation
             Point3d centerCylin = centerCrv.PointAtStart;
-            double cylinBaseSideRadius = 1;
+            double cylinBaseSideRadius = 1.5;
             Curve cylinCircle = new Circle(startSuf, centerCylin, cylinBaseSideRadius).ToNurbsCurve();
             Brep cylinBrep = sweep.PerformSweep(cylinCrvAll, cylinCircle)[0];
             cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
             myDoc.Objects.AddBrep(cylinBrep);
-            myDoc.Views.Redraw();
+
+            cylindShaft = cylinBrep;
+            //myDoc.Views.Redraw();
 
             // stopper (disc)
             Plane stopperPln = new Plane(cylinCrvAll.PointAtEnd, cylinCrvAll.TangentAtEnd);
-            Circle stopperCir = new Circle(stopperPln, cylinCrvAll.PointAtEnd, 3);
+            Circle stopperCir = new Circle(stopperPln, cylinCrvAll.PointAtEnd, 2.3);
             double tt;
-            guiderCrvLeftover.LengthParameter(guiderCrvLeftover.GetLength() - 3, out tt);
+            guiderCrvLeftover.LengthParameter(guiderCrvLeftover.GetLength() - 2, out tt);
             Curve stopperCrv = guiderCrvLeftover.Split(tt)[1];
             var stopperBrep = sweep.PerformSweep(stopperCrv, stopperCir.ToNurbsCurve())[0];
             stopperBrep = stopperBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-            myDoc.Objects.AddCurve(stopperCrv);
+            //myDoc.Objects.AddCurve(stopperCrv);
             myDoc.Objects.AddBrep(stopperBrep);
-            myDoc.Views.Redraw();
+
+            StopperBlock = stopperBrep;
+            //myDoc.Views.Redraw();
 
             // guider hole
 
             Point3d guiderPt = cylinCrv.PointAtEnd;
-            double guiderPtGap = 0.2;
+            double guiderPtGap = 0.5;
             double newRadius = cylinBaseSideRadius + guiderPtGap;
             Plane stopperPln1 = new Plane(cylinCrv.PointAtEnd, cylinCrv.TangentAtEnd);
             Curve guiderCircle = new Circle(stopperPln,guiderPt, newRadius).ToNurbsCurve();
 
             double ttt;
-            cylinCrv.LengthParameter(cylinCrv.GetLength() - 3, out ttt);
+            cylinCrv.LengthParameter(cylinCrv.GetLength() - 4, out ttt);
 
             var splitedLeftCrvs = cylinCrv.Split(ttt);
             Brep guiderCenter = sweep.PerformSweep(splitedLeftCrvs[1], guiderCircle)[0];
@@ -2835,7 +2978,7 @@ namespace PluginBar
             var guiderFinal = Brep.CreateBooleanIntersection(outerGuider, guiderCenter, myDoc.ModelRelativeTolerance)[0];
             myDoc.Objects.Add(guiderFinal);
 
-
+            // Last render
             myDoc.Views.Redraw();
         }
         private void generateTwistBendSupport(Plane startSuf, Plane endSuf, Curve centerCrv, List<bend_info> bendInfoList, Point3d startPt, Point3d endPt, bool isStart)
@@ -2921,11 +3064,11 @@ namespace PluginBar
                     guiderInnerCornerPt[3].Transform(txn);
                     guiderInnerCornerPt[4].Transform(txn);
 
-                    foreach (var p in guiderInnerCornerPt)
-                    {
-                        myDoc.Objects.AddPoint(p);
-                        myDoc.Views.Redraw();
-                    }
+                    //foreach (var p in guiderInnerCornerPt)
+                    //{
+                    //    myDoc.Objects.AddPoint(p);
+                    //    myDoc.Views.Redraw();
+                    //}
                     Curve guiderOuterRectCrv = new Polyline(guiderOuterCornerPt).ToNurbsCurve();
                     Curve guiderInnerRectCrv = new Polyline(guiderInnerCornerPt).ToNurbsCurve();
 
@@ -2998,7 +3141,7 @@ namespace PluginBar
                     var stopperBrep = sweep.PerformSweep(stopperCrv, stopperCir.ToNurbsCurve())[0];
                     stopperBrep = stopperBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-                    myDoc.Objects.AddCurve(stopperCrv);
+                    //myDoc.Objects.AddCurve(stopperCrv);
                     myDoc.Objects.AddBrep(stopperBrep);
                     //myDoc.Views.Redraw();
 
@@ -3048,7 +3191,7 @@ namespace PluginBar
                     hingeOuterCornerPt[3] = hingePt3;
                     hingeOuterCornerPt[4] = hingePt1;
                     Curve hingeOuterRectCrv = new Polyline(hingeOuterCornerPt).ToNurbsCurve();
-                    myDoc.Objects.AddCurve(hingeOuterRectCrv, attributes);
+                   // myDoc.Objects.AddCurve(hingeOuterRectCrv, attributes);
                     //myDoc.Views.Redraw();
                     #endregion
 
@@ -3062,7 +3205,7 @@ namespace PluginBar
                     hingeInnerCornerPt[3] = hingeInnerPt1 + axis * scale2 + axis * scale1;
                     hingeInnerCornerPt[4] = hingeInnerPt1 + axis * scale2;
                     Curve hingeInnerRectCrv = new Polyline(hingeInnerCornerPt).ToNurbsCurve();
-                    myDoc.Objects.AddCurve(hingeInnerRectCrv, attributes);
+                   // myDoc.Objects.AddCurve(hingeInnerRectCrv, attributes);
                     //myDoc.Views.Redraw();
                     #endregion
 
@@ -3076,8 +3219,8 @@ namespace PluginBar
                     splitedLeftCrvs[0].LengthParameter(splitedLeftCrvs[0].GetLength() - 2* endSuf.Normal.Length * scale1, out hingeEndPara);
                     Point3d end_pt = splitedLeftCrvs[0].PointAt(hingeEndPara);
                     attributes.ObjectColor = Color.White;
-                    myDoc.Objects.AddPoint(end_pt, attributes);
-                    myDoc.Views.Redraw();
+                    //myDoc.Objects.AddPoint(end_pt, attributes);
+                    //myDoc.Views.Redraw();
 
                     Point3d end = end_pt;
                     double frontCrvPara = 0;
@@ -3099,7 +3242,7 @@ namespace PluginBar
                         double para = 0;
                         divideCrv.ClosestPoint(p, out para);
                         tangents.Add(divideCrv.TangentAt(para));
-                        myDoc.Objects.AddPoint(p, attributes);
+                        //myDoc.Objects.AddPoint(p, attributes);
                     }
 
                     // store transforms from the first point to each point
@@ -3133,8 +3276,8 @@ namespace PluginBar
                         tempInnerCrv.Transform(tr.ElementAt(1));
                         innerCrvs.Add(tempInnerCrv);
 
-                        myDoc.Objects.AddCurve(tempOuterCrv, attributes);
-                        myDoc.Objects.AddCurve(tempInnerCrv, attributes);
+                        //myDoc.Objects.AddCurve(tempOuterCrv, attributes);
+                        //myDoc.Objects.AddCurve(tempInnerCrv, attributes);
                     }
                     #endregion
 
@@ -3178,9 +3321,6 @@ namespace PluginBar
 
                         innerBreps.Add(brep);
                     }
-
-                    //// prepared for difference boolean with the central rod
-                    //innerBrepsDup = innerBreps;
 
                     #endregion
 
@@ -3299,11 +3439,11 @@ namespace PluginBar
                     guiderInnerCornerPt[3].Transform(txn);
                     guiderInnerCornerPt[4].Transform(txn);
 
-                    foreach (var p in guiderInnerCornerPt)
-                    {
-                        myDoc.Objects.AddPoint(p);
-                        myDoc.Views.Redraw();
-                    }
+                    //foreach (var p in guiderInnerCornerPt)
+                    //{
+                    //    myDoc.Objects.AddPoint(p);
+                    //    myDoc.Views.Redraw();
+                    //}
                     Curve guiderOuterRectCrv = new Polyline(guiderOuterCornerPt).ToNurbsCurve();
                     Curve guiderInnerRectCrv = new Polyline(guiderInnerCornerPt).ToNurbsCurve();
 
@@ -3376,7 +3516,7 @@ namespace PluginBar
                     var stopperBrep = sweep.PerformSweep(stopperCrv, stopperCir.ToNurbsCurve())[0];
                     stopperBrep = stopperBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-                    myDoc.Objects.AddCurve(stopperCrv);
+                    //myDoc.Objects.AddCurve(stopperCrv);
                     myDoc.Objects.AddBrep(stopperBrep);
                     //myDoc.Views.Redraw();
 
@@ -3567,9 +3707,6 @@ namespace PluginBar
                         innerBreps.Add(brep);
                     }
 
-                    //// prepared for difference boolean with the central rod
-                    //innerBrepsDup = innerBreps;
-
                     #endregion
 
                     #endregion
@@ -3643,8 +3780,6 @@ namespace PluginBar
                         tempBrep.Transform(tr.ElementAt(0));
                         tempBrep.Transform(tr.ElementAt(1));
                         myDoc.Objects.AddBrep(tempBrep, attributes);
-                        
-
                     }
 
                     #endregion
@@ -3655,9 +3790,11 @@ namespace PluginBar
 
             myDoc.Views.Redraw();
         }
-        private void generateBendSupport(Plane startSuf, Plane endSuf, Curve centerCrv, List<bend_info> bendInfoList, Point3d startPt, Point3d endPt, bool isStart)
+        private void generateBendSupport(Plane startSuf, Plane endSuf, Curve centerCrv, List<bend_info> bendInfoList, Point3d startPt, Point3d endPt, bool isStart, out List<Brep> centrShaft, out List<Brep> hinges)
         {
-            foreach(bend_info b in bendInfoList)
+            centrShaft = new List<Brep>();
+            hinges = new List<Brep>();
+            foreach (bend_info b in bendInfoList)
             {
                 Vector3d normal_dir = b.dir;
                 Vector3d axis;
@@ -3686,8 +3823,8 @@ namespace PluginBar
                     hingeOuterCornerPt[3] = hingePt3;
                     hingeOuterCornerPt[4] = hingePt1;
                     Curve hingeOuterRectCrv = new Polyline(hingeOuterCornerPt).ToNurbsCurve();
-                    myDoc.Objects.AddCurve(hingeOuterRectCrv, attributes);
-                    myDoc.Views.Redraw();
+                    //myDoc.Objects.AddCurve(hingeOuterRectCrv, attributes);
+                    //myDoc.Views.Redraw();
                     #endregion
 
                     #region construct the inner rectangle of each hinge
@@ -3700,8 +3837,8 @@ namespace PluginBar
                     hingeInnerCornerPt[3] = hingeInnerPt1 + axis * scale2 + axis * scale1;
                     hingeInnerCornerPt[4] = hingeInnerPt1 + axis * scale2;
                     Curve hingeInnerRectCrv = new Polyline(hingeInnerCornerPt).ToNurbsCurve();
-                    myDoc.Objects.AddCurve(hingeInnerRectCrv, attributes);
-                    myDoc.Views.Redraw();
+                    //myDoc.Objects.AddCurve(hingeInnerRectCrv, attributes);
+                    //myDoc.Views.Redraw();
                     #endregion
 
                     #region Array all outer and inner rectangles of the hinge along the curve
@@ -3729,7 +3866,7 @@ namespace PluginBar
                         double para = 0;
                         divideCrv.ClosestPoint(p, out para);
                         tangents.Add(divideCrv.TangentAt(para));
-                        myDoc.Objects.AddPoint(p, attributes);
+                        //myDoc.Objects.AddPoint(p, attributes);
                     }
 
                     // store transforms from the first point to each point
@@ -3763,8 +3900,8 @@ namespace PluginBar
                         tempInnerCrv.Transform(t.ElementAt(1));
                         innerCrvs.Add(tempInnerCrv);
 
-                        myDoc.Objects.AddCurve(tempOuterCrv, attributes);
-                        myDoc.Objects.AddCurve(tempInnerCrv, attributes);
+                        //myDoc.Objects.AddCurve(tempOuterCrv, attributes);
+                        //myDoc.Objects.AddCurve(tempInnerCrv, attributes);
                     }
                     #endregion
 
@@ -3789,6 +3926,9 @@ namespace PluginBar
                         brep = brep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
 
                         outerBreps.Add(brep);
+
+                        //myDoc.Objects.AddBrep(brep, attributes);
+                        //myDoc.Views.Redraw();
                     }
 
                     foreach (Curve c in innerCrvs)
@@ -3807,18 +3947,18 @@ namespace PluginBar
                         brep = brep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
 
                         innerBreps.Add(brep);
-                    }
 
-                    //// prepared for difference boolean with the central rod
-                    //innerBrepsDup = innerBreps;
+                        //myDoc.Objects.AddBrep(brep, attributes);
+                        //myDoc.Views.Redraw();
+                    }
 
                     #endregion
 
                     #endregion
 
                     #region sweep the central rod
-                    double half_width_scale = 1 / normal_dir.Length; // 1 is the half width of the central rod, adjustable
-                    double half_height_scale = 1 / b.dir.Length; // 2 is the half width of the central rod, adjustable, equal to the extusion height
+                    double half_width_scale = 1.5 / normal_dir.Length; // 1 is the half width of the central rod, adjustable
+                    double half_height_scale = 1.5 / b.dir.Length; // 2 is the half width of the central rod, adjustable, equal to the extusion height
                     Point3d rodPt1 = startPt + normal_dir * half_width_scale + b.dir*half_height_scale;
                     normal_dir.Rotate(Math.PI, axis);
                     Point3d rodPt2 = startPt + normal_dir * half_width_scale + b.dir*half_height_scale;
@@ -3858,16 +3998,19 @@ namespace PluginBar
                     {
                         var tempB = Brep.CreateBooleanDifference(innerBreps[id], prev_brep, myDoc.ModelRelativeTolerance);
                         myDoc.Objects.AddBrep(tempB[1], attributes);
+                        centrShaft.Add(tempB[1]);
                         tempB[0].Flip();
                         prev_brep = tempB[0];
                         //myDoc.Views.Redraw();
                     }
 
                     // generate the hinges
+                    //innerBreps[0].Flip();
                     var firstHinge = Brep.CreateBooleanDifference(innerBreps[0], outerBreps[0], myDoc.ModelRelativeTolerance);
                     myDoc.Objects.AddBrep(firstHinge[0], attributes);
                     myDoc.Views.Redraw();
 
+                    hinges.Add(firstHinge[0]);
                     foreach (List<Transform> t in trans)
                     {
                         if(trans.IndexOf(t) != 0)
@@ -3876,6 +4019,8 @@ namespace PluginBar
                             tempBrep.Transform(t.ElementAt(0));
                             tempBrep.Transform(t.ElementAt(1));
                             myDoc.Objects.AddBrep(tempBrep, attributes);
+
+                            hinges.Add(tempBrep);
                         }
  
                     }
@@ -3909,8 +4054,8 @@ namespace PluginBar
                     hingeOuterCornerPt[3] = hingePt3;
                     hingeOuterCornerPt[4] = hingePt1;
                     Curve hingeOuterRectCrv = new Polyline(hingeOuterCornerPt).ToNurbsCurve();
-                    myDoc.Objects.AddCurve(hingeOuterRectCrv, attributes);
-                    myDoc.Views.Redraw();
+                    //myDoc.Objects.AddCurve(hingeOuterRectCrv, attributes);
+                    //myDoc.Views.Redraw();
                     #endregion
 
                     #region construct the inner rectangle of each hinge
@@ -3923,8 +4068,8 @@ namespace PluginBar
                     hingeInnerCornerPt[3] = hingeInnerPt1 + axis * scale2 + axis * scale1;
                     hingeInnerCornerPt[4] = hingeInnerPt1 + axis * scale2;
                     Curve hingeInnerRectCrv = new Polyline(hingeInnerCornerPt).ToNurbsCurve();
-                    myDoc.Objects.AddCurve(hingeInnerRectCrv, attributes);
-                    myDoc.Views.Redraw();
+                    //myDoc.Objects.AddCurve(hingeInnerRectCrv, attributes);
+                    //myDoc.Views.Redraw();
                     #endregion
 
                     #region Array all outer and inner rectangles of the hinge along the curve
@@ -3993,9 +4138,9 @@ namespace PluginBar
                         tempInnerCrv.Transform(t.ElementAt(1));
                         innerCrvs.Add(tempInnerCrv);
 
-                        myDoc.Objects.AddCurve(tempOuterCrv, attributes);
-                        myDoc.Objects.AddCurve(tempInnerCrv, attributes);
-                        myDoc.Views.Redraw();
+                        //myDoc.Objects.AddCurve(tempOuterCrv, attributes);
+                        //myDoc.Objects.AddCurve(tempInnerCrv, attributes);
+                        //myDoc.Views.Redraw();
                     }
                     #endregion
 
@@ -4048,8 +4193,8 @@ namespace PluginBar
                     #endregion
 
                     #region sweep the central rod
-                    double half_width_scale = 1 / normal_dir.Length; // 1 is the half width of the central rod, adjustable
-                    double half_height_scale = 1 / b.dir.Length; // 2 is the half width of the central rod, adjustable, equal to the extusion height
+                    double half_width_scale = 1.5 / normal_dir.Length; // 1 is the half width of the central rod, adjustable
+                    double half_height_scale = 1.5 / b.dir.Length; // 2 is the half width of the central rod, adjustable, equal to the extusion height
                     Point3d rodPt1 = endPt + normal_dir * half_width_scale + b.dir * half_height_scale;
                     normal_dir.Rotate(Math.PI, axis);
                     Point3d rodPt2 = endPt + normal_dir * half_width_scale + b.dir * half_height_scale;
@@ -4077,6 +4222,7 @@ namespace PluginBar
                     rod_brep[0] = rod_brep[0].CapPlanarHoles(myDoc.ModelRelativeTolerance);
                     //myDoc.Objects.AddBrep(rod_brep[0], attributes);
 
+                    
                     #endregion
 
                     #region boolean difference
@@ -4089,15 +4235,20 @@ namespace PluginBar
                     {
                         var tempB = Brep.CreateBooleanDifference(innerBreps[id], prev_brep, myDoc.ModelRelativeTolerance);
                         myDoc.Objects.AddBrep(tempB[1], attributes);
+                        centrShaft.Add(tempB[1]);
                         tempB[0].Flip();
                         prev_brep = tempB[0];
                         //myDoc.Views.Redraw();
                     }
 
+                   
+
                     // generate the hinges
                     var firstHinge = Brep.CreateBooleanDifference(innerBreps[0], outerBreps[0], myDoc.ModelRelativeTolerance);
                     myDoc.Objects.AddBrep(firstHinge[0], attributes);
                     myDoc.Views.Redraw();
+
+                    hinges.Add(firstHinge[0]);
 
                     foreach (List<Transform> t in trans)
                     {
@@ -4107,6 +4258,8 @@ namespace PluginBar
                             tempBrep.Transform(t.ElementAt(0));
                             tempBrep.Transform(t.ElementAt(1));
                             myDoc.Objects.AddBrep(tempBrep, attributes);
+
+                            hinges.Add(tempBrep);
                         }
 
                     }
@@ -4146,7 +4299,7 @@ namespace PluginBar
         private void Gp_BendAngelSelDynamicDraw(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
         {
             // to be added: draw the sphere around the circle to indicate the direction
-            e.Display.DrawSphere(new Sphere(this.bendCtrlPt, 2), Color.White);
+            e.Display.DrawSphere(new Sphere(this.bendCtrlPt, 1.5), Color.White);
         }
         private void Gp_BendStrengthSelMouseMove(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
         {
@@ -4169,32 +4322,32 @@ namespace PluginBar
         {
             if (isBendLinear)
             {
-                if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 2)
+                if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <=1.5)
                 {
                     // hightlight the end sphere
-                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.Yellow);
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 1.5), Color.Yellow);
                 }
                 else
                 {
-                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.White);
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 1.5), Color.White);
                 }
             }
             else
             {
-                if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 2)
+                if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 1.5)
                 {
                     // highlight the start sphere
-                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtStart, 2), Color.Yellow);
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtStart, 1.5), Color.Yellow);
                 }
-                else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 2)
+                else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 1.5)
                 {
                     // hightlight the end sphere
-                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.Yellow);
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 1.5), Color.Yellow);
                 }
                 else
                 {
-                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtStart, 2), Color.White);
-                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 2), Color.White);
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtStart, 1.5), Color.White);
+                    e.Display.DrawSphere(new Sphere(this.centerCrv.PointAtEnd, 1.5), Color.White);
                 }
             } 
         }
@@ -4215,7 +4368,7 @@ namespace PluginBar
         }
         private void Gp_AnglePlnDynamicDraw(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
         {
-            e.Display.DrawSphere(new Sphere(angleCtrlPt, 2), System.Drawing.Color.White);
+            e.Display.DrawSphere(new Sphere(angleCtrlPt, 1.5), System.Drawing.Color.White);
             e.Display.DrawLine(new Line(this.middlePt, this.angleCtrlPt), Color.White);
             this.angleCircle = new Circle(this.anglePlane, this.middlePt, Math.Sqrt(Math.Pow(this.angleCtrlPt.X - this.middlePt.X, 2) + Math.Pow(this.angleCtrlPt.Y - this.middlePt.Y, 2)) + Math.Pow(this.angleCtrlPt.Z - this.middlePt.Z, 2));
             e.Display.DrawCircle(this.angleCircle, Color.White);
@@ -4229,7 +4382,7 @@ namespace PluginBar
         }
         private void Gp_AngleSelectionDynamicDraw(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
         {
-            e.Display.DrawSphere(new Sphere(angleCtrlSecPt, 2), System.Drawing.Color.White);
+            e.Display.DrawSphere(new Sphere(angleCtrlSecPt, 1.5), System.Drawing.Color.White);
 
             // compute the angle in real time
             Vector3d v1 = (Vector3d)(angleCtrlPt - this.middlePt);
@@ -4240,15 +4393,15 @@ namespace PluginBar
             e.Display.DrawCircle(this.angleCircle, Color.White);
             e.Display.DrawLine(new Line(this.middlePt, this.angleCtrlSecPt), Color.White);
             e.Display.DrawArc(new Arc(anglePlane, 15, this.twistAngle), Color.White);
-            e.Display.Draw3dText(new Rhino.Display.Text3d(this.twistAngle.ToString()), Color.White, new Point3d(angleCtrlSecPt.X+3, angleCtrlSecPt.Y+3, angleCtrlSecPt.Z+3));
+            //e.Display.Draw3dText(new Rhino.Display.Text3d(this.twistAngle.ToString()), Color.White, new Point3d(angleCtrlSecPt.X+3, angleCtrlSecPt.Y+3, angleCtrlSecPt.Z+3));
         }
         private void Gp_CurveDynamicDraw(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
         {
-            e.Display.DrawSphere(new Sphere(centerPt, 2), System.Drawing.Color.Azure);
+            e.Display.DrawSphere(new Sphere(centerPt, 1.5), System.Drawing.Color.Azure);
         }
         private void Gp_CurveDynamicDrawStretch(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
         {
-            e.Display.DrawSphere(new Sphere(centerPt, 2), System.Drawing.Color.BlueViolet);
+            e.Display.DrawSphere(new Sphere(centerPt, 1.5), System.Drawing.Color.BlueViolet);
         }
 
 

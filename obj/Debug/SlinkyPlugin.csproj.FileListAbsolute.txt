@@ -55,7 +55,6 @@ C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\bin\SlinkyPlugin.dll
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\bin\SlinkyPlugin.pdb
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.dll
 C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.pdb
-C:\Users\ediga\OneDrive\Documents\GitHub\SlinkyPlugin\obj\Debug\SlinkyPlugin.csprojResolveAssemblyReference.cache
 C:\Users\pengh\OneDrive\Documents\GitHub\Ondule\obj\Debug\SlinkyPlugin.csprojResolveAssemblyReference.cache
 C:\Users\pengh\OneDrive\Documents\GitHub\Ondule\obj\Debug\SlinkyBar.Properties.Resources.resources
 C:\Users\pengh\OneDrive\Documents\GitHub\Ondule\obj\Debug\PluginBar.UI.PropertyWindow.resources
