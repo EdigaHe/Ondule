@@ -38,6 +38,7 @@
             this.LinearTwistBend = new System.Windows.Forms.Button();
             this.TwistBend = new System.Windows.Forms.Button();
             this.MedialAxisGeneration = new System.Windows.Forms.Button();
+            this.DeformationList = new System.Windows.Forms.ListBox();
             this.SuspendLayout();
             // 
             // mt_Select
@@ -137,11 +138,22 @@
             this.MedialAxisGeneration.UseVisualStyleBackColor = true;
             this.MedialAxisGeneration.Click += new System.EventHandler(this.MedialAxisGeneration_Click);
             // 
+            // DeformationList
+            // 
+            this.DeformationList.FormattingEnabled = true;
+            this.DeformationList.ItemHeight = 25;
+            this.DeformationList.Location = new System.Drawing.Point(652, 147);
+            this.DeformationList.Name = "DeformationList";
+            this.DeformationList.Size = new System.Drawing.Size(120, 79);
+            this.DeformationList.TabIndex = 57;
+            // 
             // PluginBarUserControl
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.AutoScroll = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.Controls.Add(this.DeformationList);
             this.Controls.Add(this.MedialAxisGeneration);
             this.Controls.Add(this.TwistBend);
             this.Controls.Add(this.LinearTwistBend);
@@ -169,5 +181,6 @@
         private System.Windows.Forms.Button LinearTwistBend;
         private System.Windows.Forms.Button TwistBend;
         private System.Windows.Forms.Button MedialAxisGeneration;
+        private System.Windows.Forms.ListBox DeformationList;
     }
 }
