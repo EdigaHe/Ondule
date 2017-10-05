@@ -175,5 +175,18 @@ namespace PluginBar
         {
             controller.medialAxisTransform();
         }
+
+        private void SpringGen_Click(object sender, EventArgs e)
+        {
+            // ask the user to select the medium axis
+            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+            Rhino.DocObjects.ObjRef objRef;
+            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+
+            if (rc == Rhino.Commands.Result.Success)
+            {
+                controller.springGeneration(objRef);
+            }
+        }
     }
 }
