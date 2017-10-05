@@ -28,6 +28,8 @@ namespace PluginBar
         void allDeform(ObjRef obj);
         void medialAxisTransform();
 
+        void springGeneration(ObjRef obj);
+
     }
 
     public class IncController : Controller
@@ -95,6 +97,11 @@ namespace PluginBar
         public void medialAxisTransform()
         {
             rhinoModel.medialAxisTransform();
+        }
+
+        public void springGeneration(ObjRef obj)
+        {
+            rhinoModel.springGen(obj);
         }
     }
 }
