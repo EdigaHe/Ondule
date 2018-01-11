@@ -30,6 +30,8 @@ namespace PluginBar
 
         void springGeneration(ObjRef obj);
 
+        void medialAxisGeneration();
+
     }
 
     public class IncController : Controller
@@ -102,6 +104,11 @@ namespace PluginBar
         public void springGeneration(ObjRef obj)
         {
             rhinoModel.springGen(obj);
+        }
+
+        public void medialAxisGeneration()
+        {
+            rhinoModel.maGen();
         }
     }
 }

@@ -188,5 +188,23 @@ namespace PluginBar
                 controller.springGeneration(objRef);
             }
         }
+
+        private void MATButton_Click(object sender, EventArgs e)
+        {
+            // ask the user to select the medium axis
+
+            controller.medialAxisGeneration();
+            
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
