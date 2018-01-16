@@ -1,0 +1,6 @@
+<!DOCTYPE FilterScript>
+<FilterScript>
+ <filter name="Merge Close Vertices">
+  <Param type="RichAbsPerc" value="0.023626" min="0" name="Threshold" max="2.36264"/>
+ </filter>
+</FilterScript>

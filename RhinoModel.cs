@@ -762,166 +762,308 @@ namespace PluginBar
         /// <param name="objRef"></param>
         public void maGen()
         {
+            // TO-DEBUG: Currently the user has to select one object before click the "Generate Medial Axis" button
+            // Limitations: if there are sharp cornners existing on the geometry, the generated medial axis is not accurate. 
+            //              In other word, we should fillet the edges of the model if possible.
             // Convert all objects in Rhino to mesh and save as stl files in the current directory
             string dir = Directory.GetCurrentDirectory();
-            var stlScript = string.Format("_-SaveAs \"{0}\\{1}\" _Enter _Enter", dir,"temp_stl.stl");
-            Rhino.RhinoApp.RunScript(stlScript, false);
+            string oldSTLFile = @"temp_stl.stl";
+            if (File.Exists(oldSTLFile)) File.Delete(oldSTLFile);
 
-            #region Select a brep or a mesh and convert it to OFF format file
-
-            // clean old files
-            string oldFile1 = @"temp_off_skeleton.txt";
-            string oldFile2 = @"temp_off.off";
-            string oldFile3 = @"temp_off_convert.off";
-            string oldFile4 = @"temp_off_skeleton.off";
-
-            if (File.Exists(oldFile1)) File.Delete(oldFile1);
-            if (File.Exists(oldFile2)) File.Delete(oldFile2);
-            if (File.Exists(oldFile3)) File.Delete(oldFile3);
-            if (File.Exists(oldFile4)) File.Delete(oldFile4);
-
-            ObjRef obj_ref;
+            ObjRef objSel_ref;
             Guid sufObjId = Guid.Empty;
-            var rc = RhinoGet.GetOneObject("Select surface or polysurface to mesh", false, ObjectType.Mesh | ObjectType.Brep, out obj_ref);
-            if (rc == Rhino.Commands.Result.Success)
-                sufObjId = obj_ref.ObjectId;
+            var rc = RhinoGet.GetOneObject("Select surface or polysurface to mesh", false, ObjectType.AnyObject, out objSel_ref);
+            if (rc == Rhino.Commands.Result.Success){
+                var stlScript = string.Format("_-Export \"{0}\\{1}\" _Enter _Enter", dir, oldSTLFile);
+                Rhino.RhinoApp.RunScript(stlScript,false);
 
-            ObjRef dupObjRef = new ObjRef(sufObjId);
-            //var brep = dupObjRef.Brep();
+                //// hide all the original breps 
+                //List<Guid> orig_IDs = new List<Guid>();
+                //Rhino.DocObjects.RhinoObject[] allObjts = myDoc.Objects.FindByObjectType(ObjectType.AnyObject);
+                //for (int idx = 0; idx < allObjts.Count(); idx++)
+                //{
+                //    Guid tempID = allObjts[idx].Id;
+                //    myDoc.Objects.Hide(tempID, true);
+                //    orig_IDs.Add(tempID);
+                //}
+                //myDoc.Views.Redraw();
 
-            //if (null == brep)
-            //    return;
+                //// load the temporarily stored stl
+                //var importScript = string.Format("_-Import \"{0}\\{1}\" _Enter", dir, "temp_stl.stl");
+                //Rhino.RhinoApp.RunScript(importScript, false);
 
-            //// you could choose anyone of these for example
-            //var jagged_and_faster = MeshingParameters.Coarse;
-            //var smooth_and_slower = MeshingParameters.Smooth;
-            //var default_mesh_params = MeshingParameters.Default;
-            //var minimal = MeshingParameters.Minimal;
+                // clean old files
+                string oldFile1 = @"temp_off_skeleton.txt";
+                string oldFile2 = @"temp_off.off";
+                string oldFile3 = @"temp_off_convert.off";
+                string oldFile4 = @"temp_off_skeleton.off";
 
-            //var meshes = Mesh.CreateFromBrep(brep, smooth_and_slower);
-            //if (meshes == null || meshes.Length == 0)
-            //    return;
+                if (File.Exists(oldFile1)) File.Delete(oldFile1);
+                if (File.Exists(oldFile2)) File.Delete(oldFile2);
+                if (File.Exists(oldFile3)) File.Delete(oldFile3);
+                if (File.Exists(oldFile4)) File.Delete(oldFile4);
 
-            //var brep_mesh = new Rhino.Geometry.Mesh();
-            //foreach (var mesh in meshes)
-            //    brep_mesh.Append(mesh);
+                sufObjId = objSel_ref.ObjectId;
 
-            var script = string.Format("_-SaveAs \"{0}\" _Enter _Enter", "temp.stl");
-            Rhino.RhinoApp.RunScript(script, false);
+                ObjRef dupObjRef = new ObjRef(sufObjId);
+                var brep_mesh = dupObjRef.Mesh();
 
-            var brep_mesh = dupObjRef.Mesh();
+                #region Using meshlab server to convert the mesh into off file
+                Process meshCompiler = new Process();
+                ProcessStartInfo meshStartInfo = new ProcessStartInfo();
+                meshStartInfo.CreateNoWindow = true;
+                meshStartInfo.UseShellExecute = false;
+                meshStartInfo.FileName = @"meshlabserver\meshlabserver.exe";
+                // Note: unifying duplicated vertices is necessary
+                meshStartInfo.Arguments = @"-i temp_stl.stl -o temp_off.off -s meshlabserver\clean.mlx";
+
+                meshCompiler.StartInfo = meshStartInfo;
+                meshCompiler.Start();
+                meshCompiler.WaitForExit();
+                #endregion
+
+                #region call the medial axis generation cmd
+                Process matCompiler = new Process();
+                ProcessStartInfo startInfo = new ProcessStartInfo();
+                startInfo.CreateNoWindow = true;
+                startInfo.UseShellExecute = false;
+                startInfo.FileName = @"skeletonization\skeletonization.exe";
+                startInfo.Arguments = "temp_off.off --debug";
+
+                matCompiler.StartInfo = startInfo;
+                matCompiler.Start();
+                matCompiler.WaitForExit();
+                //Process.Start(startInfo);
 
 
-            using (TextWriter OFFtw = new StreamWriter("temp_off.off"))
-            {
-                OFFtw.WriteLine("OFF");
+                string curFile = @"temp_off_skeleton.txt";
+                //System.Threading.Thread.Sleep(10000);
 
-                int v_count = brep_mesh.Vertices.Count();
-                int f_count = brep_mesh.Faces.Count();
-                int v_f_count = v_count * f_count;
-                OFFtw.WriteLine(v_count + " " + f_count + " " + v_f_count);
-
-                var v_list = brep_mesh.Vertices;
-                var f_list = brep_mesh.Faces;
-
-                foreach (Rhino.Geometry.Point3d v in v_list)
+                String line;
+                try
                 {
-                    OFFtw.WriteLine(v.X + " " + v.Y + " " + v.Z);
-                }
+                    //Pass the file path and file name to the StreamReader constructor
+                    StreamReader sr = new StreamReader(curFile);
 
-                foreach (MeshFace f in f_list)
-                {
-                    if (f.C == f.D)
-                        OFFtw.WriteLine("3 " + f.A + " " + f.B + " " + f.C);
-                    else
-                        OFFtw.WriteLine("4 " + f.A + " " + f.B + " " + f.C + " " + f.D);
-                }
-                OFFtw.Close();
-            }
-            #endregion
+                    //Read the first line of text
+                    line = sr.ReadLine();
+                    maPoints.Clear();
 
-            #region call the medial axis generation cmd
-            Process matCompiler = new Process();
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.CreateNoWindow = true;
-            startInfo.UseShellExecute = false;
-            startInfo.FileName = @"skeletonization\skeletonization.exe";
-            startInfo.Arguments = "temp_off.off --debug";
-
-            matCompiler.StartInfo = startInfo;
-            matCompiler.Start();
-            matCompiler.WaitForExit();
-            //Process.Start(startInfo);
-
-
-            string curFile = @"temp_off_skeleton.txt";
-            //System.Threading.Thread.Sleep(10000);
-
-            String line;
-            try
-            {
-                //Pass the file path and file name to the StreamReader constructor
-                StreamReader sr = new StreamReader(curFile);
-
-                //Read the first line of text
-                line = sr.ReadLine();
-                maPoints.Clear();
-
-                do
-                {
-                    // if there is only one number skip this line,
-                    // otherwise store those points
-                    string[] dots = line.Split('\t');
-                    if (dots.Length == 1 && maPoints.Count != 0)
+                    do
                     {
-                        // show the dots and medial axis in Rhino
-                        //foreach (Point3d p in maPoints)
-                        //{
-                        //    myDoc.Objects.AddPoint(p);
-                        //}
+                        // if there is only one number skip this line,
+                        // otherwise store those points
+                        string[] dots = line.Split('\t');
+                        if (dots.Length == 1 && maPoints.Count != 0)
+                        {
+                            // show the dots and medial axis in Rhino
+                            //foreach (Point3d p in maPoints)
+                            //{
+                            //    myDoc.Objects.AddPoint(p);
+                            //}
 
+                            Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
+                            myDoc.Objects.AddCurve(ma);
+
+                            myDoc.Views.Redraw();
+
+                            maPoints.Clear();
+
+                        }
+                        else if (dots.Length == 3)
+                        {
+                            Point3d tempPt = new Point3d();
+                            tempPt.X = Convert.ToDouble(dots[0]);
+                            tempPt.Y = Convert.ToDouble(dots[1]);
+                            tempPt.Z = Convert.ToDouble(dots[2]);
+                            maPoints.Add(tempPt);
+                        }
+
+                        line = sr.ReadLine();
+                    } while (line != null);
+
+                    if (maPoints.Count != 0)
+                    {
                         Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
                         myDoc.Objects.AddCurve(ma);
 
                         myDoc.Views.Redraw();
-
-                        maPoints.Clear();
-
                     }
-                    else if (dots.Length == 3)
-                    {
-                        Point3d tempPt = new Point3d();
-                        tempPt.X = Convert.ToDouble(dots[0]);
-                        tempPt.Y = Convert.ToDouble(dots[1]);
-                        tempPt.Z = Convert.ToDouble(dots[2]);
-                        maPoints.Add(tempPt);
-                    }
-
-                    line = sr.ReadLine();
-                } while (line != null);
-
-                if (maPoints.Count != 0)
-                {
-                    // show the dots and medial axis in Rhino
-                    //foreach (Point3d p in maPoints)
-                    //{
-                    //    myDoc.Objects.AddPoint(p);
-                    //}
-
-                    Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
-                    myDoc.Objects.AddCurve(ma);
-
-                    myDoc.Views.Redraw();
+                    //close the file
+                    sr.Close();
                 }
-                //close the file
-                sr.Close();
-            }
-            catch (Exception e)
-            {
-                RhinoApp.WriteLine(e.ToString());
+                catch (Exception e)
+                {
+                    RhinoApp.WriteLine(e.ToString());
+                }
+
+                #endregion
+
             }
 
-            #endregion
+            //#region Select a mesh and convert it to OFF format file
+
+            ////// clean old files
+            ////string oldFile1 = @"temp_off_skeleton.txt";
+            ////string oldFile2 = @"temp_off.off";
+            ////string oldFile3 = @"temp_off_convert.off";
+            ////string oldFile4 = @"temp_off_skeleton.off";
+
+            ////if (File.Exists(oldFile1)) File.Delete(oldFile1);
+            ////if (File.Exists(oldFile2)) File.Delete(oldFile2);
+            ////if (File.Exists(oldFile3)) File.Delete(oldFile3);
+            ////if (File.Exists(oldFile4)) File.Delete(oldFile4);
+
+            ////ObjRef obj_ref;
+            ////Guid sufObjId = Guid.Empty;
+            ////var rc1 = RhinoGet.GetOneObject("Select surface or polysurface to mesh", false, ObjectType.Mesh, out obj_ref);
+            ////if (rc1 == Rhino.Commands.Result.Success)
+            ////    sufObjId = obj_ref.ObjectId;
+
+            ////ObjRef dupObjRef = new ObjRef(sufObjId);
+            //////var brep = dupObjRef.Brep();
+
+            //////if (null == brep)
+            //////    return;
+
+            //////// you could choose anyone of these for example
+            //////var jagged_and_faster = MeshingParameters.Coarse;
+            //////var smooth_and_slower = MeshingParameters.Smooth;
+            //////var default_mesh_params = MeshingParameters.Default;
+            //////var minimal = MeshingParameters.Minimal;
+
+            //////var meshes = Mesh.CreateFromBrep(brep, smooth_and_slower);
+            //////if (meshes == null || meshes.Length == 0)
+            //////    return;
+
+            //////var brep_mesh = new Rhino.Geometry.Mesh();
+            //////foreach (var mesh in meshes)
+            //////    brep_mesh.Append(mesh);
+
+            ////var brep_mesh = dupObjRef.Mesh();
+
+            ////// using meshlab server to convert the mesh into off file
+            ////Process meshCompiler = new Process();
+            ////ProcessStartInfo meshStartInfo = new ProcessStartInfo();
+            ////meshStartInfo.CreateNoWindow = true;
+            ////meshStartInfo.UseShellExecute = false;
+            ////meshStartInfo.FileName = @"meshlabserver\meshlabserver.exe";
+            ////meshStartInfo.Arguments = @"-i ..\tempMesh.stl -o ..\temp_off.off";
+
+            ////meshCompiler.StartInfo = meshStartInfo;
+            ////meshCompiler.Start();
+            ////meshCompiler.WaitForExit();
+
+            //////using (TextWriter OFFtw = new StreamWriter("temp_off.off"))
+            //////{
+            //////    OFFtw.WriteLine("OFF");
+
+            //////    int v_count = brep_mesh.Vertices.Count();
+            //////    int f_count = brep_mesh.Faces.Count();
+            //////    int v_f_count = v_count * f_count;
+            //////    OFFtw.WriteLine(v_count + " " + f_count + " " + v_f_count);
+
+            //////    var v_list = brep_mesh.Vertices;
+            //////    var f_list = brep_mesh.Faces;
+
+            //////    foreach (Rhino.Geometry.Point3d v in v_list)
+            //////    {
+            //////        OFFtw.WriteLine(v.X + " " + v.Y + " " + v.Z);
+            //////    }
+
+            //////    foreach (MeshFace f in f_list)
+            //////    {
+            //////        if (f.C == f.D)
+            //////            OFFtw.WriteLine("3 " + f.A + " " + f.B + " " + f.C);
+            //////        else
+            //////            OFFtw.WriteLine("4 " + f.A + " " + f.B + " " + f.C + " " + f.D);
+            //////    }
+            //////    OFFtw.Close();
+            //////}
+            //#endregion
+
+            //#region call the medial axis generation cmd
+            //Process matCompiler = new Process();
+            //ProcessStartInfo startInfo = new ProcessStartInfo();
+            //startInfo.CreateNoWindow = true;
+            //startInfo.UseShellExecute = false;
+            //startInfo.FileName = @"skeletonization\skeletonization.exe";
+            //startInfo.Arguments = "temp_off.off --debug";
+
+            //matCompiler.StartInfo = startInfo;
+            //matCompiler.Start();
+            //matCompiler.WaitForExit();
+            ////Process.Start(startInfo);
+
+
+            //string curFile = @"temp_off_skeleton.txt";
+            ////System.Threading.Thread.Sleep(10000);
+
+            //String line;
+            //try
+            //{
+            //    //Pass the file path and file name to the StreamReader constructor
+            //    StreamReader sr = new StreamReader(curFile);
+
+            //    //Read the first line of text
+            //    line = sr.ReadLine();
+            //    maPoints.Clear();
+
+            //    do
+            //    {
+            //        // if there is only one number skip this line,
+            //        // otherwise store those points
+            //        string[] dots = line.Split('\t');
+            //        if (dots.Length == 1 && maPoints.Count != 0)
+            //        {
+            //            // show the dots and medial axis in Rhino
+            //            //foreach (Point3d p in maPoints)
+            //            //{
+            //            //    myDoc.Objects.AddPoint(p);
+            //            //}
+
+            //            Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
+            //            myDoc.Objects.AddCurve(ma);
+
+            //            myDoc.Views.Redraw();
+
+            //            maPoints.Clear();
+
+            //        }
+            //        else if (dots.Length == 3)
+            //        {
+            //            Point3d tempPt = new Point3d();
+            //            tempPt.X = Convert.ToDouble(dots[0]);
+            //            tempPt.Y = Convert.ToDouble(dots[1]);
+            //            tempPt.Z = Convert.ToDouble(dots[2]);
+            //            maPoints.Add(tempPt);
+            //        }
+
+            //        line = sr.ReadLine();
+            //    } while (line != null);
+
+            //    if (maPoints.Count != 0)
+            //    {
+            //        // show the dots and medial axis in Rhino
+            //        //foreach (Point3d p in maPoints)
+            //        //{
+            //        //    myDoc.Objects.AddPoint(p);
+            //        //}
+
+            //        Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
+            //        myDoc.Objects.AddCurve(ma);
+
+            //        myDoc.Views.Redraw();
+            //    }
+            //    //close the file
+            //    sr.Close();
+            //}
+            //catch (Exception e)
+            //{
+            //    RhinoApp.WriteLine(e.ToString());
+            //}
+
+            //#endregion
 
 
         }
