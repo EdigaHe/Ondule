@@ -10,7 +10,7 @@ using Rhino.Input;
 using System.Drawing;
 using System.Diagnostics;
 
-namespace PluginBar
+namespace OndulePlugin
 {
     public struct ma_parameters
     {
@@ -64,8 +64,8 @@ namespace PluginBar
         void allDeform(ObjRef objRef);
         void medialAxisTransform();
 
-        void springGen(ObjRef objRef);
-        void maGen();
+        void springGen(ref OnduleUnit objRef);
+        OnduleUnit maGen();
     }
 
     class PointEqualityComparer : IEqualityComparer<Point3d>
@@ -278,7 +278,7 @@ namespace PluginBar
             Plane spiralStartPln = new Plane(joinedSpiral.PointAtStart, joinedSpiral.TangentAtStart);
 
             // compute the coild diameter, must be greater than 2mm (test result)
-            double C = 12;
+            double C = 6;
             double mindia = minDiameter / C;
             if(mindia >= 2)
             {
@@ -333,24 +333,27 @@ namespace PluginBar
         /// <summary>
         /// New algorithm for spring generation
         /// </summary>
-        public void springGen(ObjRef objRef)
+        public void springGen(ref OnduleUnit objRef)
         {
-            #region generate start and end plane of the curve
-            // in the current code we ask the user to select the outer shell of the geometry. In the real case this should be the same
-            // part as our point cloud selection so user don't need to select themselves.
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.PolysrfFilter;// filter allows us to constrain the type of objects the user can select
-            Rhino.DocObjects.ObjRef sufObjRef;
-            Guid sufObjId = Guid.Empty; // all rhino doc objects has a unique ID. We can always find the object by create an objRef with the id
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one surface to print", false, filter, out sufObjRef);
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                sufObjId = sufObjRef.ObjectId;
-            }
-            ObjRef armOffsetObjRef = new ObjRef(sufObjId);//get the objRef from the GUID
+            #region Get the outer polysurface and generate start and end planes based on the central axis
+            //// in the current code we ask the user to select the outer shell of the geometry. In the real case this should be the same
+            //// part as our point cloud selection so user don't need to select themselves.
+            //const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.PolysrfFilter;// filter allows us to constrain the type of objects the user can select
+            //Rhino.DocObjects.ObjRef sufObjRef;
+            //Guid sufObjId = Guid.Empty; // all rhino doc objects has a unique ID. We can always find the object by create an objRef with the id
+            //Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one surface to print", false, filter, out sufObjRef);
+            //if (rc == Rhino.Commands.Result.Success)
+            //{
+            //    sufObjId = sufObjRef.ObjectId;
+            //}
 
+            // Get the outer polysurface
+            Guid sufObjID = objRef.BREPID;
+            ObjRef armOffsetObjRef = new ObjRef(sufObjID);//get the objRef from the GUID
             Brep surfaceBrep = armOffsetObjRef.Brep(); // because we know the geometry is Brep, we directly find it from the objRef 
 
-            Curve centerCrv = objRef.Curve();
+            // Create the tangent planes 
+            Curve centerCrv = objRef.MA;
             Point3d startPt = centerCrv.PointAtStart;
             Point3d endPt = centerCrv.PointAtEnd;
             double startPara = 0, endPara = 0;
@@ -365,57 +368,74 @@ namespace PluginBar
             //myDoc.Views.Redraw();
             #endregion
 
-            #region chop the shells and record the part that spring will replace
-            // chop the shells into 3 piece
-            List<Brep> splitsurf = new List<Brep>();
-            Brep[] firstSplit = surfaceBrep.Split(startPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-
-            Brep[] test = firstSplit[0].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-            if (test != null && test.Length > 0)
+            List<Brep> toBeReplacedBrep = new List<Brep>();
+            if(objRef.ReplacedBreps.Count > 0)
             {
-                splitsurf.AddRange(test);
-                splitsurf.Add(firstSplit[1]);
+                // Update the spring design
+                toBeReplacedBrep = objRef.ReplacedBreps;
             }
             else
             {
-                test = firstSplit[1].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-                splitsurf.AddRange(test);
-                splitsurf.Add(firstSplit[0]);
-            }
+                // Chop the brep and store the splitted parts
+                #region chop the shells and record the part that spring will replace
+                // chop the shells into 3 piece
+                List<Brep> splitsurf = new List<Brep>();
+                Brep[] firstSplit = surfaceBrep.Split(startPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
 
-            List<Brep> finalPreservedBrepList = new List<Brep>();
-            List<Brep> replacedBrepList = new List<Brep>(); // all parts that are replaced by springs
-
-            foreach (Brep b in splitsurf)
-            {
-                Point3d bcenter = b.GetBoundingBox(true).Center;
-                Vector3d v1 = bcenter - endPln.Origin;
-                Vector3d v2 = bcenter - startPln.Origin;
-                if (v1 * v2 > 0)
+                Brep[] test = firstSplit[0].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
+                if (test != null && test.Length > 0)
                 {
-                    Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-                    finalPreservedBrepList.Add(temp);
+                    splitsurf.AddRange(test);
+                    splitsurf.Add(firstSplit[1]);
                 }
                 else
                 {
-                    //Brep tempReplace = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-                    //replacedBrepList.Add(tempReplace);
-                    replacedBrepList.Add(b);
+                    test = firstSplit[1].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
+                    splitsurf.AddRange(test);
+                    splitsurf.Add(firstSplit[0]);
                 }
 
+                List<Brep> finalPreservedBrepList = new List<Brep>();
+                List<Brep> replacedBrepList = new List<Brep>(); // all parts that are replaced by springs
+
+                foreach (Brep b in splitsurf)
+                {
+                    Point3d bcenter = b.GetBoundingBox(true).Center;
+                    Vector3d v1 = bcenter - endPln.Origin;
+                    Vector3d v2 = bcenter - startPln.Origin;
+                    if (v1 * v2 > 0)
+                    {
+                        Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                        finalPreservedBrepList.Add(temp);
+                    }
+                    else
+                    {
+                        //Brep tempReplace = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                        //replacedBrepList.Add(tempReplace);
+                        replacedBrepList.Add(b);
+                    }
+
+                }
+
+                // Update the Ondule unit's preservedbrep list and replacedbrep list
+                objRef.PreservedBreps = finalPreservedBrepList;
+                objRef.ReplacedBreps = replacedBrepList;
+
+                myDoc.Objects.Hide(sufObjID, true);// hide the original shell
+
+                foreach (Brep b in finalPreservedBrepList)
+                {
+                    myDoc.Objects.AddBrep(b);
+                }
+
+                #endregion
+
+                toBeReplacedBrep = replacedBrepList;
+                
             }
-
-            myDoc.Objects.Hide(sufObjId, true);// hide the original shell
-
-            foreach (Brep b in finalPreservedBrepList)
-            {
-                myDoc.Objects.AddBrep(b, redAttribute);
-            }
-
-            #endregion
 
             #region replace the selected part with helical spring (for arbitrary geometry)
-            foreach (Brep b in replacedBrepList)
+            foreach (Brep b in toBeReplacedBrep)
             {
                 //myDoc.Objects.AddBrep(b, redAttribute);
                 //myDoc.Views.Redraw();
@@ -425,7 +445,7 @@ namespace PluginBar
                 // centerCrv - central curve
                 // b - brep of the selected surface
                 // pitch: 1mm
-                double pitch = 5;
+                double pitch = objRef.Pitch;
 
                 //DEBUG: Currently the bug is the center curve is only cut when there is a discontinuity, this is not good enough to have a nice spring approximation to the outer shell's shape.
                 // Record the diameters of all segments in the selected part
@@ -485,7 +505,7 @@ namespace PluginBar
                         Rhino.Geometry.Intersect.Intersection.BrepPlane(b, crvSegStartPln, myDoc.ModelAbsoluteTolerance, out interStartCrvs, out interStartPts);
                         Rhino.Geometry.Intersect.Intersection.BrepPlane(b, crvSegEndPln, myDoc.ModelAbsoluteTolerance, out interEndCrvs, out interEndPts);
 
-                        foreach(Curve c in interStartCrvs)
+                        foreach (Curve c in interStartCrvs)
                         {
                             double p;
                             c.ClosestPoint(crv.PointAtStart, out p);
@@ -506,58 +526,52 @@ namespace PluginBar
                         if (r1 <= minDiameter) minDiameter = r1;
                         if (r2 <= minDiameter) minDiameter = r2;
 
-                        // test if pitch is greater than coild diameter + 0.8mm (test result)
-                        double initDia = (r1 < r2 ? r1 : r2) / 12;
-                        if (initDia < 2)
-                        {
-                            initDia = 2;
-                        }
+                        //double initDia = (r1 + r2) / 2 / 10;
+                        //if (initDia < 2)
+                        //{
+                        //    initDia = 2;
+                        //}
 
-                        while (pitch <= initDia + 0.8) { pitch += 0.2; }
+                        //// test if pitch is greater than coil diameter + 0.8mm (test result)
+                        //while (pitch <= initDia + 0.8) { pitch += 0.2; }
 
                         // DEBUG: currently we create the spiral that approximates to the outer geometry (1 mm distance) but still inside the body
                         // Make sure the generated spiral is inside the model body so we can cut the geometry from inside
-                        if(spiralStartPt.Equals(new Point3d(0, 0, 0)))
+                        if (spiralStartPt.Equals(new Point3d(0, 0, 0)))
                         {
                             spiralStartPt = startPln.ClosestPoint(spiralStartPt);
                         }
 
-                        NurbsCurve spiralCrv = NurbsCurve.CreateSpiral(crv, 0, endPara1, spiralStartPt, pitch, 0, r1-2, r2-2, 30);
+                        NurbsCurve spiralCrv = NurbsCurve.CreateSpiral(crv, 0, endPara1, spiralStartPt, pitch, 0, r1 - 1, r2 - 1, 30);
                         spiralStartPt = spiralCrv.PointAtEnd;
                         spiralCrvList.Add(spiralCrv);
                     }
                 }
 
-                Curve joinedSpiral = Curve.JoinCurves(spiralCrvList)[0];
-                if (joinedSpiral != null)
-                {
-                    //myDoc.Objects.AddCurve(joinedSpiral);
-                    //myDoc.Views.Redraw();
-                }
-
                 #endregion
 
-                #region 3. approximate the spiral to the geometry and sweep the  spiral
+                #region 3. approximate the spiral to the geometry and sweep the spiral
 
+                Curve joinedSpiral = Curve.JoinCurves(spiralCrvList)[0];
                 Point3d[] points;
-     
-                List<Point3d> outerSpiral = new List<Point3d>();
+
                 List<Point3d> centralSpiral = new List<Point3d>();
 
                 // DEBUG: currently the spring diameter is hard coded.
-                int sampleNum = 1000;
-                double springDia = pitch/2;
+                int sampleNum = 300;
+                double wireDia = objRef.WireDiameter;
                 joinedSpiral.DivideByCount(sampleNum, true, out points); // 300 is the number of sample points
                 Plane initialPln = new Plane();
 
-                for(int i = 0; i< points.Count(); i++)
+                for (int i = 0; i < points.Count(); i++)
                 {
                     Point3d samplePoint = points[i];
-                  
+
                     double pointPara = 0;
                     joinedSpiral.LengthParameter(joinedSpiral.GetLength() / sampleNum * i, out pointPara);
                     Plane tempPln = new Plane(samplePoint, joinedSpiral.TangentAt(pointPara));
 
+                    // Get the closest point to  the smaple point on the medial axis
                     double para;
                     centerCrv.ClosestPoint(samplePoint, out para);
                     Point3d pt_cen = centerCrv.PointAt(para);
@@ -603,29 +617,28 @@ namespace PluginBar
                     Vector3d projDir = (Vector3d)(samplePoint - pt_cen);
                     projBrepPts = Rhino.Geometry.Intersect.Intersection.ProjectPointsToBreps(bs, projPts, projDir, myDoc.ModelAbsoluteTolerance);
 
-                    
+
                     foreach (Point3d projPt in projBrepPts)
                     {
                         Vector3d projVec = (Vector3d)(projPt - samplePoint);
-                        if(projVec*projDir > 0)
+                        if (projVec * projDir > 0)
                         {
                             pt_pln = projPt;
 
                             Vector3d shrinkDir = (Vector3d)(samplePoint - pt_pln);
                             shrinkDir = shrinkDir / shrinkDir.Length;
-                            shrinkDir = shrinkDir * springDia / 2;
+                            shrinkDir = shrinkDir * (wireDia / 2);
                             Transform shrinkTran = Transform.Translation(shrinkDir);
 
                             Point3d pt_center = pt_pln;
                             pt_center.Transform(shrinkTran);
 
-                            outerSpiral.Add(pt_pln);
                             centralSpiral.Add(pt_center);
                         }
                     }
                 }
 
-                Curve spiralTraj = Curve.CreateInterpolatedCurve(centralSpiral,3);
+                Curve spiralTraj = Curve.CreateInterpolatedCurve(centralSpiral, 3);
                 //myDoc.Objects.AddCurve(spiralTraj, whiteAttribute);
                 //myDoc.Views.Redraw();
 
@@ -633,7 +646,7 @@ namespace PluginBar
                 spiralTraj.LengthParameter(0, out springStartPara);
                 initialPln = new Plane(centralSpiral[0], spiralTraj.TangentAt(springStartPara));
 
-                Curve crossRect = new Circle(initialPln, centralSpiral[0], springDia/2).ToNurbsCurve();
+                Curve crossCircle = new Circle(initialPln, centralSpiral[0], wireDia / 2).ToNurbsCurve();
                 //myDoc.Objects.AddCurve(crossRect, whiteAttribute);
                 //myDoc.Views.Redraw();
 
@@ -642,7 +655,7 @@ namespace PluginBar
                 sweep.ClosedSweep = false;
                 sweep.SweepTolerance = myDoc.ModelAbsoluteTolerance;
 
-                var breps = sweep.PerformSweep(spiralTraj, crossRect);
+                var breps = sweep.PerformSweep(spiralTraj, crossCircle);
                 List<Brep> cappedSpring = new List<Brep>();
                 if (breps.Length > 0)
                 {
@@ -652,17 +665,28 @@ namespace PluginBar
                     }
                 }
 
-                Sphere springFrontEnd = new Sphere(centralSpiral[0], springDia / 2);
-                Sphere springRearEnd = new Sphere(centralSpiral[centralSpiral.Count() - 1], springDia / 2);
+                Sphere springFrontEnd = new Sphere(centralSpiral[0], wireDia / 2);
+                Sphere springRearEnd = new Sphere(centralSpiral[centralSpiral.Count() - 1], wireDia / 2);
 
                 Brep frontSphere = Brep.CreateFromSphere(springFrontEnd);
                 Brep rearSphere = Brep.CreateFromSphere(springRearEnd);
                 cappedSpring.Add(frontSphere);
                 cappedSpring.Add(rearSphere);
 
+                // Update the Ondule unit's capped spring IDs list
+                if (objRef.CappedSpringIDs.Count > 0)
+                {
+                    foreach (Guid springID in objRef.CappedSpringIDs)
+                    {
+                        myDoc.Objects.Delete(springID,true);
+                    }
+                    objRef.CappedSpringIDs.Clear();
+                }
+
                 foreach (Brep spring in cappedSpring)
                 {
-                    myDoc.Objects.AddBrep(spring);
+                    Guid s_ID = myDoc.Objects.AddBrep(spring);
+                    objRef.CappedSpringIDs.Add(s_ID);
                 }
 
                 // DEBUG: gap length is hard coded right now, may changed by the input
@@ -751,8 +775,6 @@ namespace PluginBar
             }
             #endregion
 
-
-
             myDoc.Views.Redraw();
         }
 
@@ -760,7 +782,7 @@ namespace PluginBar
         /// New algorithm for medial axis generation
         /// </summary>
         /// <param name="objRef"></param>
-        public void maGen()
+        public OnduleUnit maGen()
         {
             // TO-DEBUG: Currently the user has to select one object before click the "Generate Medial Axis" button
             // Limitations: if there are sharp cornners existing on the geometry, the generated medial axis is not accurate. 
@@ -770,6 +792,8 @@ namespace PluginBar
             string oldSTLFile = @"temp_stl.stl";
             if (File.Exists(oldSTLFile)) File.Delete(oldSTLFile);
 
+            OnduleUnit rel = new OnduleUnit();
+
             ObjRef objSel_ref;
             Guid sufObjId = Guid.Empty;
             var rc = RhinoGet.GetOneObject("Select surface or polysurface to mesh", false, ObjectType.AnyObject, out objSel_ref);
@@ -777,20 +801,8 @@ namespace PluginBar
                 var stlScript = string.Format("_-Export \"{0}\\{1}\" _Enter _Enter", dir, oldSTLFile);
                 Rhino.RhinoApp.RunScript(stlScript,false);
 
-                //// hide all the original breps 
-                //List<Guid> orig_IDs = new List<Guid>();
-                //Rhino.DocObjects.RhinoObject[] allObjts = myDoc.Objects.FindByObjectType(ObjectType.AnyObject);
-                //for (int idx = 0; idx < allObjts.Count(); idx++)
-                //{
-                //    Guid tempID = allObjts[idx].Id;
-                //    myDoc.Objects.Hide(tempID, true);
-                //    orig_IDs.Add(tempID);
-                //}
-                //myDoc.Views.Redraw();
-
-                //// load the temporarily stored stl
-                //var importScript = string.Format("_-Import \"{0}\\{1}\" _Enter", dir, "temp_stl.stl");
-                //Rhino.RhinoApp.RunScript(importScript, false);
+                List<Curve> cvs = new List<Curve>();
+                Curve joined;
 
                 // clean old files
                 string oldFile1 = @"temp_off_skeleton.txt";
@@ -814,6 +826,7 @@ namespace PluginBar
                 meshStartInfo.CreateNoWindow = true;
                 meshStartInfo.UseShellExecute = false;
                 meshStartInfo.FileName = @"meshlabserver\meshlabserver.exe";
+                
                 // Note: unifying duplicated vertices is necessary
                 meshStartInfo.Arguments = @"-i temp_stl.stl -o temp_off.off -s meshlabserver\clean.mlx";
 
@@ -863,9 +876,12 @@ namespace PluginBar
                             //}
 
                             Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
-                            myDoc.Objects.AddCurve(ma);
-
-                            myDoc.Views.Redraw();
+                            //var attributes = new ObjectAttributes();
+                            //attributes.ObjectColor = Color.White;
+                            //attributes.ColorSource = ObjectColorSource.ColorFromObject;
+                            cvs.Add(ma);
+                            //myDoc.Objects.AddCurve(ma, attributes);
+                            //myDoc.Views.Redraw();
 
                             maPoints.Clear();
 
@@ -885,7 +901,23 @@ namespace PluginBar
                     if (maPoints.Count != 0)
                     {
                         Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
-                        myDoc.Objects.AddCurve(ma);
+                        cvs.Add(ma);
+                        joined = Curve.JoinCurves(cvs)[0];
+
+                        var attributes = new ObjectAttributes();
+                        attributes.ObjectColor = Color.White;
+                        attributes.ColorSource = ObjectColorSource.ColorFromObject;
+                        myDoc.Objects.AddCurve(joined,attributes);
+                        rel.MA = joined;
+
+                        Point3d startPt = joined.PointAtStart;
+                        Point3d endPt = joined.PointAtEnd;
+                        Sphere ctrlPtStart = new Sphere(startPt, 1.5);
+                        Sphere ctrlPtEnd = new Sphere(endPt, 1.5);
+                        myDoc.Objects.AddSphere(ctrlPtStart, attributes);
+                        myDoc.Objects.AddSphere(ctrlPtEnd, attributes);
+                        rel.endPt = endPt;
+                        rel.startPt = startPt;
 
                         myDoc.Views.Redraw();
                     }
@@ -900,172 +932,8 @@ namespace PluginBar
                 #endregion
 
             }
-
-            //#region Select a mesh and convert it to OFF format file
-
-            ////// clean old files
-            ////string oldFile1 = @"temp_off_skeleton.txt";
-            ////string oldFile2 = @"temp_off.off";
-            ////string oldFile3 = @"temp_off_convert.off";
-            ////string oldFile4 = @"temp_off_skeleton.off";
-
-            ////if (File.Exists(oldFile1)) File.Delete(oldFile1);
-            ////if (File.Exists(oldFile2)) File.Delete(oldFile2);
-            ////if (File.Exists(oldFile3)) File.Delete(oldFile3);
-            ////if (File.Exists(oldFile4)) File.Delete(oldFile4);
-
-            ////ObjRef obj_ref;
-            ////Guid sufObjId = Guid.Empty;
-            ////var rc1 = RhinoGet.GetOneObject("Select surface or polysurface to mesh", false, ObjectType.Mesh, out obj_ref);
-            ////if (rc1 == Rhino.Commands.Result.Success)
-            ////    sufObjId = obj_ref.ObjectId;
-
-            ////ObjRef dupObjRef = new ObjRef(sufObjId);
-            //////var brep = dupObjRef.Brep();
-
-            //////if (null == brep)
-            //////    return;
-
-            //////// you could choose anyone of these for example
-            //////var jagged_and_faster = MeshingParameters.Coarse;
-            //////var smooth_and_slower = MeshingParameters.Smooth;
-            //////var default_mesh_params = MeshingParameters.Default;
-            //////var minimal = MeshingParameters.Minimal;
-
-            //////var meshes = Mesh.CreateFromBrep(brep, smooth_and_slower);
-            //////if (meshes == null || meshes.Length == 0)
-            //////    return;
-
-            //////var brep_mesh = new Rhino.Geometry.Mesh();
-            //////foreach (var mesh in meshes)
-            //////    brep_mesh.Append(mesh);
-
-            ////var brep_mesh = dupObjRef.Mesh();
-
-            ////// using meshlab server to convert the mesh into off file
-            ////Process meshCompiler = new Process();
-            ////ProcessStartInfo meshStartInfo = new ProcessStartInfo();
-            ////meshStartInfo.CreateNoWindow = true;
-            ////meshStartInfo.UseShellExecute = false;
-            ////meshStartInfo.FileName = @"meshlabserver\meshlabserver.exe";
-            ////meshStartInfo.Arguments = @"-i ..\tempMesh.stl -o ..\temp_off.off";
-
-            ////meshCompiler.StartInfo = meshStartInfo;
-            ////meshCompiler.Start();
-            ////meshCompiler.WaitForExit();
-
-            //////using (TextWriter OFFtw = new StreamWriter("temp_off.off"))
-            //////{
-            //////    OFFtw.WriteLine("OFF");
-
-            //////    int v_count = brep_mesh.Vertices.Count();
-            //////    int f_count = brep_mesh.Faces.Count();
-            //////    int v_f_count = v_count * f_count;
-            //////    OFFtw.WriteLine(v_count + " " + f_count + " " + v_f_count);
-
-            //////    var v_list = brep_mesh.Vertices;
-            //////    var f_list = brep_mesh.Faces;
-
-            //////    foreach (Rhino.Geometry.Point3d v in v_list)
-            //////    {
-            //////        OFFtw.WriteLine(v.X + " " + v.Y + " " + v.Z);
-            //////    }
-
-            //////    foreach (MeshFace f in f_list)
-            //////    {
-            //////        if (f.C == f.D)
-            //////            OFFtw.WriteLine("3 " + f.A + " " + f.B + " " + f.C);
-            //////        else
-            //////            OFFtw.WriteLine("4 " + f.A + " " + f.B + " " + f.C + " " + f.D);
-            //////    }
-            //////    OFFtw.Close();
-            //////}
-            //#endregion
-
-            //#region call the medial axis generation cmd
-            //Process matCompiler = new Process();
-            //ProcessStartInfo startInfo = new ProcessStartInfo();
-            //startInfo.CreateNoWindow = true;
-            //startInfo.UseShellExecute = false;
-            //startInfo.FileName = @"skeletonization\skeletonization.exe";
-            //startInfo.Arguments = "temp_off.off --debug";
-
-            //matCompiler.StartInfo = startInfo;
-            //matCompiler.Start();
-            //matCompiler.WaitForExit();
-            ////Process.Start(startInfo);
-
-
-            //string curFile = @"temp_off_skeleton.txt";
-            ////System.Threading.Thread.Sleep(10000);
-
-            //String line;
-            //try
-            //{
-            //    //Pass the file path and file name to the StreamReader constructor
-            //    StreamReader sr = new StreamReader(curFile);
-
-            //    //Read the first line of text
-            //    line = sr.ReadLine();
-            //    maPoints.Clear();
-
-            //    do
-            //    {
-            //        // if there is only one number skip this line,
-            //        // otherwise store those points
-            //        string[] dots = line.Split('\t');
-            //        if (dots.Length == 1 && maPoints.Count != 0)
-            //        {
-            //            // show the dots and medial axis in Rhino
-            //            //foreach (Point3d p in maPoints)
-            //            //{
-            //            //    myDoc.Objects.AddPoint(p);
-            //            //}
-
-            //            Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
-            //            myDoc.Objects.AddCurve(ma);
-
-            //            myDoc.Views.Redraw();
-
-            //            maPoints.Clear();
-
-            //        }
-            //        else if (dots.Length == 3)
-            //        {
-            //            Point3d tempPt = new Point3d();
-            //            tempPt.X = Convert.ToDouble(dots[0]);
-            //            tempPt.Y = Convert.ToDouble(dots[1]);
-            //            tempPt.Z = Convert.ToDouble(dots[2]);
-            //            maPoints.Add(tempPt);
-            //        }
-
-            //        line = sr.ReadLine();
-            //    } while (line != null);
-
-            //    if (maPoints.Count != 0)
-            //    {
-            //        // show the dots and medial axis in Rhino
-            //        //foreach (Point3d p in maPoints)
-            //        //{
-            //        //    myDoc.Objects.AddPoint(p);
-            //        //}
-
-            //        Rhino.Geometry.Curve ma = Rhino.Geometry.Curve.CreateControlPointCurve(maPoints, 5);
-            //        myDoc.Objects.AddCurve(ma);
-
-            //        myDoc.Views.Redraw();
-            //    }
-            //    //close the file
-            //    sr.Close();
-            //}
-            //catch (Exception e)
-            //{
-            //    RhinoApp.WriteLine(e.ToString());
-            //}
-
-            //#endregion
-
-
+            rel.BREPID = sufObjId;
+            return rel;
         }
         /// <summary>
         /// This method generates linear deformation structure. Currently support generating compression
@@ -1073,7 +941,6 @@ namespace PluginBar
         /// <param name="objRef"></param>
         public void linearDeform(ObjRef objRef)
         {
-
             // in the current code we ask the user to select the outer shell of the geometry. In the real case this should be the same
             // part as our point cloud selection so user don't need to select themselves.
             const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.PolysrfFilter;// filter allows us to constrain the type of objects the user can select

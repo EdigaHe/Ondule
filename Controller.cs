@@ -5,7 +5,7 @@ using System.Text;
 using System.Timers;
 using Rhino.DocObjects;
 
-namespace PluginBar
+namespace OndulePlugin
 {
     public interface IControllerModelObserver
     {
@@ -28,9 +28,15 @@ namespace PluginBar
         void allDeform(ObjRef obj);
         void medialAxisTransform();
 
-        void springGeneration(ObjRef obj);
+        void springGeneration(ref OnduleUnit obj);
 
-        void medialAxisGeneration();
+        OnduleUnit medialAxisGeneration();
+
+        OnduleUnit getUnitFromGlobal(int index);
+        void updateUnitFromGlobal(int index, OnduleUnit newUnit);
+        void addUnitToGlobal(OnduleUnit newUnit);
+        void removeUnitGlobal(int index);
+        int getCountGlobal(); 
 
     }
 
@@ -40,7 +46,49 @@ namespace PluginBar
         RhinoModel rhinoModel;
         View view;
 
-        
+        public List<OnduleUnit> globalUnits = new List<OnduleUnit>();
+        /// <summary>
+        /// get the element from the list
+        /// </summary>
+        /// <param name="index">the location of the element</param>
+        /// <param name="globalUnits">the list that stores all elements</param>
+        /// <returns></returns>
+        public OnduleUnit getUnitFromGlobal(int index)
+        {
+            return globalUnits.ElementAt(index);
+        }
+        /// <summary>
+        /// update the unit at index location
+        /// </summary>
+        /// <param name="index">the index of the element that needs to be updated</param>
+        /// <param name="newUnit">the new unit</param>
+        /// <param name="globalUnits">the list that stores all elements</param>
+        public void updateUnitFromGlobal(int index, OnduleUnit newUnit)
+        {
+            globalUnits.ElementAt(index).CoilDiameter = newUnit.CoilDiameter;
+            globalUnits.ElementAt(index).CoilNum = newUnit.CoilNum;
+            globalUnits.ElementAt(index).WireDiameter = newUnit.WireDiameter;
+            globalUnits.ElementAt(index).endPt = newUnit.endPt;
+            globalUnits.ElementAt(index).G = newUnit.G;
+            globalUnits.ElementAt(index).Length = newUnit.Length;
+            globalUnits.ElementAt(index).MA = newUnit.MA;
+            globalUnits.ElementAt(index).Pitch = newUnit.Pitch;
+            globalUnits.ElementAt(index).startPt = newUnit.startPt;
+            globalUnits.ElementAt(index).BREPID = newUnit.BREPID;
+            globalUnits.ElementAt(index).ID = newUnit.ID;
+        }
+        public void addUnitToGlobal(OnduleUnit newUnit)
+        {
+            globalUnits.Add(newUnit);
+        }
+        public void removeUnitGlobal(int index)
+        {
+            globalUnits.RemoveAt(index);
+        }
+        public int getCountGlobal()
+        {
+            return globalUnits.Count();
+        }
 
         public IncController(View v,  RhinoModel rm)
         {
@@ -101,14 +149,15 @@ namespace PluginBar
             rhinoModel.medialAxisTransform();
         }
 
-        public void springGeneration(ObjRef obj)
+        public void springGeneration(ref OnduleUnit obj)
         {
-            rhinoModel.springGen(obj);
+
+            rhinoModel.springGen(ref obj);
         }
 
-        public void medialAxisGeneration()
+        public OnduleUnit medialAxisGeneration()
         {
-            rhinoModel.maGen();
+            return rhinoModel.maGen();
         }
     }
 }
