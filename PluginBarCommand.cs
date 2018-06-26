@@ -7,7 +7,7 @@ using Rhino.Input;
 using Rhino.Input.Custom;
 using RMA.UI;
 
-namespace PluginBar
+namespace OndulePlugin
 {
     [System.Runtime.InteropServices.Guid("679d72b6-7877-4e1a-8728-650ca4487b48")]
     [CommandStyle(Style.ScriptRunner)]
@@ -32,7 +32,7 @@ namespace PluginBar
         ///<returns>The command name as it appears on the Rhino command line.</returns>
         public override string EnglishName
         {
-            get { return "SlinkyPlugin"; }
+            get { return "OndulePlugin"; }
         }
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)

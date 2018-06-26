@@ -117,4 +117,80 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="TwistLock_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TwistLock_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="BendLock_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BendLock_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TwistConstr_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TwistConstr_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LinearLock_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LinearLock_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LinearConstr_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LinearConstr_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MAT_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MAT_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TwistConstr_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TwistConstr_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LinearTwistConstr_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LinearTwistConstr_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="BendConstr_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BendConstr_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Freeform_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Freeform_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="BendLock_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BendLock_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Freeform_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Freeform_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LinearConstr_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LinearConstr_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="BendConstr_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BendConstr_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TwistLock_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TwistLock_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Print_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Print_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MAT_defaut" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MAT_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LinearLock_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LinearLock_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LinearTwistConstr_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LinearTwistConstr_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MAT_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MAT_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Preview_default" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Preview_default.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Print_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Print_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="split_v" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\split_v.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Preview_active" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Preview_active.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="split_h" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\split_h.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

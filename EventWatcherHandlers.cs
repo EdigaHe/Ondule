@@ -8,7 +8,7 @@ using Rhino.Display;
 using Rhino.DocObjects;
 using Rhino.DocObjects.Tables;
 
-namespace PluginBar
+namespace OndulePlugin
 {
     class EventWatcherHandlers
     {
@@ -59,7 +59,6 @@ namespace PluginBar
 
         }
         #endregion
-
 
         void OnUndoRedo(object sender, UndoRedoEventArgs e)
         {
