@@ -11,6 +11,11 @@ namespace OndulePlugin
 {
     public partial class DeformationDesignForm : MetroFramework.Forms.MetroForm, IControllerModelObserver
     {
+        Boolean isTwistable = false;
+        Boolean isBendable = false;
+        Boolean isLinearLimited = false;
+        Boolean isLinearTwistLimited = false;
+
         private OnduleUnit _springUnit = new OnduleUnit();
         private OnduleUnit _tempRenderedSpring = new OnduleUnit();
 
@@ -39,6 +44,7 @@ namespace OndulePlugin
         private int N_min = 1;
         private int N_max = 10;
         private double gap_min = 0.4;
+        private double thickness = 2;   // the thickness of the stopper and the cap is 2mm
         
         private Controller controller;
 
@@ -85,6 +91,20 @@ namespace OndulePlugin
             this.PitchTrackbar.Minimum = 4;
             this.PitchTrackbar.Value = (int)(this._springParamPitch / 0.1);
             this.PitchTrackbar.TickStyle = TickStyle.None;
+
+            // Initialize the min and max for the linear compression and tension 
+            // The thickness of the stopper is 2mm
+            // The thickness of the cap is 2mm
+            this.LinearConsCompressMin.Text = "0";
+            this.LinearConsCompressMax.Text = Math.Round((this._springParam_L-2*thickness) / 2, 1).ToString();
+            this.LinearConsStretchMin.Text = "0";
+            this.LinearConsStretchMax.Text = Math.Round(this._springParam_L - 2*thickness, 1).ToString();
+            this.LinearConsCompressTrackbar.Minimum = 0;
+            this.LinearConsCompressTrackbar.Maximum = (int)((Math.Round((this._springParam_L - 2*thickness) / 2, 1)) / 0.1);
+            this.LinearConsStretchTrackbar.Minimum = 0;
+            this.LinearConsStretchTrackbar.Maximum = (int)((Math.Round(this._springParam_L - 2*thickness, 1)) / 0.1);
+            this.LinearConsCompressValue.Text = "0";
+            this.LinearConsStretchValue.Text = "0";
 
             //this.BendTrackbar.Minimum = 0;
             //this.BendTrackbar.Maximum = 60;
@@ -150,8 +170,11 @@ namespace OndulePlugin
         private void TwistTrackbar_ValueChanged(object sender, EventArgs e)
         {
             // change the twist angle value
-            //this._tempTwistAngle = this.TwistTrackbar.Value;
-            //this.setTwistAngle.Text = this.TwistTrackbar.Value.ToString();
+            this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
+            if (isTwistable)
+            {
+                // TO-DO: Update the outer spring to satisfy the expected twiting angle
+            }    
         }
 
         private void InverseComputeSpringParameters(double expectLinearDeflection, 
@@ -323,6 +346,82 @@ namespace OndulePlugin
             int pitch_value = Convert.ToInt32(this._springUnit.Pitch / 0.1);
             this.PitchTrackbar.Value = pitch_value;
             this.PitchValLabel.Text = this._springUnit.Pitch.ToString();
+        }
+
+        private void TwistOnlyCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!isTwistable)
+            {
+                isTwistable = true;
+                // Get the current twist angle from TwistTrackbar
+                this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
+                controller.addTwistConstraint(this._tempRenderedSpring);
+
+                // TO-DO: Update the outer spring to satisfy the expected twiting angle
+            }
+            else
+            {
+                isTwistable = false;
+            }
+            
+        }
+
+        private void LinearOnlyCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!isLinearLimited)
+            {
+                isLinearLimited = true;
+                // Get the current compression displacement from LinearConsCompressTrackbar
+                this._tempRenderedSpring.CompressionDis = this.LinearConsCompressTrackbar.Value * 0.1;
+                // Get the current extension displacement from LinearConsStretchTrackbar
+                this._tempRenderedSpring.ExtensionDis = this.LinearConsStretchTrackbar.Value * 0.1;
+                controller.addLinearConstraint(this._tempRenderedSpring);
+
+            }
+            else
+            {
+                isLinearLimited = false;
+            }
+        }
+
+        private void LinearConsCompressTrackbar_Scroll(object sender, EventArgs e)
+        {
+            double c_value = this.LinearConsCompressTrackbar.Value * 0.1;
+            this.LinearConsCompressValue.Text = c_value.ToString();
+            double s_value = Math.Round(this._springParam_L - 2*thickness - c_value * 2,1);
+            this.LinearConsStretchMax.Text = s_value.ToString();
+            this.LinearConsStretchTrackbar.Maximum = (int)(s_value / 0.1);
+        }
+
+        private void LinearConsStretchTrackbar_Scroll(object sender, EventArgs e)
+        {
+            double s_value = this.LinearConsStretchTrackbar.Value * 0.1;
+            this.LinearConsStretchValue.Text = s_value.ToString();
+            double c_value = Math.Round((this._springParam_L - 2*thickness - s_value) / 2, 1);
+            this.LinearConsCompressMax.Text = c_value.ToString();
+            this.LinearConsCompressTrackbar.Maximum = (int)(c_value / 0.1);
+        }
+
+        private void LinearTwistCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!isLinearTwistLimited)
+            {
+                isLinearTwistLimited = true;
+                // Get the current compression displacement from LinearConsCompressTrackbar
+                this._tempRenderedSpring.CompressionDis = this.LinearConsCompressTrackbar.Value * 0.1;
+                // Get the current extension displacement from LinearConsStretchTrackbar
+                this._tempRenderedSpring.ExtensionDis = this.LinearConsStretchTrackbar.Value * 0.1;
+
+                // Get the current twist angle from TwistTrackbar
+                this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
+
+                controller.addLinearTwistConstraint(this._tempRenderedSpring);
+
+            }
+            else
+            {
+                isLinearTwistLimited = false;
+            }
         }
     }
 }

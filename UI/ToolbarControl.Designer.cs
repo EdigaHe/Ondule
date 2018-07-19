@@ -122,6 +122,7 @@
             this.ExportBtn.Size = new System.Drawing.Size(82, 82);
             this.ExportBtn.TabIndex = 66;
             this.ExportBtn.UseVisualStyleBackColor = false;
+            this.ExportBtn.Click += new System.EventHandler(this.ExportBtn_Click);
             // 
             // PreviewBtn
             // 

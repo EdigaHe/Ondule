@@ -19,10 +19,13 @@ namespace OndulePlugin
         void deformBrep(Rhino.DocObjects.ObjRef obj);
         void wireframe();
         void selection();
-        void linearDeform(ObjRef obj);
-        void twistDeform(ObjRef obj);
+        void addLinearConstraint(OnduleUnit obj);   // new linear constraint
+        //void linearDeform(ObjRef obj);
+        // void twistDeform(ObjRef obj);
+        void addTwistConstraint(OnduleUnit obj);    // new twisting constraint
         void bendDeform(ObjRef obj);
-        void linearTwistDeform(ObjRef obj);
+        void addLinearTwistConstraint(OnduleUnit obj);
+        //void linearTwistDeform(ObjRef obj);
         void linearBendDeform(ObjRef obj);
         void twistBendDeform(ObjRef obj);
         void allDeform(ObjRef obj);
@@ -97,23 +100,35 @@ namespace OndulePlugin
             view.setController(this);
         }
 
-        public void linearDeform(ObjRef objRef)
-        {
-            rhinoModel.linearDeform(objRef);
-        }
+        //public void linearDeform(ObjRef objRef)
+        //{
+        //    rhinoModel.linearDeform(objRef);
+        //}
 
-        public void twistDeform(ObjRef objRef)
+        //public void twistDeform(ObjRef objRef)
+        //{
+        //    rhinoModel.twistDeform(objRef);
+        //}
+        public void addLinearConstraint(OnduleUnit obj)
         {
-            rhinoModel.twistDeform(objRef);
+            rhinoModel.addLinearConstraint(obj);
+        }
+        public void addTwistConstraint(OnduleUnit obj)
+        {
+            rhinoModel.addTwistConstraint(obj);
         }
         public void bendDeform(ObjRef objRef)
         {
             rhinoModel.bendDeform(objRef);
         }
-        public void linearTwistDeform(ObjRef objRef)
+        public void addLinearTwistConstraint(OnduleUnit obj)
         {
-            rhinoModel.linearTwistDeform(objRef);
+            rhinoModel.addLinearTwistConstraint(obj);
         }
+        //public void linearTwistDeform(ObjRef objRef)
+        //{
+        //    rhinoModel.linearTwistDeform(objRef);
+        //}
         public void linearBendDeform(ObjRef objRef)
         {
             rhinoModel.linearBendDeform(objRef);

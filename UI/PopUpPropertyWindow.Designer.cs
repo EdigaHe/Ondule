@@ -456,9 +456,9 @@
             this.CoilPitchLabel.ForeColor = System.Drawing.Color.White;
             this.CoilPitchLabel.Location = new System.Drawing.Point(361, 309);
             this.CoilPitchLabel.Name = "CoilPitchLabel";
-            this.CoilPitchLabel.Size = new System.Drawing.Size(111, 26);
+            this.CoilPitchLabel.Size = new System.Drawing.Size(108, 26);
             this.CoilPitchLabel.TabIndex = 45;
-            this.CoilPitchLabel.Text = "Coil Pitch:";
+            this.CoilPitchLabel.Text = "Turn Gap:";
             // 
             // StiffnessLabel
             // 
@@ -511,6 +511,7 @@
             this.LinearOnlyCheckbox.TabIndex = 50;
             this.LinearOnlyCheckbox.Text = "Linear Only";
             this.LinearOnlyCheckbox.UseVisualStyleBackColor = true;
+            this.LinearOnlyCheckbox.CheckedChanged += new System.EventHandler(this.LinearOnlyCheckbox_CheckedChanged);
             // 
             // BendOnlyCheckbox
             // 
@@ -533,6 +534,7 @@
             this.TwistOnlyCheckbox.TabIndex = 52;
             this.TwistOnlyCheckbox.Text = "Twist Only";
             this.TwistOnlyCheckbox.UseVisualStyleBackColor = true;
+            this.TwistOnlyCheckbox.CheckedChanged += new System.EventHandler(this.TwistOnlyCheckbox_CheckedChanged);
             // 
             // LinearTwistCheckbox
             // 
@@ -544,6 +546,7 @@
             this.LinearTwistCheckbox.TabIndex = 53;
             this.LinearTwistCheckbox.Text = "Linear + Twist";
             this.LinearTwistCheckbox.UseVisualStyleBackColor = true;
+            this.LinearTwistCheckbox.CheckedChanged += new System.EventHandler(this.LinearTwistCheckbox_CheckedChanged);
             // 
             // compressLabel
             // 
@@ -615,6 +618,7 @@
             this.LinearConsCompressTrackbar.TabIndex = 59;
             this.LinearConsCompressTrackbar.TickStyle = System.Windows.Forms.TickStyle.None;
             this.LinearConsCompressTrackbar.Value = 1;
+            this.LinearConsCompressTrackbar.Scroll += new System.EventHandler(this.LinearConsCompressTrackbar_Scroll);
             // 
             // LinearConsStretchTrackbar
             // 
@@ -628,6 +632,7 @@
             this.LinearConsStretchTrackbar.TabIndex = 60;
             this.LinearConsStretchTrackbar.TickStyle = System.Windows.Forms.TickStyle.None;
             this.LinearConsStretchTrackbar.Value = 1;
+            this.LinearConsStretchTrackbar.Scroll += new System.EventHandler(this.LinearConsStretchTrackbar_Scroll);
             // 
             // bendDirLabel
             // 

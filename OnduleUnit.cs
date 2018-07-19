@@ -23,8 +23,10 @@ namespace OndulePlugin
         private Point3d _endPt;
         //private List<double> _stiffness;
         //private double _linearDeflection;
-        //private double _bendAngle;
-        //private double _twistAngle;
+        private int _bendAngle;
+        private int _twistAngle;
+        private double _compressionDis;
+        private double _extensionDis;
         List<Brep> _preservedBrepList = new List<Brep>();   // Record the preserved breps
         List<Brep> _replacedBrepList = new List<Brep>();    // Record the replaced breps
         List<Guid> _capperSpringIDList = new List<Guid>();  // Record the IDs of generated spring breps 
@@ -33,6 +35,27 @@ namespace OndulePlugin
         {
 
         }
+        public double CompressionDis
+        {
+            get { return this._compressionDis; }
+            set { this._compressionDis = value; }
+        }
+        public double ExtensionDis
+        {
+            get { return this._extensionDis; }
+            set { this._extensionDis = value; }
+        }
+        public int TwistAngle
+        {
+            get { return this._twistAngle; }
+            set { this._twistAngle = value; }
+        }
+        public int BendAngle
+        {
+            get { return this._bendAngle; }
+            set { this._bendAngle = value; }
+        }
+
         public OnduleUnit(int id, Guid brepid, List<int> cNum, List<double> cDia, double p, double wDia, double L, double G, Curve MA, Point3d strPt, Point3d endPt)
         {
             this._ID = id;

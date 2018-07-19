@@ -1,5 +1,5 @@
-C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\SlinkyPlugin.dll
-C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\SlinkyPlugin.pdb
+C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\OndulePlugin.dll
+C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\OndulePlugin.pdb
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\KangarooSolver.dll
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\MetroFramework.dll
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\MetroFramework.Fonts.dll
@@ -8,5 +8,5 @@ C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\SlinkyBar.Properties.Resourc
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.DeformationDesignForm.resources
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.OnduleTopBarControl.resources
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.csproj.GenerateResource.Cache
-C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\SlinkyPlugin.dll
-C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\SlinkyPlugin.pdb
+C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.dll
+C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.pdb

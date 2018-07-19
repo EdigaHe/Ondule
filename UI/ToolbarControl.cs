@@ -61,19 +61,6 @@ namespace OndulePlugin
         #endregion
 
         #region deformation triggers (reserved for the other window control)
-        private void Twist_Click(object sender, EventArgs e)
-        {
-            // ask the user to select the medium axis
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
-
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                // send the object reference to the rhinomodel basically
-                controller.twistDeform(objRef);
-            }
-        }
 
         private void Bend_Click(object sender, EventArgs e)
         {
@@ -89,19 +76,21 @@ namespace OndulePlugin
             }
         }
 
-        private void LinearTwist_Click(object sender, EventArgs e)
-        {
-            // ask the user to select the medium axis
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+        #region Old version of calling Linear + Twist
+        //private void LinearTwist_Click(object sender, EventArgs e)
+        //{
+        //    // ask the user to select the medium axis
+        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+        //    Rhino.DocObjects.ObjRef objRef;
+        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
 
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                // send the object reference to the rhinomodel basically
-                controller.linearTwistDeform(objRef);
-            }
-        }
+        //    if (rc == Rhino.Commands.Result.Success)
+        //    {
+        //        // send the object reference to the rhinomodel basically
+        //        controller.linearTwistDeform(objRef);
+        //    }
+        //}
+        #endregion
 
         private void LinearBend_Click(object sender, EventArgs e)
         {
@@ -120,7 +109,13 @@ namespace OndulePlugin
         private void LinearTwistBend_Click(object sender, EventArgs e)
         {
             is_freeform = true;
-            SpringfyBtn.BackgroundImage = Image.FromFile(@"../Resources/FreeForm_mode.png");
+
+            // ### FOR DEBUG ###
+            String path = @"Resources\FreeForm_mode.png";
+            // ### FOR RELEASE ###
+            //String path = @"OndulePlugin\Resources\FreeForm_mode.png";
+
+            SpringfyBtn.BackgroundImage = Image.FromFile(path);
             SpringfyBtn.Cursor = Cursors.Default;
             SpringfyBtn.BackColor = Color.White;
 
@@ -179,7 +174,12 @@ namespace OndulePlugin
         {
             // ask the user to select the medium axis
             is_freeform = false;
-            SpringfyBtn.BackgroundImage = Image.FromFile(@"../Resources/FreeForm_default.png");
+            // ### FOR DEBUG ###
+            String path = @"Resources\FreeForm_default.png";
+            // ### FOR RELEASE ###
+            //String path = @"OndulePlugin\Resources\FreeForm_default.png";
+
+            SpringfyBtn.BackgroundImage = Image.FromFile(path);
             SpringfyBtn.Cursor = Cursors.Default;
             SpringfyBtn.BackColor = Color.White;
             
@@ -202,7 +202,7 @@ namespace OndulePlugin
             List<double> coilDs = new List<double>();
             List<int> coilNs = new List<int>();
             double wireD = 0;   // all discontinued curves share the same wire diameter
-           double springPitch = d_min+gap_min;
+            double springPitch = d_min+gap_min;
             List<double> disLen = new List<double>();
 
             #region Compute the discontinued curves, coil diameters, wire diameter, coild numbers, and pitches
@@ -384,38 +384,55 @@ namespace OndulePlugin
 
         private void MATButton_MouseEnter(object sender, EventArgs e)
         {
-            MATBtn.BackgroundImage = Image.FromFile(@"../Resources/MAT_active.png");
+            // ### FOR DEBUG ###
+            String path = @"Resources\MAT_active.png";
+            // ### FOR RELEASE ###
+            //String path = @"OndulePlugin\Resources\MAT_active.png";
+
+            MATBtn.BackgroundImage = Image.FromFile(path);
             MATBtn.Cursor = Cursors.Default;
             MATBtn.BackColor = Color.White;
         }
 
         private void MATButton_MouseLeave(object sender, EventArgs e)
         {
-            MATBtn.BackgroundImage = Image.FromFile(@"../Resources/MAT_default.png");
+            // ### FOR DEBUG ###
+            String path = @"Resources\MAT_default.png";
+            // ### FOR RELEASE ###
+            //String path = @"OndulePlugin\Resources\MAT_default.png";
+
+            MATBtn.BackgroundImage = Image.FromFile(path);
             MATBtn.BackColor = Color.White;
             MATBtn.Cursor = Cursors.Default;
         }
 
         private void MATButton_MouseHover(object sender, EventArgs e)
         {
-            MATBtn.BackgroundImage = Image.FromFile(@"../Resources/MAT_active.png");
+            // ### FOR DEBUG ###
+            String path = @"Resources\MAT_active.png";
+            // ### FOR RELEASE ###
+            //String path = @"OndulePlugin\Resources\MAT_active.png";
+
+            MATBtn.BackgroundImage = Image.FromFile(path);
             MATBtn.Cursor = Cursors.Default;
             MATBtn.BackColor = Color.White;
         }
 
-        private void LinearBtn_Click(object sender, EventArgs e)
-        {
-            // ask the user to select the medium axis
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+        #region Old linear implementation
+        //private void LinearBtn_Click(object sender, EventArgs e)
+        //{
+        //    // ask the user to select the medium axis
+        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+        //    Rhino.DocObjects.ObjRef objRef;
+        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
 
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                // send the object reference to the rhinomodel basically
-                controller.linearDeform(objRef);
-            }
-        }
+        //    if (rc == Rhino.Commands.Result.Success)
+        //    {
+        //        // send the object reference to the rhinomodel basically
+        //        controller.linearDeform(objRef);
+        //    }
+        //}
+        #endregion
 
         private void LinearLockBtn_Click(object sender, EventArgs e)
         {
@@ -436,7 +453,12 @@ namespace OndulePlugin
         {
             if (!is_freeform)
             {
-                SpringfyBtn.BackgroundImage = Image.FromFile(@"../Resources/FreeForm_active.png");
+                // ### FOR DEBUG ###
+                String path = @"Resources\FreeForm_active.png";
+                // ### FOR RELEASE ###
+                //String path = @"OndulePlugin\Resources\FreeForm_active.png";
+
+                SpringfyBtn.BackgroundImage = Image.FromFile(path);
                 SpringfyBtn.Cursor = Cursors.Default;
                 SpringfyBtn.BackColor = Color.White;
             }
@@ -447,7 +469,12 @@ namespace OndulePlugin
         {
             if (!is_freeform)
             {
-                SpringfyBtn.BackgroundImage = Image.FromFile(@"../Resources/FreeForm_active.png");
+                // ### FOR DEBUG ###
+                String path = @"Resources\FreeForm_active.png";
+                // ### FOR RELEASE ###
+                //String path = @"OndulePlugin\Resources\FreeForm_active.png";
+
+                SpringfyBtn.BackgroundImage = Image.FromFile(path);
                 SpringfyBtn.Cursor = Cursors.Default;
                 SpringfyBtn.BackColor = Color.White;
             }
@@ -457,7 +484,12 @@ namespace OndulePlugin
         {
             if (!is_freeform)
             {
-                SpringfyBtn.BackgroundImage = Image.FromFile(@"../Resources/FreeForm_default.png");
+                // ### FOR DEBUG ###
+                String path = @"Resources\FreeForm_default.png";
+                // ### FOR RELEASE ###
+                //String path = @"OndulePlugin\Resources\FreeForm_default.png";
+
+                SpringfyBtn.BackgroundImage = Image.FromFile(path);
                 SpringfyBtn.Cursor = Cursors.Default;
                 SpringfyBtn.BackColor = Color.White;
             }
@@ -506,6 +538,11 @@ namespace OndulePlugin
                 coilwindow.Show();
             }
           
+        }
+
+        private void ExportBtn_Click(object sender, EventArgs e)
+        {
+            //MessageBox.Show("Hello World!");
         }
     }
 }
