@@ -15,20 +15,28 @@ namespace OndulePlugin
 
     public interface Controller
     {
+        #region default functions
         void printSTL(Rhino.DocObjects.ObjRef obj, Rhino.Geometry.Point3d pt);
         void deformBrep(Rhino.DocObjects.ObjRef obj);
         void wireframe();
+        #endregion
+
         void selection();
         void addLinearConstraint(OnduleUnit obj);   // new linear constraint
+        void addTwistConstraint(OnduleUnit obj);    // new twisting constraint
+        void addBendConstraint(OnduleUnit obj, Boolean dir);
+        void addLinearTwistConstraint(OnduleUnit obj);
+
+        #region old versions of deformation behaviors
+        //void linearTwistDeform(ObjRef obj);
+        //void linearBendDeform(ObjRef obj);
+        //void twistBendDeform(ObjRef obj);
+        //void bendDeform(ObjRef obj);
         //void linearDeform(ObjRef obj);
         // void twistDeform(ObjRef obj);
-        void addTwistConstraint(OnduleUnit obj);    // new twisting constraint
-        void bendDeform(ObjRef obj);
-        void addLinearTwistConstraint(OnduleUnit obj);
-        //void linearTwistDeform(ObjRef obj);
-        void linearBendDeform(ObjRef obj);
-        void twistBendDeform(ObjRef obj);
-        void allDeform(ObjRef obj);
+        //void allDeform(ObjRef obj);
+        #endregion
+
         void medialAxisTransform();
 
         void springGeneration(ref OnduleUnit obj);
@@ -100,6 +108,24 @@ namespace OndulePlugin
             view.setController(this);
         }
 
+        
+        public void addLinearConstraint(OnduleUnit obj)
+        {
+            rhinoModel.addLinearConstraint(obj);
+        }
+        public void addTwistConstraint(OnduleUnit obj)
+        {
+            rhinoModel.addTwistConstraint(obj);
+        }
+        public void addLinearTwistConstraint(OnduleUnit obj)
+        {
+            rhinoModel.addLinearTwistConstraint(obj);
+        }
+        public void addBendConstraint(OnduleUnit obj, Boolean dir)
+        {
+            rhinoModel.addBendConstraint(obj, dir);
+        }
+        #region old versions of deforamtion behaviors
         //public void linearDeform(ObjRef objRef)
         //{
         //    rhinoModel.linearDeform(objRef);
@@ -109,38 +135,28 @@ namespace OndulePlugin
         //{
         //    rhinoModel.twistDeform(objRef);
         //}
-        public void addLinearConstraint(OnduleUnit obj)
-        {
-            rhinoModel.addLinearConstraint(obj);
-        }
-        public void addTwistConstraint(OnduleUnit obj)
-        {
-            rhinoModel.addTwistConstraint(obj);
-        }
-        public void bendDeform(ObjRef objRef)
-        {
-            rhinoModel.bendDeform(objRef);
-        }
-        public void addLinearTwistConstraint(OnduleUnit obj)
-        {
-            rhinoModel.addLinearTwistConstraint(obj);
-        }
+        //public void bendDeform(ObjRef objRef)
+        //{
+        //    rhinoModel.bendDeform(objRef);
+        //}
         //public void linearTwistDeform(ObjRef objRef)
         //{
         //    rhinoModel.linearTwistDeform(objRef);
         //}
-        public void linearBendDeform(ObjRef objRef)
-        {
-            rhinoModel.linearBendDeform(objRef);
-        }
-        public void twistBendDeform(ObjRef objRef)
-        {
-            rhinoModel.twistBendDeform(objRef);
-        }
-        public void allDeform(ObjRef objRef)
-        {
-            rhinoModel.allDeform(objRef);
-        }
+        //public void linearBendDeform(ObjRef objRef)
+        //{
+        //    rhinoModel.linearBendDeform(objRef);
+        //}
+        //public void twistBendDeform(ObjRef objRef)
+        //{
+        //    rhinoModel.twistBendDeform(objRef);
+        //}
+        //public void allDeform(ObjRef objRef)
+        //{
+        //    rhinoModel.allDeform(objRef);
+        //}
+        #endregion
+
         public void selection()
         {
             rhinoModel.selection();

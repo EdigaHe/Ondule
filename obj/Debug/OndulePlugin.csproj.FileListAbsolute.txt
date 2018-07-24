@@ -3,10 +3,10 @@ C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\OndulePlugin.pdb
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\KangarooSolver.dll
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\MetroFramework.dll
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\bin\MetroFramework.Fonts.dll
-C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.csprojResolveAssemblyReference.cache
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\SlinkyBar.Properties.Resources.resources
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.DeformationDesignForm.resources
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.OnduleTopBarControl.resources
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.csproj.GenerateResource.Cache
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.dll
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.pdb
+C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.csprojResolveAssemblyReference.cache

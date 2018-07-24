@@ -15,6 +15,7 @@ namespace OndulePlugin
         Boolean isBendable = false;
         Boolean isLinearLimited = false;
         Boolean isLinearTwistLimited = false;
+        Boolean isAllDirBending = false;
 
         private OnduleUnit _springUnit = new OnduleUnit();
         private OnduleUnit _tempRenderedSpring = new OnduleUnit();
@@ -297,8 +298,10 @@ namespace OndulePlugin
 
         private void Preview_Click(object sender, EventArgs e)
         {
+
             //Rhino.DocObjects.ObjRef obj = new Rhino.DocObjects.ObjRef(this._springUnit.UnitID);
             controller.springGeneration(ref this._tempRenderedSpring);
+ 
         }
 
         private void OKBtn_Click(object sender, EventArgs e)
@@ -422,6 +425,25 @@ namespace OndulePlugin
             {
                 isLinearTwistLimited = false;
             }
+        }
+
+        private void BendOnlyCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!isBendable)
+            {
+                isBendable = true;
+                this._tempRenderedSpring.BendAngle = this.BendConsDirectionTrackbar.Value;
+                controller.addBendConstraint(this._tempRenderedSpring, isAllDirBending);
+            }
+            else
+            {
+                isBendable = false;
+            }
+        }
+
+        private void AllDirBendingCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            isAllDirBending = !isAllDirBending;
         }
     }
 }

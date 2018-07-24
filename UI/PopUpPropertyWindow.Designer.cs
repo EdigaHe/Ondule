@@ -84,6 +84,7 @@
             this.BendConsDirectionValue = new System.Windows.Forms.Label();
             this.PitchValLabel = new System.Windows.Forms.Label();
             this.WDValLabel = new System.Windows.Forms.Label();
+            this.AllDirBendingCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.PitchTrackbar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TwistTrackbar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.WireDiameterTrackbar)).BeginInit();
@@ -517,18 +518,19 @@
             // 
             this.BendOnlyCheckbox.AutoSize = true;
             this.BendOnlyCheckbox.ForeColor = System.Drawing.Color.White;
-            this.BendOnlyCheckbox.Location = new System.Drawing.Point(207, 839);
+            this.BendOnlyCheckbox.Location = new System.Drawing.Point(555, 804);
             this.BendOnlyCheckbox.Name = "BendOnlyCheckbox";
             this.BendOnlyCheckbox.Size = new System.Drawing.Size(144, 29);
             this.BendOnlyCheckbox.TabIndex = 51;
             this.BendOnlyCheckbox.Text = "Bend Only";
             this.BendOnlyCheckbox.UseVisualStyleBackColor = true;
+            this.BendOnlyCheckbox.CheckedChanged += new System.EventHandler(this.BendOnlyCheckbox_CheckedChanged);
             // 
             // TwistOnlyCheckbox
             // 
             this.TwistOnlyCheckbox.AutoSize = true;
             this.TwistOnlyCheckbox.ForeColor = System.Drawing.Color.White;
-            this.TwistOnlyCheckbox.Location = new System.Drawing.Point(385, 839);
+            this.TwistOnlyCheckbox.Location = new System.Drawing.Point(197, 839);
             this.TwistOnlyCheckbox.Name = "TwistOnlyCheckbox";
             this.TwistOnlyCheckbox.Size = new System.Drawing.Size(144, 29);
             this.TwistOnlyCheckbox.TabIndex = 52;
@@ -540,7 +542,7 @@
             // 
             this.LinearTwistCheckbox.AutoSize = true;
             this.LinearTwistCheckbox.ForeColor = System.Drawing.Color.White;
-            this.LinearTwistCheckbox.Location = new System.Drawing.Point(550, 839);
+            this.LinearTwistCheckbox.Location = new System.Drawing.Point(362, 839);
             this.LinearTwistCheckbox.Name = "LinearTwistCheckbox";
             this.LinearTwistCheckbox.Size = new System.Drawing.Size(178, 29);
             this.LinearTwistCheckbox.TabIndex = 53;
@@ -567,7 +569,7 @@
             this.BendConsDirectionTrackbar.Margin = new System.Windows.Forms.Padding(6);
             this.BendConsDirectionTrackbar.Minimum = 1;
             this.BendConsDirectionTrackbar.Name = "BendConsDirectionTrackbar";
-            this.BendConsDirectionTrackbar.Size = new System.Drawing.Size(205, 90);
+            this.BendConsDirectionTrackbar.Size = new System.Drawing.Size(209, 90);
             this.BendConsDirectionTrackbar.TabIndex = 55;
             this.BendConsDirectionTrackbar.TickStyle = System.Windows.Forms.TickStyle.None;
             this.BendConsDirectionTrackbar.Value = 1;
@@ -782,6 +784,19 @@
             this.WDValLabel.Text = "1.6mm";
             this.WDValLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // AllDirBendingCheckBox
+            // 
+            this.AllDirBendingCheckBox.AutoSize = true;
+            this.AllDirBendingCheckBox.BackColor = System.Drawing.Color.Black;
+            this.AllDirBendingCheckBox.ForeColor = System.Drawing.Color.White;
+            this.AllDirBendingCheckBox.Location = new System.Drawing.Point(555, 839);
+            this.AllDirBendingCheckBox.Name = "AllDirBendingCheckBox";
+            this.AllDirBendingCheckBox.Size = new System.Drawing.Size(167, 29);
+            this.AllDirBendingCheckBox.TabIndex = 74;
+            this.AllDirBendingCheckBox.Text = "All directions";
+            this.AllDirBendingCheckBox.UseVisualStyleBackColor = false;
+            this.AllDirBendingCheckBox.CheckedChanged += new System.EventHandler(this.AllDirBendingCheckBox_CheckedChanged);
+            // 
             // DeformationDesignForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
@@ -789,6 +804,7 @@
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(774, 1183);
             this.ControlBox = false;
+            this.Controls.Add(this.AllDirBendingCheckBox);
             this.Controls.Add(this.WDValLabel);
             this.Controls.Add(this.PitchValLabel);
             this.Controls.Add(this.BendConsDirectionValue);
@@ -928,5 +944,6 @@
         private System.Windows.Forms.Label BendConsDirectionValue;
         private System.Windows.Forms.Label PitchValLabel;
         private System.Windows.Forms.Label WDValLabel;
+        private System.Windows.Forms.CheckBox AllDirBendingCheckBox;
     }
 }

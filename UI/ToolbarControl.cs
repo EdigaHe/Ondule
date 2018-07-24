@@ -62,19 +62,19 @@ namespace OndulePlugin
 
         #region deformation triggers (reserved for the other window control)
 
-        private void Bend_Click(object sender, EventArgs e)
-        {
-            // ask the user to select the medium axis
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+        //private void Bend_Click(object sender, EventArgs e)
+        //{
+        //    // ask the user to select the medium axis
+        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+        //    Rhino.DocObjects.ObjRef objRef;
+        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
 
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                // send the object reference to the rhinomodel basically
-                controller.bendDeform(objRef);
-            }
-        }
+        //    if (rc == Rhino.Commands.Result.Success)
+        //    {
+        //        // send the object reference to the rhinomodel basically
+        //        controller.bendDeform(objRef);
+        //    }
+        //}
 
         #region Old version of calling Linear + Twist
         //private void LinearTwist_Click(object sender, EventArgs e)
@@ -92,19 +92,19 @@ namespace OndulePlugin
         //}
         #endregion
 
-        private void LinearBend_Click(object sender, EventArgs e)
-        {
-            // ask the user to select the medium axis
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+        //private void LinearBend_Click(object sender, EventArgs e)
+        //{
+        //    // ask the user to select the medium axis
+        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+        //    Rhino.DocObjects.ObjRef objRef;
+        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
 
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                // send the object reference to the rhinomodel basically
-                controller.linearBendDeform(objRef);
-            }
-        }
+        //    if (rc == Rhino.Commands.Result.Success)
+        //    {
+        //        // send the object reference to the rhinomodel basically
+        //        controller.linearBendDeform(objRef);
+        //    }
+        //}
 
         private void LinearTwistBend_Click(object sender, EventArgs e)
         {
@@ -131,19 +131,19 @@ namespace OndulePlugin
             //}
         }
 
-        private void TwistBend_Click(object sender, EventArgs e)
-        {
-            // ask the user to select the medium axis
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+        //private void TwistBend_Click(object sender, EventArgs e)
+        //{
+        //    // ask the user to select the medium axis
+        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+        //    Rhino.DocObjects.ObjRef objRef;
+        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
 
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                // send the object reference to the rhinomodel basically
-                controller.twistBendDeform(objRef);
-            }
-        }
+        //    if (rc == Rhino.Commands.Result.Success)
+        //    {
+        //        // send the object reference to the rhinomodel basically
+        //        controller.twistBendDeform(objRef);
+        //    }
+        //}
 
         #endregion
 
@@ -495,22 +495,13 @@ namespace OndulePlugin
             }
         }
 
- 
+
 
 
 
         private void PreviewBtn_Click(object sender, EventArgs e)
         {
-            // ask the user to select the medium axis
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            Rhino.DocObjects.ObjRef objRef;
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
-
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                // send the object reference to the rhinomodel basically
-                controller.allDeform(objRef);
-            }
+            
         }
 
         private void Springfy_Click(object sender, EventArgs e)

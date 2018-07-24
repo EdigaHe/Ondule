@@ -56,11 +56,11 @@ namespace OndulePlugin
 
         //void linearDeform(ObjRef objRef);
         //void twistDeform(ObjRef objRef);
-        void bendDeform(ObjRef objRef);
-        //void linearTwistDeform(ObjRef objRef);
-        void linearBendDeform(ObjRef objRef);
-        void twistBendDeform(ObjRef objRef);
-        void allDeform(ObjRef objRef);
+        //void bendDeform(ObjRef objRef);
+        ////void linearTwistDeform(ObjRef objRef);
+        //void linearBendDeform(ObjRef objRef);
+        //void twistBendDeform(ObjRef objRef);
+        //void allDeform(ObjRef objRef);
         void medialAxisTransform();
 
 
@@ -71,6 +71,7 @@ namespace OndulePlugin
         void addTwistConstraint(OnduleUnit obj);
         void addLinearConstraint(OnduleUnit obj);
         void addLinearTwistConstraint(OnduleUnit obj);
+        void addBendConstraint(OnduleUnit obj, Boolean dir);
         #endregion
     }
 
@@ -558,7 +559,7 @@ namespace OndulePlugin
                             spiralStartPt = startPln.ClosestPoint(spiralStartPt);
                         }
 
-                        NurbsCurve spiralCrv = NurbsCurve.CreateSpiral(crv, 0, endPara1, spiralStartPt, pitch, 0, r1 - 1, r2 - 1, 30);
+                        NurbsCurve spiralCrv = NurbsCurve.CreateSpiral(crv, 0, endPara1, spiralStartPt, pitch, 0, r1 - objRef.WireDiameter, r2 - objRef.WireDiameter, 30);
                         spiralStartPt = spiralCrv.PointAtEnd;
                         spiralCrvList.Add(spiralCrv);
                     }
@@ -960,6 +961,33 @@ namespace OndulePlugin
             return rel;
         }
 
+
+        public void addBendConstraint(OnduleUnit obj, Boolean dir)
+        {
+            // Hide the control points
+            myDoc.Objects.Hide(ctrlPt1, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt2, true);// hide the original shell
+
+            #region Get the outer brep surface
+            ObjRef armOffsetObjRef = new ObjRef(obj.BREPID);    //get the objRef from the GUID
+            Brep surfaceBrep = armOffsetObjRef.Brep();          // curently we only recognize the polysurface as a brep, TO-DO: recognize the imported mesh
+            #endregion
+
+            # region Get the start and end planes
+            Curve centerCrv = obj.MA;
+            Point3d startPt = centerCrv.PointAtStart;
+            Point3d endPt = centerCrv.PointAtEnd;
+            double startPara = 0, endPara = 0;
+            centerCrv.LengthParameter(0, out startPara);
+            centerCrv.LengthParameter(centerCrv.GetLength(), out endPara);
+            Plane startPln = new Plane(startPt, centerCrv.TangentAt(startPara));    // the plane at the start of the curve
+            Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));          // the plane at the end of the curve
+            #endregion
+
+            #region Generate the joint chain
+            generateBendSupport(startPln, endPln, centerCrv, dir, obj.BendAngle);
+            #endregion
+        }
         /// <summary>
         /// Add prismatic joint and bearing for both linear deformation and twisting
         /// </summary>
@@ -1199,10 +1227,17 @@ namespace OndulePlugin
             double outerRadius = middleRadius + 2 * wall;
             Plane wallPln = new Plane(capCrv.PointAtStart, capCrv.TangentAtStart);
 
+            // Align wallPln and stopperPln so the slider block is the opening slot
+            //Vector3d wallPlnX = wallPln.XAxis;
+            //Vector3d stopperPlnX = stopperPln.XAxis;
+            //Double angleBetween;
+            //angleBetween = Vector3d.VectorAngle(wallPlnX, stopperPlnX);
+            //Transform rotation = Transform.Rotation(angleBetween, capCrv.PointAtStart);
+            //wallPln.Transform(rotation);
+
             Curve innerCircle = new Circle(wallPln, wallCircleCenter, innerRadius).ToNurbsCurve();
             Curve middleCircle = new Circle(wallPln, wallCircleCenter, middleRadius).ToNurbsCurve();
             Curve outerCircle = new Circle(wallPln, wallCircleCenter, outerRadius).ToNurbsCurve();
-
             var innerBreps = sweep.PerformSweep(wallCrv, innerCircle);
             Brep innerBrep = innerBreps[0];
             innerBrep = innerBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
@@ -1230,33 +1265,105 @@ namespace OndulePlugin
             myDoc.Objects.AddBrep(sliderBlock, red_attributes);
 
 
-            Point3d[] sliderWallPts = new Point3d[5];
+            //Point3d[] sliderWallPts = new Point3d[5];
+            //double slotW = sliderW + gap * 2;
+            //double slotH = sliderH;
+            //Transform txp_rect1 = Transform.Translation(wallPln.XAxis * (slotW / 2));
+            //Transform typ_rect1 = Transform.Translation(wallPln.YAxis * slotH);
+            //Transform txn_rect1 = Transform.Translation(wallPln.XAxis * -(slotW / 2));
+            //Transform tyn_rect1 = Transform.Translation(wallPln.YAxis * 0);
+
+            //sliderWallPts[0] = capCrv.PointAtStart;
+            //sliderWallPts[1] = capCrv.PointAtStart;
+            //sliderWallPts[2] = capCrv.PointAtStart;
+            //sliderWallPts[3] = capCrv.PointAtStart;
+            //sliderWallPts[4] = capCrv.PointAtStart;
+
+            //sliderWallPts[0].Transform(txp_rect1); sliderWallPts[0].Transform(typ_rect1);
+            //sliderWallPts[1].Transform(txn_rect1); sliderWallPts[1].Transform(typ_rect1);
+            //sliderWallPts[2].Transform(txn_rect1); sliderWallPts[2].Transform(tyn_rect1);
+            //sliderWallPts[3].Transform(txp_rect1); sliderWallPts[3].Transform(tyn_rect1);
+            //sliderWallPts[4] = sliderWallPts[0];
+
+            //Curve slotRect = new Polyline(sliderWallPts).ToNurbsCurve();
+            //var slotBrep = sweep.PerformSweep(wallCrv, slotRect)[0];
+            //slotBrep = slotBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+            //var linearWalls = Brep.CreateBooleanDifference(sliderWall, slotBrep, myDoc.ModelAbsoluteTolerance);
+            //Brep linearWall = linearWalls[0];
+
+            //myDoc.Objects.AddBrep(linearWall, red_attributes);
+
+            List<Curve> crvList1 = new List<Curve>();
+            crvList1.Add(stopperCrv);
+            crvList1.Add(compCrvRear);
+            Curve crv1 = Curve.JoinCurves(crvList1)[0];
+
+            Point3d[] sliderWallPtsSet1 = new Point3d[5];
+            Point3d[] sliderWallPtsSet2 = new Point3d[5];
             double slotW = sliderW + gap * 2;
             double slotH = sliderH;
-            Transform txp_rect1 = Transform.Translation(wallPln.XAxis * (slotW / 2));
-            Transform typ_rect1 = Transform.Translation(wallPln.YAxis * slotH);
-            Transform txn_rect1 = Transform.Translation(wallPln.XAxis * -(slotW / 2));
-            Transform tyn_rect1 = Transform.Translation(wallPln.YAxis * 0);
+            Transform txp_rect1 = Transform.Translation(stopperPln.XAxis * (slotW / 2));
+            Transform typ_rect1 = Transform.Translation(stopperPln.YAxis * slotH);
+            Transform txn_rect1 = Transform.Translation(stopperPln.XAxis * -(slotW / 2));
+            Transform tyn_rect1 = Transform.Translation(stopperPln.YAxis * -slotH);
 
-            sliderWallPts[0] = capCrv.PointAtStart;
-            sliderWallPts[1] = capCrv.PointAtStart;
-            sliderWallPts[2] = capCrv.PointAtStart;
-            sliderWallPts[3] = capCrv.PointAtStart;
-            sliderWallPts[4] = capCrv.PointAtStart;
+            Transform txp_rect2 = Transform.Translation(stopperPln.XAxis * slotH);
+            Transform typ_rect2 = Transform.Translation(stopperPln.YAxis * (slotW / 2));
+            Transform txn_rect2 = Transform.Translation(stopperPln.XAxis * -slotH);
+            Transform tyn_rect2 = Transform.Translation(stopperPln.YAxis * -(slotW / 2));
 
-            sliderWallPts[0].Transform(txp_rect1); sliderWallPts[0].Transform(typ_rect1);
-            sliderWallPts[1].Transform(txn_rect1); sliderWallPts[1].Transform(typ_rect1);
-            sliderWallPts[2].Transform(txn_rect1); sliderWallPts[2].Transform(tyn_rect1);
-            sliderWallPts[3].Transform(txp_rect1); sliderWallPts[3].Transform(tyn_rect1);
-            sliderWallPts[4] = sliderWallPts[0];
+            sliderWallPtsSet1[0] = stopperCrv.PointAtStart;
+            sliderWallPtsSet1[1] = stopperCrv.PointAtStart;
+            sliderWallPtsSet1[2] = stopperCrv.PointAtStart;
+            sliderWallPtsSet1[3] = stopperCrv.PointAtStart;
+            sliderWallPtsSet1[4] = stopperCrv.PointAtStart;
+            sliderWallPtsSet2[0] = stopperCrv.PointAtStart;
+            sliderWallPtsSet2[1] = stopperCrv.PointAtStart;
+            sliderWallPtsSet2[2] = stopperCrv.PointAtStart;
+            sliderWallPtsSet2[3] = stopperCrv.PointAtStart;
+            sliderWallPtsSet2[4] = stopperCrv.PointAtStart;
 
-            Curve slotRect = new Polyline(sliderWallPts).ToNurbsCurve();
-            var slotBrep = sweep.PerformSweep(wallCrv, slotRect)[0];
-            slotBrep = slotBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-            var linearWalls = Brep.CreateBooleanDifference(sliderWall, slotBrep, myDoc.ModelAbsoluteTolerance);
-            Brep linearWall = linearWalls[0];
 
-            myDoc.Objects.AddBrep(linearWall, red_attributes);
+            sliderWallPtsSet1[0].Transform(txp_rect1); sliderWallPtsSet1[0].Transform(typ_rect1);
+            sliderWallPtsSet1[1].Transform(txn_rect1); sliderWallPtsSet1[1].Transform(typ_rect1);
+            sliderWallPtsSet1[2].Transform(txn_rect1); sliderWallPtsSet1[2].Transform(tyn_rect1);
+            sliderWallPtsSet1[3].Transform(txp_rect1); sliderWallPtsSet1[3].Transform(tyn_rect1);
+            sliderWallPtsSet1[4] = sliderWallPtsSet1[0];
+
+            sliderWallPtsSet2[0].Transform(txp_rect2); sliderWallPtsSet2[0].Transform(typ_rect2);
+            sliderWallPtsSet2[1].Transform(txn_rect2); sliderWallPtsSet2[1].Transform(typ_rect2);
+            sliderWallPtsSet2[2].Transform(txn_rect2); sliderWallPtsSet2[2].Transform(tyn_rect2);
+            sliderWallPtsSet2[3].Transform(txp_rect2); sliderWallPtsSet2[3].Transform(tyn_rect2);
+            sliderWallPtsSet2[4] = sliderWallPtsSet2[0];
+
+            Curve slotRect1 = new Polyline(sliderWallPtsSet1).ToNurbsCurve();
+            Curve slotRect2 = new Polyline(sliderWallPtsSet2).ToNurbsCurve();
+
+            var slotBrepSet1Part1 = sweep.PerformSweep(crv1, slotRect1)[0];
+            slotBrepSet1Part1 = slotBrepSet1Part1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+            var slotBrepSet1Part2 = sweep.PerformSweep(tensionCrv, slotRect1)[0];
+            slotBrepSet1Part2 = slotBrepSet1Part2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+            var slotBrepSet2Part1 = sweep.PerformSweep(crv1, slotRect2)[0];
+            slotBrepSet2Part1 = slotBrepSet2Part1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+            var slotBrepSet2Part2 = sweep.PerformSweep(tensionCrv, slotRect2)[0];
+            slotBrepSet2Part2 = slotBrepSet2Part2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+            List<Brep> slotBreps1 = new List<Brep>();
+            slotBreps1.Add(slotBrepSet2Part1);
+            List<Brep> slotBreps2 = new List<Brep>();
+            slotBreps2.Add(slotBrepSet2Part2);
+
+            var linearWalls = Brep.CreateBooleanDifference(sliderWall, slotBrepSet1Part1, myDoc.ModelAbsoluteTolerance);
+            var lo1 = linearWalls[0];
+            var lo2 = Brep.CreateBooleanDifference(lo1, slotBrepSet2Part1, myDoc.ModelAbsoluteTolerance)[0];
+
+            var lo3 = Brep.CreateBooleanIntersection(lo2, slotBrepSet1Part2, myDoc.ModelAbsoluteTolerance)[0];
+            var lo4s = Brep.CreateBooleanIntersection(lo3, slotBrepSet2Part2, myDoc.ModelAbsoluteTolerance);
+
+            myDoc.Objects.AddBrep(lo4s[0], red_attributes);
+            myDoc.Views.Redraw();
+            
 
             #endregion
 
@@ -1453,148 +1560,6 @@ namespace OndulePlugin
             #endregion
 
             myDoc.Views.Redraw();
-
-            #region old version
-            //// base structure 2 bars
-            //double baseStructureDisToCenter = 3.3;
-            //Curve baseStructureCrv1 = guiderCrv.DuplicateCurve();
-            //Curve baseStructureCrv2 = guiderCrv.DuplicateCurve();
-            //baseStructureCrv1.Translate(endSuf.YAxis * baseStructureDisToCenter);
-            //baseStructureCrv2.Translate(endSuf.YAxis * (-baseStructureDisToCenter));
-            //Point3d[] guiderOuterCornerPt = new Point3d[5];
-            //Point3d[] guiderInnerCornerPt = new Point3d[5];
-            //Point3d[] cornerPt = new Point3d[5];
-            //Transform txp = Transform.Translation(endSuf.XAxis * 2.8);
-            //Transform typ = Transform.Translation(endSuf.YAxis * 0.5);
-            //Transform txn = Transform.Translation(endSuf.XAxis * -2.8);
-            //Transform tyn = Transform.Translation(endSuf.YAxis * -0.5);
-            //cornerPt[0] = baseStructureCrv1.PointAtEnd;
-            //cornerPt[1] = baseStructureCrv1.PointAtEnd;
-            //cornerPt[2] = baseStructureCrv1.PointAtEnd;
-            //cornerPt[3] = baseStructureCrv1.PointAtEnd;
-            //cornerPt[0].Transform(txp); cornerPt[0].Transform(typ);
-            //cornerPt[1].Transform(txn); cornerPt[1].Transform(typ);
-            //cornerPt[2].Transform(txn); cornerPt[2].Transform(tyn);
-            //cornerPt[3].Transform(txp); cornerPt[3].Transform(tyn);
-
-
-            //guiderOuterCornerPt[0] = cornerPt[0];
-            //guiderOuterCornerPt[1] = cornerPt[1];
-
-            //guiderInnerCornerPt[0] = cornerPt[2];
-            //guiderInnerCornerPt[1] = cornerPt[3];
-
-            //Curve baseRectCrv1 = new Polyline(cornerPt).ToNurbsCurve();
-            //cornerPt[0] = baseStructureCrv2.PointAtEnd;
-            //cornerPt[1] = baseStructureCrv2.PointAtEnd;
-            //cornerPt[2] = baseStructureCrv2.PointAtEnd;
-            //cornerPt[3] = baseStructureCrv2.PointAtEnd;
-            //cornerPt[0].Transform(txp); cornerPt[0].Transform(typ);
-            //cornerPt[1].Transform(txn); cornerPt[1].Transform(typ);
-            //cornerPt[2].Transform(txn); cornerPt[2].Transform(tyn);
-            //cornerPt[3].Transform(txp); cornerPt[3].Transform(tyn);
-            //cornerPt[4] = cornerPt[0];
-
-            //guiderOuterCornerPt[2] = cornerPt[2];
-            //guiderOuterCornerPt[3] = cornerPt[3];
-            //guiderOuterCornerPt[4] = guiderOuterCornerPt[0];
-
-            //guiderInnerCornerPt[2] = cornerPt[0];
-            //guiderInnerCornerPt[3] = cornerPt[1];
-            //guiderInnerCornerPt[4] = guiderInnerCornerPt[0];
-
-            //guiderInnerCornerPt[0].Transform(txn);
-            //guiderInnerCornerPt[1].Transform(txp);
-            //guiderInnerCornerPt[2].Transform(txp);
-            //guiderInnerCornerPt[3].Transform(txn);
-            //guiderInnerCornerPt[4].Transform(txn);
-
-            ////foreach (var p in guiderInnerCornerPt)
-            ////{
-            ////    myDoc.Objects.AddPoint(p);
-            ////    myDoc.Views.Redraw();
-            ////}
-            //Curve guiderOuterRectCrv = new Polyline(guiderOuterCornerPt).ToNurbsCurve();
-            //Curve guiderInnerRectCrv = new Polyline(guiderInnerCornerPt).ToNurbsCurve();
-
-            //var outerRect = sweep.PerformSweep(guiderCrv, guiderOuterRectCrv)[0];
-            //var innerRect = sweep.PerformSweep(guiderCrv, guiderInnerRectCrv)[0];
-
-
-            //var baseBreps = Brep.CreateBooleanIntersection(outerRect, innerRect, myDoc.ModelRelativeTolerance);
-            //baseBreps[0] = baseBreps[0].CapPlanarHoles(myDoc.ModelRelativeTolerance);
-            //baseBreps[1] = baseBreps[1].CapPlanarHoles(myDoc.ModelRelativeTolerance);
-
-            //myDoc.Objects.AddBrep(baseBreps[0]);
-            //myDoc.Objects.AddBrep(baseBreps[1]);
-
-            //List<Point3d> baseVertexList = new List<Point3d>();
-            //foreach (Brep b in baseBreps)
-            //{
-            //    Rhino.Geometry.Collections.BrepVertexList vertexList = b.Vertices;
-            //    if (vertexList != null && vertexList.Count > 0)
-            //    {
-            //        foreach (var v in vertexList)
-            //        {
-            //            baseVertexList.Add(v.Location);
-            //        }
-            //    }
-            //}
-
-            //Plane guiderPln = new Plane(guiderCrv.PointAtEnd, guiderCrv.TangentAtEnd);
-            //PlaneSurface guiderPlnSuf = new PlaneSurface(guiderPln, new Interval(-30, 30), new Interval(-30, 30));
-            //List<Point3d> guiderPointsList = new List<Point3d>();
-            //foreach (Point3d p in baseVertexList)
-            //{
-            //    double u, v;
-            //    guiderPlnSuf.ClosestPoint(p, out u, out v);
-            //    if (guiderPlnSuf.PointAt(u, v).DistanceTo(p) < 0.5)
-            //    {
-            //        guiderPointsList.Add(p);
-            //    }
-            //}
-
-            //Rhino.Geometry.PointCloud ptCloud = new PointCloud(guiderPointsList);
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    int removeIdx = ptCloud.ClosestPoint(guiderPln.Origin);
-            //    ptCloud.RemoveAt(removeIdx);
-            //}
-            //guiderPointsList.Clear();
-            //foreach (var p in ptCloud)
-            //    guiderPointsList.Add(p.Location);
-
-            //guiderPointsList.Add(guiderPointsList[0]);
-            //Curve guiderTopCrv = new Polyline(guiderPointsList).ToNurbsCurve();
-
-
-
-
-            //TO-DO: Clean the following code
-            //// guider hole
-
-            //Point3d guiderPt = cylinCrv.PointAtEnd;
-            //double guiderPtGap = 0.5;
-            //double newRadius = cylinBaseSideRadius + guiderPtGap;
-            //Plane stopperPln1 = new Plane(cylinCrv.PointAtEnd, cylinCrv.TangentAtEnd);
-            //Curve guiderCircle = new Circle(stopperPln,guiderPt, newRadius).ToNurbsCurve();
-
-            //double ttt;
-            //cylinCrv.LengthParameter(cylinCrv.GetLength() - 4, out ttt);
-
-            //var splitedLeftCrvs = cylinCrv.Split(ttt);
-            //Brep guiderCenter = sweep.PerformSweep(splitedLeftCrvs[1], guiderCircle)[0];
-            //guiderCenter = guiderCenter.CapPlanarHoles(myDoc.ModelRelativeTolerance);
-
-            ////guider outcube
-            //Brep outerGuider = sweep.PerformSweep(splitedLeftCrvs[1], guiderTopCrv)[0];
-            //outerGuider = outerGuider.CapPlanarHoles(myDoc.ModelRelativeTolerance);
-            //var guiderFinal = Brep.CreateBooleanIntersection(outerGuider, guiderCenter, myDoc.ModelRelativeTolerance)[0];
-            //myDoc.Objects.Add(guiderFinal);
-
-            //// Last render
-            //myDoc.Views.Redraw();
-            #endregion
         }
         private void generateLinearTwistSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis)
         {
@@ -1797,294 +1762,752 @@ namespace OndulePlugin
 
             myDoc.Views.Redraw();
         }
-
-        /// <summary>
-        /// This method generates bend deformation structure.
-        /// </summary>
-        /// <param name="objRef"></param>
-        public void bendDeform(ObjRef objRef)
+        private void generateBendSupport(Plane startPln, Plane endPln, Curve centerCrv, Boolean dir, int angle)
         {
-            // in the current code we ask the user to select the outer shell of the geometry. In the real case this should be the same
-            // part as our point cloud selection so user don't need to select themselves.
-            const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.PolysrfFilter;// filter allows us to constrain the type of objects the user can select
-            Rhino.DocObjects.ObjRef sufObjRef;
-            Guid sufObjId = Guid.Empty; // all rhino doc objects has a unique ID. We can always find the object by create an objRef with the id
-            Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one surface to print", false, filter, out sufObjRef);
-            if (rc == Rhino.Commands.Result.Success)
-            {
-                sufObjId = sufObjRef.ObjectId;
-            }
-            ObjRef armOffsetObjRef = new ObjRef(sufObjId);//get the objRef from the GUID
+            double rodRadius = 1;       // the rod radius
+            double jointRadius = 2;     // the joint radius
+            double chainUnitLen = 8;    // the length of the chain unit
+            double chainLen = centerCrv.GetLength();
+            double paddingLen = (chainLen - Math.Floor(chainLen / chainUnitLen) * chainUnitLen) / 2;     // padding for the first chain and the last chain units 
+            double gap = 0.4;
+            double holderThickness = 0.8;
 
-            Brep surfaceBrep = armOffsetObjRef.Brep(); // because we know the geometry is Brep, we directly find it from the objRef 
-
-            #region generate start and end plane of the curve
-            Curve centerCrv = objRef.Curve();
-            Point3d startPt = centerCrv.PointAtStart;
-            Point3d endPt = centerCrv.PointAtEnd;
-            double startPara = 0, endPara = 0;
-            centerCrv.LengthParameter(0, out startPara);
-            centerCrv.LengthParameter(centerCrv.GetLength(), out endPara);
-            Plane startPln = new Plane(startPt, centerCrv.TangentAt(startPara));// the plane at the start of the curve
-            Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
-            Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-50, 50), new Interval(-50, 50));// convert the plane object to an actual surface so that we can draw it in the rhino doc
-            Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-50, 50), new Interval(-50, 50));// 15 is a random number. It should actually be the ourter shell's radius or larger.
-            //myDoc.Objects.AddSurface(startPlnSuf);
-            //myDoc.Objects.AddSurface(endPlnSuf);
+            #region create sweep function
+            var sweep = new Rhino.Geometry.SweepOneRail();
+            sweep.AngleToleranceRadians = myDoc.ModelAngleToleranceRadians;
+            sweep.ClosedSweep = false;
+            sweep.SweepTolerance = myDoc.ModelAbsoluteTolerance;
             #endregion
 
-            #region get the anchor control points for deciding the bending direction
-            this.centerCrv = centerCrv;
-            var attributes = new ObjectAttributes();
-            attributes.ObjectColor = Color.White;
-            attributes.ColorSource = ObjectColorSource.ColorFromObject;
+            #region create the color
+            var red_attributes = new ObjectAttributes();
+            red_attributes.ObjectColor = Color.Red;
+            red_attributes.ColorSource = ObjectColorSource.ColorFromObject;
 
-            // listen to the user's selected sphere: either at the start or at the end sphere
-            Rhino.Input.Custom.GetPoint gp_pt = new Rhino.Input.Custom.GetPoint();
-            gp_pt.DynamicDraw += Gp_sphereSelDynamicDraw;
-            gp_pt.MouseMove += Gp_sphereSelMouseMove;
-            gp_pt.Get(true);
+            var black_attributes = new ObjectAttributes();
+            black_attributes.ObjectColor = Color.Black;
+            black_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+            #endregion
 
-            if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 1.5)
+            int segmentNum = (int)(Math.Floor(chainLen / chainUnitLen));
+
+            List<Curve> segments = new List<Curve>();
+            Curve trajectory = centerCrv;
+
+            for (int idx = 0; idx < segmentNum - 1; idx++)
             {
-                // selected the start sphere
-                Rhino.Geometry.Sphere startSphere = new Rhino.Geometry.Sphere(startPt, 1.5);
-                Guid sphId = myDoc.Objects.AddSphere(startSphere, attributes);
-                Plane anglePln = new Plane(startPt, centerCrv.TangentAt(startPara)); // the plane at the starting plane of the central curve
-                this.bendPlane = anglePln;
-
-                this.bendCtrlPt = startPt;
-                Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(anglePln, startPt, 20);
-                this.angleCircle = dirCircle;
-
-                Guid sId = myDoc.Objects.AddCircle(dirCircle);
-                myDoc.Views.Redraw();
-
-                // start the command 
-                is_BendStart = true;
-
-                if (is_BendStart)
+                double t;
+                double l;
+                if (idx == 0)
                 {
-                    // if the user doesn't press the 'Enter' key it will continue to accept the next direction
-                    bend_info tempBendInfo = new bend_info();
-
-                    // step 1: decide the direction
-                    Rhino.Input.Custom.GetPoint gp_dir = new Rhino.Input.Custom.GetPoint();
-                    //gp.MouseDown += Gp_BendAngleSelMouseDown; // only when the user click it starts to change the angle;
-                    gp_dir.MouseMove += Gp_BendAngleSelMouseMove; // Every move compute the changed angle
-                    gp_dir.DynamicDraw += Gp_BendAngelSelDynamicDraw; // Draw the refreshed ball in the scenes
-                    gp_dir.Get(true);
-                    Point3d p = this.angleCircle.ClosestPoint(gp_dir.Point());
-                    tempBendInfo.dir = (Vector3d)(p - startPt);
-
-                    // step 2: decide the bending strength
-                    Rhino.Input.Custom.GetPoint gp_bs = new Rhino.Input.Custom.GetPoint();
-                    gp_bs.MouseMove += Gp_BendStrengthSelMouseMove;
-                    gp_bs.DynamicDraw += Gp_BendStrengthSelDynamicDraw;
-                    gp_bs.Get(true);
-                    Point3d pp = gp_bs.Point();
-                    tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
-
-                    // add current bending information in the bending list
-                    //RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
-                    //RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
-                    bendInfoList.Add(tempBendInfo);
-                }
-
-                myDoc.Objects.Delete(sId, false);
-                myDoc.Objects.Delete(sphId, false);
-                myDoc.Views.Redraw();
-
-                #region generating the outer spring
-                double K;
-                springGeneration(centerCrv, surfaceBrep, 5, 3, out K);
-                RhinoApp.WriteLine("The K value of the generated soring is: " + K);
-                #endregion
-
-                #region delete the part that spring will replaced
-                // chop the shells into 3 piece
-                List<Brep> splitsurf = new List<Brep>();
-                Brep[] firstSplit = surfaceBrep.Split(startPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-
-                Brep[] test = firstSplit[0].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-                if (test != null && test.Length > 0)
-                {
-                    splitsurf.AddRange(test);
-                    splitsurf.Add(firstSplit[1]);
+                    // the first and the last segment, use the padded length for the chain length
+                    l = chainUnitLen + paddingLen;
                 }
                 else
                 {
-                    test = firstSplit[1].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-                    splitsurf.AddRange(test);
-                    splitsurf.Add(firstSplit[0]);
-                }
-                List<Brep> finalPreservedBrepList = new List<Brep>();
-                foreach (Brep b in splitsurf)
-                {
-                    Point3d bcenter = b.GetBoundingBox(true).Center;
-                    Vector3d v1 = bcenter - endPln.Origin;
-                    Vector3d v2 = bcenter - startPln.Origin;
-                    if (v1 * v2 > 0)
-                    {
-                        Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-                        finalPreservedBrepList.Add(temp);
-                    }
-
+                    l = chainUnitLen;
                 }
 
+                trajectory.LengthParameter(trajectory.GetLength() - l, out t);
 
-                foreach (Brep b in finalPreservedBrepList)
-                {
-                    myDoc.Objects.AddBrep(b, redAttribute);
-                }
-
-                #endregion
-
-                // generate the bend support structure
-                List<Brep> centrShaft = new List<Brep>();
-                List<Brep> hinges = new List<Brep>();
-                generateBendSupport(startPln, endPln, this.centerCrv, bendInfoList, startPt, endPt, true, out centrShaft, out hinges);
-
-                // Clear the bend information list
-                bendInfoList.Clear();
-
-                // Animation
-                List<Brep> animList = new List<Brep>();
-                animList.Add(finalPreservedBrepList[1]);
-
-                // add all breps of the central connector and all hinges
-                foreach (Brep s in centrShaft)
-                {
-                    animList.Add(s);
-                }
-                foreach (Brep h in hinges)
-                {
-                    animList.Add(h);
-                }
+                Curve chainTra = trajectory.Split(t)[1];
+                trajectory = trajectory.Split(t)[0];
+                segments.Add(chainTra);
             }
-            else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 1.5)
+            segments.Add(trajectory);
+
+            if (dir)
             {
-                // selected the end sphere
-                Rhino.Geometry.Sphere endSphere = new Rhino.Geometry.Sphere(endPt, 1.5);
-                Guid sphId = myDoc.Objects.AddSphere(endSphere, attributes);
-                Plane anglePln = new Plane(endPt, centerCrv.TangentAt(endPara)); // the plane at the end plane of the central curve
-                this.bendPlane = anglePln;
+                #region Allows all direction bending, using ball joints
 
-                this.bendCtrlPt = endPt;
-                Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(anglePln, endPt, 20);
-                this.angleCircle = dirCircle;
-
-                Guid sId = myDoc.Objects.AddCircle(dirCircle);
-                myDoc.Views.Redraw();
-
-                // start the command 
-                is_BendStart = true;
-
-                if (is_BendStart)
+                for(int idx=0; idx<segments.Count(); idx++)
                 {
-                    // if the user doesn't press the 'Enter' key it will continue to accept the next direction
-                    bend_info tempBendInfo = new bend_info();
+                    #region For debug: show all first points on all curves
+                    //Sphere sphere = new Sphere(j.PointAtStart, 1.5);
+                    //myDoc.Objects.AddSphere(sphere, red_attributes);
+                    //myDoc.Views.Redraw();
+                    #endregion
 
-                    // step 1: decide the direction
-                    Rhino.Input.Custom.GetPoint gp_dir = new Rhino.Input.Custom.GetPoint();
-                    //gp.MouseDown += Gp_BendAngleSelMouseDown; // only when the user click it starts to change the angle;
-                    gp_dir.MouseMove += Gp_BendAngleSelMouseMove; // Every move compute the changed angle
-                    gp_dir.DynamicDraw += Gp_BendAngelSelDynamicDraw; // Draw the refreshed ball in the scenes
-                    gp_dir.Get(true);
-                    Point3d p = this.angleCircle.ClosestPoint(gp_dir.Point());
-                    tempBendInfo.dir = (Vector3d)(p - endPt);
+                    Curve chainCrv = segments.ElementAt(idx);
 
-                    // step 2: decide the bending strength
-                    Rhino.Input.Custom.GetPoint gp_bs = new Rhino.Input.Custom.GetPoint();
-                    gp_bs.MouseMove += Gp_BendStrengthSelMouseMove;
-                    gp_bs.DynamicDraw += Gp_BendStrengthSelDynamicDraw;
-                    gp_bs.Get(true);
-                    Point3d pp = gp_bs.Point();
-                    tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
-
-                    // add current bending information in the bending list
-                    RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
-                    RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
-                    bendInfoList.Add(tempBendInfo);
-                }
-                myDoc.Objects.Delete(sId, false);
-                myDoc.Objects.Delete(sphId, false);
-                myDoc.Views.Redraw();
-
-                #region generating the outer spring
-                double K;
-                springGeneration(centerCrv, surfaceBrep, 5, 3, out K);
-                RhinoApp.WriteLine("The K value of the generated soring is: " + K);
-                #endregion
-
-                #region delete the part that spring will replaced
-                // chop the shells into 3 piece
-                List<Brep> splitsurf = new List<Brep>();
-                Brep[] firstSplit = surfaceBrep.Split(startPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-
-                Brep[] test = firstSplit[0].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-                if (test != null && test.Length > 0)
-                {
-                    splitsurf.AddRange(test);
-                    splitsurf.Add(firstSplit[1]);
-                }
-                else
-                {
-                    test = firstSplit[1].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
-                    splitsurf.AddRange(test);
-                    splitsurf.Add(firstSplit[0]);
-                }
-                List<Brep> finalPreservedBrepList = new List<Brep>();
-                foreach (Brep b in splitsurf)
-                {
-                    Point3d bcenter = b.GetBoundingBox(true).Center;
-                    Vector3d v1 = bcenter - endPln.Origin;
-                    Vector3d v2 = bcenter - startPln.Origin;
-                    if (v1 * v2 > 0)
+                    if(idx == 0)
                     {
-                        Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-                        finalPreservedBrepList.Add(temp);
+                        // The first chain unit, only generate the holder
+                        Sphere innerBall = new Sphere(chainCrv.PointAtStart, jointRadius + gap);
+                        Sphere outerBall = new Sphere(chainCrv.PointAtStart, jointRadius + gap + holderThickness);
+
+                        Curve nextChainCrv = segments.ElementAt(idx + 1);
+                        double t;
+                        nextChainCrv.LengthParameter(nextChainCrv.GetLength() - 0.2 * jointRadius, out t);
+                        Curve capCrv = nextChainCrv.Split(t)[1];
+                        Curve capLeftoverCrv = nextChainCrv.Split(t)[0];
+                        Plane capPln = new Plane(capCrv.PointAtStart, capCrv.TangentAtStart);
+
+                        Circle removeCir = new Circle(capPln, capCrv.PointAtStart, jointRadius + gap + holderThickness);
+                        var removeBrep = sweep.PerformSweep(capLeftoverCrv, removeCir.ToNurbsCurve())[0];
+                        removeBrep = removeBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                        var removeBrepDup = removeBrep.DuplicateBrep();
+
+                        var outerBalls = Brep.CreateBooleanIntersection(outerBall.ToBrep(), removeBrep, myDoc.ModelAbsoluteTolerance);
+                        var innerBalls = Brep.CreateBooleanIntersection(innerBall.ToBrep(), removeBrepDup, myDoc.ModelAbsoluteTolerance);
+                        var shells = Brep.CreateBooleanDifference(outerBalls[0], innerBalls[0], myDoc.ModelAbsoluteTolerance);
+
+                        myDoc.Objects.AddBrep(shells[0], red_attributes);
+
+                        // Add the rod
+                        chainCrv.LengthParameter(jointRadius + gap + holderThickness / 2, out t);
+                        Curve rodTrajectory = chainCrv.Split(t)[1];
+
+                        myDoc.Objects.AddCurve(rodTrajectory, red_attributes);
+                        myDoc.Views.Redraw();
+
+                        Plane rodPln = new Plane(rodTrajectory.PointAtStart, rodTrajectory.TangentAtStart);
+                        Curve cylinCircle = new Circle(rodPln, rodTrajectory.PointAtStart, rodRadius).ToNurbsCurve();
+                        var cylinBreps = sweep.PerformSweep(rodTrajectory, cylinCircle);
+                        Brep cylinBrep = cylinBreps[0];
+                        cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        myDoc.Objects.AddBrep(cylinBrep, red_attributes);
                     }
+                    else if(idx == segments.Count() - 1)
+                    {
+                        // The last chain unit, only generate the ball joint
+                        Sphere ball = new Sphere(chainCrv.PointAtEnd, jointRadius);
+                        myDoc.Objects.AddSphere(ball, red_attributes);
 
+                        Plane rodPln = new Plane(chainCrv.PointAtStart, chainCrv.TangentAtStart);
+                        Curve cylinCircle = new Circle(rodPln, chainCrv.PointAtStart, rodRadius).ToNurbsCurve();
+                        var cylinBreps = sweep.PerformSweep(chainCrv, cylinCircle);
+                        Brep cylinBrep = cylinBreps[0];
+                        cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        myDoc.Objects.AddBrep(cylinBrep, red_attributes);
+                    }
+                    else
+                    {
+                        // The middle chain units, generate both holder and ball joint
+                        // Add the ball
+                        Sphere ball = new Sphere(chainCrv.PointAtEnd, jointRadius);
+                        myDoc.Objects.AddSphere(ball, red_attributes);
+
+                        // Add the holder
+                        Sphere innerBall = new Sphere(chainCrv.PointAtStart, jointRadius + gap);
+                        Sphere outerBall = new Sphere(chainCrv.PointAtStart, jointRadius + gap + holderThickness);
+
+                        Curve nextChainCrv = segments.ElementAt(idx + 1);
+                        double t;
+                        nextChainCrv.LengthParameter(nextChainCrv.GetLength() - 0.2 * jointRadius, out t);
+                        Curve capCrv = nextChainCrv.Split(t)[1];
+                        Curve capLeftoverCrv = nextChainCrv.Split(t)[0];
+                        Plane capPln = new Plane(capCrv.PointAtStart, capCrv.TangentAtStart);
+
+                        Circle removeCir = new Circle(capPln, capCrv.PointAtStart, jointRadius + gap + holderThickness);
+                        var removeBrep = sweep.PerformSweep(capLeftoverCrv, removeCir.ToNurbsCurve())[0];
+                        removeBrep = removeBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                        var removeBrepDup = removeBrep.DuplicateBrep();
+
+                        var outerBalls = Brep.CreateBooleanIntersection(outerBall.ToBrep(), removeBrep, myDoc.ModelAbsoluteTolerance);
+                        var innerBalls = Brep.CreateBooleanIntersection(innerBall.ToBrep(), removeBrepDup, myDoc.ModelAbsoluteTolerance);
+                        var shells = Brep.CreateBooleanDifference(outerBalls[0], innerBalls[0], myDoc.ModelAbsoluteTolerance);
+
+                        myDoc.Objects.AddBrep(shells[0], red_attributes);
+
+                        // Add the rod
+                        chainCrv.LengthParameter(jointRadius + gap + holderThickness / 2, out t);
+                        Curve rodTrajectory = chainCrv.Split(t)[1];
+
+                        Plane rodPln = new Plane(rodTrajectory.PointAtStart, rodTrajectory.TangentAtStart);
+                        Curve cylinCircle = new Circle(rodPln, rodTrajectory.PointAtStart, rodRadius).ToNurbsCurve();
+                        var cylinBreps = sweep.PerformSweep(rodTrajectory, cylinCircle);
+                        Brep cylinBrep = cylinBreps[0];
+                        cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        myDoc.Objects.AddBrep(cylinBrep, red_attributes);
+                    }
                 }
+                #endregion
+            }
+            else
+            {
+                #region Allows one-direction bending, using cylinder joints
 
+                double bendAngle = angle * Math.PI / 180;
+                #region Test if all planes generated along the central axis has the same directions
+                //double t;
+                //double dis = 0;
+                //for (dis = 0; dis < centerCrv.GetLength(); dis++)
+                //{
+                //    centerCrv.LengthParameter(dis, out t);
+                //    Plane p = new Plane(centerCrv.PointAt(t), centerCrv.TangentAt(t));
+                //    Point3d pt1 = centerCrv.PointAt(t);
+                //    Vector3d direction = p.XAxis;
+                //    direction.Rotate(bendAngle, centerCrv.TangentAt(t));
+                //    Point3d pt2 = pt1 + direction;
+                //    Line l = new Line(pt1, pt2);
+                //    Curve l_c = l.ToNurbsCurve();
 
-                foreach (Brep b in finalPreservedBrepList)
-                {
-                    myDoc.Objects.AddBrep(b, redAttribute);
-                }
-
+                //    myDoc.Objects.AddCurve(l_c, red_attributes);
+                //    myDoc.Views.Redraw();
+                //}
                 #endregion
 
-                // generate the bend support structure
-                List<Brep> centrShaft = new List<Brep>();
-                List<Brep> hinges = new List<Brep>();
-                generateBendSupport(startPln, endPln, this.centerCrv, bendInfoList, startPt, endPt, false, out centrShaft, out hinges);
-
-                // Clear the bend information list
-                bendInfoList.Clear();
-
-                // Animation
-                List<Brep> animList = new List<Brep>();
-                animList.Add(finalPreservedBrepList[1]);
-
-                // add all breps of the central connector and all hinges
-                foreach (Brep s in centrShaft)
+                for (int idx = 0; idx < segments.Count(); idx++)
                 {
-                    animList.Add(s);
+                    #region For debug: show all first points on all curves
+                    //Sphere sphere = new Sphere(j.PointAtStart, 1.5);
+                    //myDoc.Objects.AddSphere(sphere, red_attributes);
+                    //myDoc.Views.Redraw();
+                    #endregion
+
+                    Curve chainCrv = segments.ElementAt(idx);
+
+                    if (idx == 0)
+                    {
+                        // The first chain unit, only generate the holder
+                        // Add the holder
+                        Plane p = new Plane(chainCrv.PointAtStart, chainCrv.TangentAtStart);
+                        Vector3d direction = p.XAxis;
+                        Vector3d jointNormal = p.XAxis;
+                        Point3d origPt = chainCrv.PointAtStart;
+                        direction.Rotate(bendAngle, chainCrv.TangentAtStart);
+                        jointNormal.Rotate(bendAngle + Math.PI/2, chainCrv.TangentAtStart);
+                        Point3d dir1Pt = origPt + (jointNormal / jointNormal.Length) * (rodRadius + gap + holderThickness);
+                        Point3d dir2Pt = origPt - (jointNormal / jointNormal.Length) * (rodRadius + gap + holderThickness);
+                        Curve jointTrajectoryPart1 = new Line(origPt, dir1Pt).ToNurbsCurve();
+                        Curve jointTrajectoryPart2 = new Line(origPt, dir2Pt).ToNurbsCurve();
+
+                        Plane jointCylinderPln = new Plane(chainCrv.PointAtStart, jointNormal);
+
+                        Curve jointCylinderInnerCircle = new Circle(jointCylinderPln, chainCrv.PointAtStart, rodRadius+gap).ToNurbsCurve();
+                        var jointCylinderInnerPart1 = sweep.PerformSweep(jointTrajectoryPart1, jointCylinderInnerCircle)[0];
+                        jointCylinderInnerPart1 = jointCylinderInnerPart1.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderInnerPart2 = sweep.PerformSweep(jointTrajectoryPart2, jointCylinderInnerCircle)[0];
+                        jointCylinderInnerPart2 = jointCylinderInnerPart2.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderInnerBrep = Brep.CreateBooleanDifference(jointCylinderInnerPart2, jointCylinderInnerPart1, myDoc.ModelAbsoluteTolerance)[0];
+
+                        Curve jointCylinderOuterCircle = new Circle(jointCylinderPln, chainCrv.PointAtStart, rodRadius + gap+holderThickness).ToNurbsCurve();
+                        var jointCylinderOuterPart1 = sweep.PerformSweep(jointTrajectoryPart1, jointCylinderOuterCircle)[0];
+                        jointCylinderOuterPart1 = jointCylinderOuterPart1.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderOuterPart2 = sweep.PerformSweep(jointTrajectoryPart2, jointCylinderOuterCircle)[0];
+                        jointCylinderOuterPart2 = jointCylinderOuterPart2.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderOuterBrep = Brep.CreateBooleanDifference(jointCylinderOuterPart2, jointCylinderOuterPart1, myDoc.ModelAbsoluteTolerance)[0];
+
+                        var holderBrep = Brep.CreateBooleanDifference(jointCylinderInnerBrep, jointCylinderOuterBrep, myDoc.ModelAbsoluteTolerance)[0];
+                        //myDoc.Objects.AddBrep(holderBrep, red_attributes);
+
+                        // Remove the central part so that a hollow holder is created
+                        Point3d[] cavityPts = new Point3d[5];
+
+                        cavityPts[0] = chainCrv.PointAtStart;
+                        cavityPts[1] = chainCrv.PointAtStart;
+                        cavityPts[2] = chainCrv.PointAtStart;
+                        cavityPts[3] = chainCrv.PointAtStart;
+                        cavityPts[4] = chainCrv.PointAtStart;
+
+                        Point3d dirPt = chainCrv.PointAtStart + direction;
+                        Point3d dirPtinPlane = jointCylinderPln.ClosestPoint(dirPt);
+                        Vector3d cavX = dirPtinPlane - chainCrv.PointAtStart;
+
+                        Vector3d longerDir = cavX;
+                        Vector3d shorterDir = chainCrv.TangentAtStart;
+                        longerDir.Rotate(Math.PI/2, jointNormal);
+                        if (longerDir * shorterDir >= 0)
+                        {
+                            longerDir.Rotate(Math.PI, jointNormal);
+                        }
+
+                        Transform txp_rect = Transform.Translation(cavX / direction.Length * (rodRadius + gap + holderThickness));
+                        Transform typ_rect = Transform.Translation(-longerDir / longerDir.Length * (rodRadius + gap));
+                        Transform txn_rect = Transform.Translation(-cavX / direction.Length * (rodRadius + gap + holderThickness));
+                        Transform tyn_rect = Transform.Translation(longerDir / longerDir.Length * (rodRadius + gap + holderThickness));
+
+                        cavityPts[0].Transform(txp_rect); cavityPts[0].Transform(typ_rect);
+                        cavityPts[1].Transform(txn_rect); cavityPts[1].Transform(typ_rect);
+                        cavityPts[2].Transform(txn_rect); cavityPts[2].Transform(tyn_rect);
+                        cavityPts[3].Transform(txp_rect); cavityPts[3].Transform(tyn_rect);
+                        cavityPts[4] = cavityPts[0];
+
+                        Curve cavityRect = new Polyline(cavityPts).ToNurbsCurve();
+
+
+                        Point3d cavDir1Pt = origPt + (jointNormal / jointNormal.Length) * (rodRadius + gap);
+                        Point3d cavDir2Pt = origPt - (jointNormal / jointNormal.Length) * (rodRadius + gap);
+                        Curve cavityTrajectoryPart1 = new Line(origPt, cavDir1Pt).ToNurbsCurve();
+                        Curve cavityTrajectoryPart2 = new Line(origPt, cavDir2Pt).ToNurbsCurve();
+
+                        var cavityBrep1 = sweep.PerformSweep(cavityTrajectoryPart1, cavityRect)[0];
+                        cavityBrep1 = cavityBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                        var cavityBrep2 = sweep.PerformSweep(cavityTrajectoryPart2, cavityRect)[0];
+                        cavityBrep2 = cavityBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                        var cavityUnion = Brep.CreateBooleanDifference(cavityBrep1, cavityBrep2, myDoc.ModelAbsoluteTolerance)[0];
+
+                        var cavityBrep = Brep.CreateBooleanIntersection(holderBrep, cavityUnion, myDoc.ModelAbsoluteTolerance)[0];
+                        myDoc.Objects.AddBrep(cavityBrep, red_attributes);
+                        myDoc.Views.Redraw();
+
+                        // Add the rod
+                        double t;
+                        chainCrv.LengthParameter(rodRadius + gap + holderThickness / 2, out t);
+                        Curve rodTrajectory = chainCrv.Split(t)[1];
+
+                        Plane rodPln = new Plane(rodTrajectory.PointAtStart, rodTrajectory.TangentAtStart);
+                        Curve cylinCircle = new Circle(rodPln, rodTrajectory.PointAtStart, rodRadius).ToNurbsCurve();
+                        var cylinBreps = sweep.PerformSweep(rodTrajectory, cylinCircle);
+                        Brep cylinBrep = cylinBreps[0];
+                        cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        myDoc.Objects.AddBrep(cylinBrep, red_attributes);
+                    }
+                    else if (idx == segments.Count() - 1)
+                    {
+                        // The last chain unit, only generate the ball joint
+                        Plane p = new Plane(chainCrv.PointAtEnd, chainCrv.TangentAtEnd);
+                        Vector3d direction = p.XAxis;
+                        Vector3d jointNormal = p.XAxis;
+                        Point3d origPt = chainCrv.PointAtEnd;
+                        
+                        direction.Rotate(bendAngle, chainCrv.TangentAtEnd);
+                        jointNormal.Rotate(bendAngle+Math.PI/2, chainCrv.TangentAtEnd);
+                        Point3d dir1Pt = origPt + (jointNormal / jointNormal.Length) * (rodRadius + gap + holderThickness);
+                        Point3d dir2Pt = origPt - (jointNormal / jointNormal.Length) * (rodRadius + gap + holderThickness);
+                        Curve jointTrajectoryPart1 = new Line(origPt, dir1Pt).ToNurbsCurve();
+                        Curve jointTrajectoryPart2 = new Line(origPt, dir2Pt).ToNurbsCurve();
+
+                        Plane jointCylinderPln = new Plane(chainCrv.PointAtEnd, jointNormal);
+                        Curve jointCylinderCircle = new Circle(jointCylinderPln, chainCrv.PointAtEnd, rodRadius).ToNurbsCurve();
+                        var jointCylinderPart1 = sweep.PerformSweep(jointTrajectoryPart1, jointCylinderCircle)[0];
+                        jointCylinderPart1 = jointCylinderPart1.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderPart2 = sweep.PerformSweep(jointTrajectoryPart2, jointCylinderCircle)[0];
+                        jointCylinderPart2 = jointCylinderPart2.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+
+                        var jointUnion = Brep.CreateBooleanDifference(jointCylinderPart2, jointCylinderPart1, myDoc.ModelAbsoluteTolerance)[0];
+                        myDoc.Objects.AddBrep(jointUnion, red_attributes);
+                        //myDoc.Objects.AddBrep(jointCylinderPart1, red_attributes);
+                        //myDoc.Objects.AddBrep(jointCylinderPart2, red_attributes);
+
+                        Plane rodPln = new Plane(chainCrv.PointAtStart, chainCrv.TangentAtStart);
+                        Curve cylinCircle = new Circle(rodPln, chainCrv.PointAtStart, rodRadius).ToNurbsCurve();
+                        var cylinBreps = sweep.PerformSweep(chainCrv, cylinCircle);
+                        Brep cylinBrep = cylinBreps[0];
+                        cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        myDoc.Objects.AddBrep(cylinBrep, red_attributes);
+                    }
+                    else
+                    {
+                        // The middle chain units, generate both holder and ball joint
+                        // Add the cylinder joint
+                        Plane pJoint = new Plane(chainCrv.PointAtEnd, chainCrv.TangentAtEnd);
+                        Vector3d directionJoint = pJoint.XAxis;
+                        Vector3d jointNormalJoint = pJoint.XAxis;
+                        Point3d origPtJoint = chainCrv.PointAtEnd;
+
+                        directionJoint.Rotate(bendAngle, chainCrv.TangentAtEnd);
+                        jointNormalJoint.Rotate(bendAngle + Math.PI / 2, chainCrv.TangentAtEnd);
+                        Point3d dir1PtJoint = origPtJoint + (jointNormalJoint / jointNormalJoint.Length) * (rodRadius + gap + holderThickness);
+                        Point3d dir2PtJoint = origPtJoint - (jointNormalJoint / jointNormalJoint.Length) * (rodRadius + gap + holderThickness);
+                        Curve jointTrajectoryPart1End = new Line(origPtJoint, dir1PtJoint).ToNurbsCurve();
+                        Curve jointTrajectoryPart2End = new Line(origPtJoint, dir2PtJoint).ToNurbsCurve();
+
+                        Plane jointCylinderPlnEnd = new Plane(chainCrv.PointAtEnd, jointNormalJoint);
+                        Curve jointCylinderCircle = new Circle(jointCylinderPlnEnd, chainCrv.PointAtEnd, rodRadius).ToNurbsCurve();
+                        var jointCylinderPart1 = sweep.PerformSweep(jointTrajectoryPart1End, jointCylinderCircle)[0];
+                        jointCylinderPart1 = jointCylinderPart1.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderPart2 = sweep.PerformSweep(jointTrajectoryPart2End, jointCylinderCircle)[0];
+                        jointCylinderPart2 = jointCylinderPart2.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+
+                        var jointUnion = Brep.CreateBooleanDifference(jointCylinderPart2, jointCylinderPart1, myDoc.ModelAbsoluteTolerance)[0];
+                        myDoc.Objects.AddBrep(jointUnion, red_attributes);
+
+                        // Add the holder
+                        Plane p = new Plane(chainCrv.PointAtStart, chainCrv.TangentAtStart);
+                        Vector3d direction = p.XAxis;
+                        Vector3d jointNormal = p.XAxis;
+                        Point3d origPt = chainCrv.PointAtStart;
+                        direction.Rotate(bendAngle, chainCrv.TangentAtStart);
+                        jointNormal.Rotate(bendAngle + Math.PI/2, chainCrv.TangentAtStart);
+                        Point3d dir1Pt = origPt + (jointNormal / jointNormal.Length) * (rodRadius + gap + holderThickness);
+                        Point3d dir2Pt = origPt - (jointNormal / jointNormal.Length) * (rodRadius + gap + holderThickness);
+                        Curve jointTrajectoryPart1 = new Line(origPt, dir1Pt).ToNurbsCurve();
+                        Curve jointTrajectoryPart2 = new Line(origPt, dir2Pt).ToNurbsCurve();
+
+                        Plane jointCylinderPln = new Plane(chainCrv.PointAtStart, jointNormal);
+
+                        Curve jointCylinderInnerCircle = new Circle(jointCylinderPln, chainCrv.PointAtStart, rodRadius+gap).ToNurbsCurve();
+                        var jointCylinderInnerPart1 = sweep.PerformSweep(jointTrajectoryPart1, jointCylinderInnerCircle)[0];
+                        jointCylinderInnerPart1 = jointCylinderInnerPart1.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderInnerPart2 = sweep.PerformSweep(jointTrajectoryPart2, jointCylinderInnerCircle)[0];
+                        jointCylinderInnerPart2 = jointCylinderInnerPart2.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderInnerBrep = Brep.CreateBooleanDifference(jointCylinderInnerPart2, jointCylinderInnerPart1, myDoc.ModelAbsoluteTolerance)[0];
+
+                        Curve jointCylinderOuterCircle = new Circle(jointCylinderPln, chainCrv.PointAtStart, rodRadius + gap+holderThickness).ToNurbsCurve();
+                        var jointCylinderOuterPart1 = sweep.PerformSweep(jointTrajectoryPart1, jointCylinderOuterCircle)[0];
+                        jointCylinderOuterPart1 = jointCylinderOuterPart1.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderOuterPart2 = sweep.PerformSweep(jointTrajectoryPart2, jointCylinderOuterCircle)[0];
+                        jointCylinderOuterPart2 = jointCylinderOuterPart2.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        var jointCylinderOuterBrep = Brep.CreateBooleanDifference(jointCylinderOuterPart2, jointCylinderOuterPart1, myDoc.ModelAbsoluteTolerance)[0];
+
+                        var holderBrep = Brep.CreateBooleanDifference(jointCylinderInnerBrep, jointCylinderOuterBrep, myDoc.ModelAbsoluteTolerance)[0];
+                        //myDoc.Objects.AddBrep(holderBrep, red_attributes);
+
+                        // Remove the central part so that a hollow holder is created
+                        Point3d[] cavityPts = new Point3d[5];
+
+                        cavityPts[0] = chainCrv.PointAtStart;
+                        cavityPts[1] = chainCrv.PointAtStart;
+                        cavityPts[2] = chainCrv.PointAtStart;
+                        cavityPts[3] = chainCrv.PointAtStart;
+                        cavityPts[4] = chainCrv.PointAtStart;
+
+                        Point3d dirPt = chainCrv.PointAtStart + direction;
+                        Point3d dirPtinPlane = jointCylinderPln.ClosestPoint(dirPt);
+                        Vector3d cavX = dirPtinPlane - chainCrv.PointAtStart;
+
+                        Vector3d longerDir = cavX;
+                        Vector3d shorterDir = chainCrv.TangentAtStart;
+                        longerDir.Rotate(Math.PI/2, jointNormal);
+                        if (longerDir * shorterDir >= 0)
+                        {
+                            longerDir.Rotate(Math.PI, jointNormal);
+                        }
+
+                        Transform txp_rect = Transform.Translation(cavX / direction.Length * (rodRadius + gap + holderThickness));
+                        Transform typ_rect = Transform.Translation(-longerDir / longerDir.Length * (rodRadius + gap));
+                        Transform txn_rect = Transform.Translation(-cavX / direction.Length * (rodRadius + gap + holderThickness));
+                        Transform tyn_rect = Transform.Translation(longerDir / longerDir.Length * (rodRadius + gap + holderThickness));
+
+                        cavityPts[0].Transform(txp_rect); cavityPts[0].Transform(typ_rect);
+                        cavityPts[1].Transform(txn_rect); cavityPts[1].Transform(typ_rect);
+                        cavityPts[2].Transform(txn_rect); cavityPts[2].Transform(tyn_rect);
+                        cavityPts[3].Transform(txp_rect); cavityPts[3].Transform(tyn_rect);
+                        cavityPts[4] = cavityPts[0];
+
+                        Curve cavityRect = new Polyline(cavityPts).ToNurbsCurve();
+
+
+                        Point3d cavDir1Pt = origPt + (jointNormal / jointNormal.Length) * (rodRadius + gap);
+                        Point3d cavDir2Pt = origPt - (jointNormal / jointNormal.Length) * (rodRadius + gap);
+                        Curve cavityTrajectoryPart1 = new Line(origPt, cavDir1Pt).ToNurbsCurve();
+                        Curve cavityTrajectoryPart2 = new Line(origPt, cavDir2Pt).ToNurbsCurve();
+
+                        var cavityBrep1 = sweep.PerformSweep(cavityTrajectoryPart1, cavityRect)[0];
+                        cavityBrep1 = cavityBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                        var cavityBrep2 = sweep.PerformSweep(cavityTrajectoryPart2, cavityRect)[0];
+                        cavityBrep2 = cavityBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                        var cavityUnion = Brep.CreateBooleanDifference(cavityBrep1, cavityBrep2, myDoc.ModelAbsoluteTolerance)[0];
+
+                        var cavityBrep = Brep.CreateBooleanIntersection(holderBrep, cavityUnion, myDoc.ModelAbsoluteTolerance)[0];
+                        myDoc.Objects.AddBrep(cavityBrep, red_attributes);
+                        myDoc.Views.Redraw();
+
+                        // Add the rod
+                        double t;
+                        chainCrv.LengthParameter(rodRadius + gap + holderThickness / 2, out t);
+                        Curve rodTrajectory = chainCrv.Split(t)[1];
+
+                        Plane rodPln = new Plane(rodTrajectory.PointAtStart, rodTrajectory.TangentAtStart);
+                        Curve cylinCircle = new Circle(rodPln, rodTrajectory.PointAtStart, rodRadius).ToNurbsCurve();
+                        var cylinBreps = sweep.PerformSweep(rodTrajectory, cylinCircle);
+                        Brep cylinBrep = cylinBreps[0];
+                        cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                        myDoc.Objects.AddBrep(cylinBrep, red_attributes);
+                    }
                 }
-                foreach (Brep h in hinges)
-                {
-                    animList.Add(h);
-                }
+                #endregion
             }
 
-            #endregion
-
-            myDoc.Objects.Hide(sufObjId, true);// hide the original shell
             myDoc.Views.Redraw();
-
         }
+
+        #region Old versions of generating the deformation constraints
+        #region Old version of generate the bend support
+        ///// <summary>
+        ///// This method generates bend deformation structure.
+        ///// </summary>
+        ///// <param name="objRef"></param>
+        //public void bendDeform(ObjRef objRef)
+        //{
+        //    // in the current code we ask the user to select the outer shell of the geometry. In the real case this should be the same
+        //    // part as our point cloud selection so user don't need to select themselves.
+        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.PolysrfFilter;// filter allows us to constrain the type of objects the user can select
+        //    Rhino.DocObjects.ObjRef sufObjRef;
+        //    Guid sufObjId = Guid.Empty; // all rhino doc objects has a unique ID. We can always find the object by create an objRef with the id
+        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one surface to print", false, filter, out sufObjRef);
+        //    if (rc == Rhino.Commands.Result.Success)
+        //    {
+        //        sufObjId = sufObjRef.ObjectId;
+        //    }
+        //    ObjRef armOffsetObjRef = new ObjRef(sufObjId);//get the objRef from the GUID
+
+        //    Brep surfaceBrep = armOffsetObjRef.Brep(); // because we know the geometry is Brep, we directly find it from the objRef 
+
+        //    #region generate start and end plane of the curve
+        //    Curve centerCrv = objRef.Curve();
+        //    Point3d startPt = centerCrv.PointAtStart;
+        //    Point3d endPt = centerCrv.PointAtEnd;
+        //    double startPara = 0, endPara = 0;
+        //    centerCrv.LengthParameter(0, out startPara);
+        //    centerCrv.LengthParameter(centerCrv.GetLength(), out endPara);
+        //    Plane startPln = new Plane(startPt, centerCrv.TangentAt(startPara));// the plane at the start of the curve
+        //    Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));// the plane at the end of the curve
+        //    Rhino.Geometry.PlaneSurface startPlnSuf = new PlaneSurface(startPln, new Interval(-50, 50), new Interval(-50, 50));// convert the plane object to an actual surface so that we can draw it in the rhino doc
+        //    Rhino.Geometry.PlaneSurface endPlnSuf = new PlaneSurface(endPln, new Interval(-50, 50), new Interval(-50, 50));// 15 is a random number. It should actually be the ourter shell's radius or larger.
+        //    //myDoc.Objects.AddSurface(startPlnSuf);
+        //    //myDoc.Objects.AddSurface(endPlnSuf);
+        //    #endregion
+
+        //    #region get the anchor control points for deciding the bending direction
+        //    this.centerCrv = centerCrv;
+        //    var attributes = new ObjectAttributes();
+        //    attributes.ObjectColor = Color.White;
+        //    attributes.ColorSource = ObjectColorSource.ColorFromObject;
+
+        //    // listen to the user's selected sphere: either at the start or at the end sphere
+        //    Rhino.Input.Custom.GetPoint gp_pt = new Rhino.Input.Custom.GetPoint();
+        //    gp_pt.DynamicDraw += Gp_sphereSelDynamicDraw;
+        //    gp_pt.MouseMove += Gp_sphereSelMouseMove;
+        //    gp_pt.Get(true);
+
+        //    if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtStart) <= 1.5)
+        //    {
+        //        // selected the start sphere
+        //        Rhino.Geometry.Sphere startSphere = new Rhino.Geometry.Sphere(startPt, 1.5);
+        //        Guid sphId = myDoc.Objects.AddSphere(startSphere, attributes);
+        //        Plane anglePln = new Plane(startPt, centerCrv.TangentAt(startPara)); // the plane at the starting plane of the central curve
+        //        this.bendPlane = anglePln;
+
+        //        this.bendCtrlPt = startPt;
+        //        Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(anglePln, startPt, 20);
+        //        this.angleCircle = dirCircle;
+
+        //        Guid sId = myDoc.Objects.AddCircle(dirCircle);
+        //        myDoc.Views.Redraw();
+
+        //        // start the command 
+        //        is_BendStart = true;
+
+        //        if (is_BendStart)
+        //        {
+        //            // if the user doesn't press the 'Enter' key it will continue to accept the next direction
+        //            bend_info tempBendInfo = new bend_info();
+
+        //            // step 1: decide the direction
+        //            Rhino.Input.Custom.GetPoint gp_dir = new Rhino.Input.Custom.GetPoint();
+        //            //gp.MouseDown += Gp_BendAngleSelMouseDown; // only when the user click it starts to change the angle;
+        //            gp_dir.MouseMove += Gp_BendAngleSelMouseMove; // Every move compute the changed angle
+        //            gp_dir.DynamicDraw += Gp_BendAngelSelDynamicDraw; // Draw the refreshed ball in the scenes
+        //            gp_dir.Get(true);
+        //            Point3d p = this.angleCircle.ClosestPoint(gp_dir.Point());
+        //            tempBendInfo.dir = (Vector3d)(p - startPt);
+
+        //            // step 2: decide the bending strength
+        //            Rhino.Input.Custom.GetPoint gp_bs = new Rhino.Input.Custom.GetPoint();
+        //            gp_bs.MouseMove += Gp_BendStrengthSelMouseMove;
+        //            gp_bs.DynamicDraw += Gp_BendStrengthSelDynamicDraw;
+        //            gp_bs.Get(true);
+        //            Point3d pp = gp_bs.Point();
+        //            tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
+
+        //            // add current bending information in the bending list
+        //            //RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
+        //            //RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
+        //            bendInfoList.Add(tempBendInfo);
+        //        }
+
+        //        myDoc.Objects.Delete(sId, false);
+        //        myDoc.Objects.Delete(sphId, false);
+        //        myDoc.Views.Redraw();
+
+        //        #region generating the outer spring
+        //        double K;
+        //        springGeneration(centerCrv, surfaceBrep, 5, 3, out K);
+        //        RhinoApp.WriteLine("The K value of the generated soring is: " + K);
+        //        #endregion
+
+        //        #region delete the part that spring will replaced
+        //        // chop the shells into 3 piece
+        //        List<Brep> splitsurf = new List<Brep>();
+        //        Brep[] firstSplit = surfaceBrep.Split(startPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
+
+        //        Brep[] test = firstSplit[0].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
+        //        if (test != null && test.Length > 0)
+        //        {
+        //            splitsurf.AddRange(test);
+        //            splitsurf.Add(firstSplit[1]);
+        //        }
+        //        else
+        //        {
+        //            test = firstSplit[1].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
+        //            splitsurf.AddRange(test);
+        //            splitsurf.Add(firstSplit[0]);
+        //        }
+        //        List<Brep> finalPreservedBrepList = new List<Brep>();
+        //        foreach (Brep b in splitsurf)
+        //        {
+        //            Point3d bcenter = b.GetBoundingBox(true).Center;
+        //            Vector3d v1 = bcenter - endPln.Origin;
+        //            Vector3d v2 = bcenter - startPln.Origin;
+        //            if (v1 * v2 > 0)
+        //            {
+        //                Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+        //                finalPreservedBrepList.Add(temp);
+        //            }
+
+        //        }
+
+
+        //        foreach (Brep b in finalPreservedBrepList)
+        //        {
+        //            myDoc.Objects.AddBrep(b, redAttribute);
+        //        }
+
+        //        #endregion
+
+        //        // generate the bend support structure
+        //        List<Brep> centrShaft = new List<Brep>();
+        //        List<Brep> hinges = new List<Brep>();
+        //        generateBendSupport(startPln, endPln, this.centerCrv, bendInfoList, startPt, endPt, true, out centrShaft, out hinges);
+
+        //        // Clear the bend information list
+        //        bendInfoList.Clear();
+
+        //        // Animation
+        //        List<Brep> animList = new List<Brep>();
+        //        animList.Add(finalPreservedBrepList[1]);
+
+        //        // add all breps of the central connector and all hinges
+        //        foreach (Brep s in centrShaft)
+        //        {
+        //            animList.Add(s);
+        //        }
+        //        foreach (Brep h in hinges)
+        //        {
+        //            animList.Add(h);
+        //        }
+        //    }
+        //    else if (distanceBtwTwoPts(this.bendPtSel, this.centerCrv.PointAtEnd) <= 1.5)
+        //    {
+        //        // selected the end sphere
+        //        Rhino.Geometry.Sphere endSphere = new Rhino.Geometry.Sphere(endPt, 1.5);
+        //        Guid sphId = myDoc.Objects.AddSphere(endSphere, attributes);
+        //        Plane anglePln = new Plane(endPt, centerCrv.TangentAt(endPara)); // the plane at the end plane of the central curve
+        //        this.bendPlane = anglePln;
+
+        //        this.bendCtrlPt = endPt;
+        //        Rhino.Geometry.Circle dirCircle = new Rhino.Geometry.Circle(anglePln, endPt, 20);
+        //        this.angleCircle = dirCircle;
+
+        //        Guid sId = myDoc.Objects.AddCircle(dirCircle);
+        //        myDoc.Views.Redraw();
+
+        //        // start the command 
+        //        is_BendStart = true;
+
+        //        if (is_BendStart)
+        //        {
+        //            // if the user doesn't press the 'Enter' key it will continue to accept the next direction
+        //            bend_info tempBendInfo = new bend_info();
+
+        //            // step 1: decide the direction
+        //            Rhino.Input.Custom.GetPoint gp_dir = new Rhino.Input.Custom.GetPoint();
+        //            //gp.MouseDown += Gp_BendAngleSelMouseDown; // only when the user click it starts to change the angle;
+        //            gp_dir.MouseMove += Gp_BendAngleSelMouseMove; // Every move compute the changed angle
+        //            gp_dir.DynamicDraw += Gp_BendAngelSelDynamicDraw; // Draw the refreshed ball in the scenes
+        //            gp_dir.Get(true);
+        //            Point3d p = this.angleCircle.ClosestPoint(gp_dir.Point());
+        //            tempBendInfo.dir = (Vector3d)(p - endPt);
+
+        //            // step 2: decide the bending strength
+        //            Rhino.Input.Custom.GetPoint gp_bs = new Rhino.Input.Custom.GetPoint();
+        //            gp_bs.MouseMove += Gp_BendStrengthSelMouseMove;
+        //            gp_bs.DynamicDraw += Gp_BendStrengthSelDynamicDraw;
+        //            gp_bs.Get(true);
+        //            Point3d pp = gp_bs.Point();
+        //            tempBendInfo.strength = Math.Sqrt(Math.Pow(pp.X - p.X, 2) + Math.Pow(pp.Y - p.Y, 2) + Math.Pow(pp.Z - p.Z, 2));  // check if this is discrete or continuous
+
+        //            // add current bending information in the bending list
+        //            RhinoApp.WriteLine("direction: (" + tempBendInfo.dir.X + "," + tempBendInfo.dir.Y + "," + tempBendInfo.dir.Z + ")");
+        //            RhinoApp.WriteLine("strength: " + tempBendInfo.strength);
+        //            bendInfoList.Add(tempBendInfo);
+        //        }
+        //        myDoc.Objects.Delete(sId, false);
+        //        myDoc.Objects.Delete(sphId, false);
+        //        myDoc.Views.Redraw();
+
+        //        #region generating the outer spring
+        //        double K;
+        //        springGeneration(centerCrv, surfaceBrep, 5, 3, out K);
+        //        RhinoApp.WriteLine("The K value of the generated soring is: " + K);
+        //        #endregion
+
+        //        #region delete the part that spring will replaced
+        //        // chop the shells into 3 piece
+        //        List<Brep> splitsurf = new List<Brep>();
+        //        Brep[] firstSplit = surfaceBrep.Split(startPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
+
+        //        Brep[] test = firstSplit[0].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
+        //        if (test != null && test.Length > 0)
+        //        {
+        //            splitsurf.AddRange(test);
+        //            splitsurf.Add(firstSplit[1]);
+        //        }
+        //        else
+        //        {
+        //            test = firstSplit[1].Split(endPlnSuf.ToBrep(), myDoc.ModelAbsoluteTolerance);
+        //            splitsurf.AddRange(test);
+        //            splitsurf.Add(firstSplit[0]);
+        //        }
+        //        List<Brep> finalPreservedBrepList = new List<Brep>();
+        //        foreach (Brep b in splitsurf)
+        //        {
+        //            Point3d bcenter = b.GetBoundingBox(true).Center;
+        //            Vector3d v1 = bcenter - endPln.Origin;
+        //            Vector3d v2 = bcenter - startPln.Origin;
+        //            if (v1 * v2 > 0)
+        //            {
+        //                Brep temp = b.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+        //                finalPreservedBrepList.Add(temp);
+        //            }
+
+        //        }
+
+
+        //        foreach (Brep b in finalPreservedBrepList)
+        //        {
+        //            myDoc.Objects.AddBrep(b, redAttribute);
+        //        }
+
+        //        #endregion
+
+        //        // generate the bend support structure
+        //        List<Brep> centrShaft = new List<Brep>();
+        //        List<Brep> hinges = new List<Brep>();
+        //        generateBendSupport(startPln, endPln, this.centerCrv, bendInfoList, startPt, endPt, false, out centrShaft, out hinges);
+
+        //        // Clear the bend information list
+        //        bendInfoList.Clear();
+
+        //        // Animation
+        //        List<Brep> animList = new List<Brep>();
+        //        animList.Add(finalPreservedBrepList[1]);
+
+        //        // add all breps of the central connector and all hinges
+        //        foreach (Brep s in centrShaft)
+        //        {
+        //            animList.Add(s);
+        //        }
+        //        foreach (Brep h in hinges)
+        //        {
+        //            animList.Add(h);
+        //        }
+        //    }
+
+        //    #endregion
+
+        //    myDoc.Objects.Hide(sufObjId, true);// hide the original shell
+        //    myDoc.Views.Redraw();
+
+        //}
+        #endregion
 
         #region Old version of generate the support structure for linear deformation
         ///// <summary>
@@ -2752,7 +3175,7 @@ namespace OndulePlugin
         //}
 
         #endregion
-
+        #endregion
 
         /// <summary>
         /// Simulation of linear deformation
