@@ -824,7 +824,28 @@ namespace OndulePlugin
             Guid sufObjId = Guid.Empty;
             var rc = RhinoGet.GetOneObject("Select surface or polysurface to mesh", false, ObjectType.AnyObject, out objSel_ref);
             if (rc == Rhino.Commands.Result.Success){
-                var stlScript = string.Format("_-Export \"{0}\" _Enter _Enter", oldSTLFile);
+                String str1 = "_ExportFileAs=_Binary ";
+                String str2 = "_ExportUnfinishedObjects=_No ";
+                String str3 = "_UseSimpleDialog=_No ";
+                String str4 = "_UseSimpleParameters=_Yes ";
+                //String str5 = "_Enter _DetailedOptions ";
+                //String str6 = "_JaggedSeams=_No ";
+                //String str7 = "_PackTextures=_No ";
+                //String str8 = "_Refine=_Yes ";
+                //String str9 = "_SimplePlane=_Yes ";
+                //String str10 = "_Weld=_No ";
+                //String str11 = "_AdvancedOptions ";
+                //String str12 = "_Angle=15 ";
+                //String str13 = "_AspectRatio=0 ";
+                //String str14 = "_Distance=0.01 ";
+                //String str15 = "_Grid=16 ";
+                //String str16 = "_MaxEdgeLength=0 ";
+                //String str17 = "_MinEdgeLength=0.0001 ";
+                String str18 = "_Enter _Enter";
+                String str = str1 + str2 + str3 + str4 + str18;
+
+                //String str = "_Enter _Enter";
+                var stlScript = string.Format("_-Export \"{0}\" {1}", oldSTLFile, str);
                 Rhino.RhinoApp.RunScript(stlScript,false);
 
                 List<Curve> cvs = new List<Curve>();
@@ -869,7 +890,7 @@ namespace OndulePlugin
                 startInfo.UseShellExecute = false;
                 startInfo.FileName = @"skeletonization\skeletonization.exe";
                 
-                startInfo.Arguments = dir+@"\temp_off.off --debug";
+                startInfo.Arguments = dir+@"\temp_off.off --debug 0.4";
 
                 matCompiler.StartInfo = startInfo;
                 matCompiler.Start();
