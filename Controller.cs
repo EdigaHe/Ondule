@@ -22,10 +22,11 @@ namespace OndulePlugin
         #endregion
 
         void selection();
-        void addLinearConstraint(OnduleUnit obj);   // new linear constraint
-        void addTwistConstraint(OnduleUnit obj);    // new twisting constraint
-        void addBendConstraint(OnduleUnit obj, Boolean dir);
-        void addLinearTwistConstraint(OnduleUnit obj);
+        void addLinearConstraint(ref OnduleUnit obj);   // new linear constraint
+        void addTwistConstraint(ref OnduleUnit obj);    // new twisting constraint
+        void addBendConstraint(ref OnduleUnit obj, Boolean dir);
+        void addLinearTwistConstraint(ref OnduleUnit obj);
+        void showClothSpring(List<Guid> IDs, Boolean ishown);
 
         #region old versions of deformation behaviors
         //void linearTwistDeform(ObjRef obj);
@@ -109,21 +110,25 @@ namespace OndulePlugin
         }
 
         
-        public void addLinearConstraint(OnduleUnit obj)
+        public void addLinearConstraint(ref OnduleUnit obj)
         {
-            rhinoModel.addLinearConstraint(obj);
+            rhinoModel.addLinearConstraint(ref obj);
         }
-        public void addTwistConstraint(OnduleUnit obj)
+        public void addTwistConstraint(ref OnduleUnit obj)
         {
-            rhinoModel.addTwistConstraint(obj);
+            rhinoModel.addTwistConstraint(ref obj);
         }
-        public void addLinearTwistConstraint(OnduleUnit obj)
+        public void addLinearTwistConstraint(ref OnduleUnit obj)
         {
-            rhinoModel.addLinearTwistConstraint(obj);
+            rhinoModel.addLinearTwistConstraint(ref obj);
         }
-        public void addBendConstraint(OnduleUnit obj, Boolean dir)
+        public void addBendConstraint(ref OnduleUnit obj, Boolean dir)
         {
-            rhinoModel.addBendConstraint(obj, dir);
+            rhinoModel.addBendConstraint(ref obj, dir);
+        }
+        public void showClothSpring(List<Guid> IDs, Boolean isshown)
+        {
+            rhinoModel.showClothSpring(IDs, isshown);
         }
         #region old versions of deforamtion behaviors
         //public void linearDeform(ObjRef objRef)

@@ -85,6 +85,7 @@
             this.PitchValLabel = new System.Windows.Forms.Label();
             this.WDValLabel = new System.Windows.Forms.Label();
             this.AllDirBendingCheckBox = new System.Windows.Forms.CheckBox();
+            this.ShowOuterSpringCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.PitchTrackbar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TwistTrackbar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.WireDiameterTrackbar)).BeginInit();
@@ -398,9 +399,9 @@
             this.Preview.Location = new System.Drawing.Point(32, 1097);
             this.Preview.Margin = new System.Windows.Forms.Padding(6);
             this.Preview.Name = "Preview";
-            this.Preview.Size = new System.Drawing.Size(137, 55);
+            this.Preview.Size = new System.Drawing.Size(150, 55);
             this.Preview.TabIndex = 39;
-            this.Preview.Text = "Preview";
+            this.Preview.Text = "Preview ";
             this.Preview.UseVisualStyleBackColor = false;
             this.Preview.Click += new System.EventHandler(this.Preview_Click);
             // 
@@ -797,6 +798,18 @@
             this.AllDirBendingCheckBox.UseVisualStyleBackColor = false;
             this.AllDirBendingCheckBox.CheckedChanged += new System.EventHandler(this.AllDirBendingCheckBox_CheckedChanged);
             // 
+            // ShowOuterSpringCheckBox
+            // 
+            this.ShowOuterSpringCheckBox.AutoSize = true;
+            this.ShowOuterSpringCheckBox.ForeColor = System.Drawing.Color.White;
+            this.ShowOuterSpringCheckBox.Location = new System.Drawing.Point(197, 1112);
+            this.ShowOuterSpringCheckBox.Name = "ShowOuterSpringCheckBox";
+            this.ShowOuterSpringCheckBox.Size = new System.Drawing.Size(217, 29);
+            this.ShowOuterSpringCheckBox.TabIndex = 75;
+            this.ShowOuterSpringCheckBox.Text = "Show outer spring";
+            this.ShowOuterSpringCheckBox.UseVisualStyleBackColor = true;
+            this.ShowOuterSpringCheckBox.CheckedChanged += new System.EventHandler(this.ShowOuterSpringCheckBox_CheckedChanged);
+            // 
             // DeformationDesignForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
@@ -804,6 +817,7 @@
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(774, 1183);
             this.ControlBox = false;
+            this.Controls.Add(this.ShowOuterSpringCheckBox);
             this.Controls.Add(this.AllDirBendingCheckBox);
             this.Controls.Add(this.WDValLabel);
             this.Controls.Add(this.PitchValLabel);
@@ -945,5 +959,6 @@
         private System.Windows.Forms.Label PitchValLabel;
         private System.Windows.Forms.Label WDValLabel;
         private System.Windows.Forms.CheckBox AllDirBendingCheckBox;
+        private System.Windows.Forms.CheckBox ShowOuterSpringCheckBox;
     }
 }

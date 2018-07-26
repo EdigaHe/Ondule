@@ -30,7 +30,8 @@ namespace OndulePlugin
         List<Brep> _preservedBrepList = new List<Brep>();   // Record the preserved breps
         List<Brep> _replacedBrepList = new List<Brep>();    // Record the replaced breps
         List<Guid> _capperSpringIDList = new List<Guid>();  // Record the IDs of generated spring breps 
-
+        List<Guid> _clothIDList = new List<Guid>();         // Record the IDs of the generated spring cloth
+        List<Guid> _innerStructureIDList = new List<Guid>();// Record the IDs of the inner constraint structure
         public OnduleUnit()
         {
 
@@ -125,7 +126,11 @@ namespace OndulePlugin
             get { return this._coilNum; }
             set { this._coilNum = value; }
         }
-        
+        public List<Guid> InnerStructureIDs
+        {
+            get { return this._innerStructureIDList; }
+            set { this._innerStructureIDList = value; }
+        }
         public List<double> CoilDiameter
         {
             get { return this._coilDiameter; }
@@ -164,6 +169,11 @@ namespace OndulePlugin
         {
             get { return this._capperSpringIDList; }
             set { this._capperSpringIDList = value; }
+        }
+        public List<Guid> ClothIDs
+        {
+            get { return this._clothIDList; }
+            set { this._clothIDList = value; }
         }
 
         public Point3d startPt

@@ -16,6 +16,7 @@ namespace OndulePlugin
         Boolean isLinearLimited = false;
         Boolean isLinearTwistLimited = false;
         Boolean isAllDirBending = false;
+        Boolean isOuterClothShown = false;
 
         private OnduleUnit _springUnit = new OnduleUnit();
         private OnduleUnit _tempRenderedSpring = new OnduleUnit();
@@ -300,6 +301,7 @@ namespace OndulePlugin
         {
 
             //Rhino.DocObjects.ObjRef obj = new Rhino.DocObjects.ObjRef(this._springUnit.UnitID);
+            this.ShowOuterSpringCheckBox.Checked = false;
             controller.springGeneration(ref this._tempRenderedSpring);
  
         }
@@ -358,7 +360,7 @@ namespace OndulePlugin
                 isTwistable = true;
                 // Get the current twist angle from TwistTrackbar
                 this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
-                controller.addTwistConstraint(this._tempRenderedSpring);
+                controller.addTwistConstraint(ref this._tempRenderedSpring);
 
                 // TO-DO: Update the outer spring to satisfy the expected twiting angle
             }
@@ -378,7 +380,7 @@ namespace OndulePlugin
                 this._tempRenderedSpring.CompressionDis = this.LinearConsCompressTrackbar.Value * 0.1;
                 // Get the current extension displacement from LinearConsStretchTrackbar
                 this._tempRenderedSpring.ExtensionDis = this.LinearConsStretchTrackbar.Value * 0.1;
-                controller.addLinearConstraint(this._tempRenderedSpring);
+                controller.addLinearConstraint(ref this._tempRenderedSpring);
 
             }
             else
@@ -418,7 +420,7 @@ namespace OndulePlugin
                 // Get the current twist angle from TwistTrackbar
                 this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
 
-                controller.addLinearTwistConstraint(this._tempRenderedSpring);
+                controller.addLinearTwistConstraint(ref this._tempRenderedSpring);
 
             }
             else
@@ -433,7 +435,7 @@ namespace OndulePlugin
             {
                 isBendable = true;
                 this._tempRenderedSpring.BendAngle = this.BendConsDirectionTrackbar.Value;
-                controller.addBendConstraint(this._tempRenderedSpring, isAllDirBending);
+                controller.addBendConstraint(ref this._tempRenderedSpring, isAllDirBending);
             }
             else
             {
@@ -444,6 +446,15 @@ namespace OndulePlugin
         private void AllDirBendingCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             isAllDirBending = !isAllDirBending;
+        }
+
+        private void ShowOuterSpringCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            isOuterClothShown = !isOuterClothShown;
+            if(this._tempRenderedSpring.ClothIDs.Count > 0)
+            {
+                controller.showClothSpring(this._tempRenderedSpring.ClothIDs, isOuterClothShown);
+            }
         }
     }
 }

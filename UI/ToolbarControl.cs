@@ -115,10 +115,6 @@ namespace OndulePlugin
             // ### FOR RELEASE ###
             //String path = @"OndulePlugin\Resources\FreeForm_mode.png";
 
-            SpringfyBtn.BackgroundImage = Image.FromFile(path);
-            SpringfyBtn.Cursor = Cursors.Default;
-            SpringfyBtn.BackColor = Color.White;
-
             //// ask the user to select the medium axis
             //const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
             //Rhino.DocObjects.ObjRef objRef;
@@ -178,10 +174,6 @@ namespace OndulePlugin
             String path = @"Resources\FreeForm_default.png";
             // ### FOR RELEASE ###
             //String path = @"OndulePlugin\Resources\FreeForm_default.png";
-
-            SpringfyBtn.BackgroundImage = Image.FromFile(path);
-            SpringfyBtn.Cursor = Cursors.Default;
-            SpringfyBtn.BackColor = Color.White;
             
             //ObjRef armOffsetObjRef = new ObjRef(sufObjId);//get the objRef from the GUID
 
@@ -449,62 +441,17 @@ namespace OndulePlugin
 
         }
 
-        private void FreeFormBtn_MouseEnter(object sender, EventArgs e)
-        {
-            if (!is_freeform)
-            {
-                // ### FOR DEBUG ###
-                String path = @"Resources\FreeForm_active.png";
-                // ### FOR RELEASE ###
-                //String path = @"OndulePlugin\Resources\FreeForm_active.png";
-
-                SpringfyBtn.BackgroundImage = Image.FromFile(path);
-                SpringfyBtn.Cursor = Cursors.Default;
-                SpringfyBtn.BackColor = Color.White;
-            }
-            
-        }
-
-        private void FreeFormBtn_MouseHover(object sender, EventArgs e)
-        {
-            if (!is_freeform)
-            {
-                // ### FOR DEBUG ###
-                String path = @"Resources\FreeForm_active.png";
-                // ### FOR RELEASE ###
-                //String path = @"OndulePlugin\Resources\FreeForm_active.png";
-
-                SpringfyBtn.BackgroundImage = Image.FromFile(path);
-                SpringfyBtn.Cursor = Cursors.Default;
-                SpringfyBtn.BackColor = Color.White;
-            }
-        }
-
-        private void FreeFormBtn_MouseLeave(object sender, EventArgs e)
-        {
-            if (!is_freeform)
-            {
-                // ### FOR DEBUG ###
-                String path = @"Resources\FreeForm_default.png";
-                // ### FOR RELEASE ###
-                //String path = @"OndulePlugin\Resources\FreeForm_default.png";
-
-                SpringfyBtn.BackgroundImage = Image.FromFile(path);
-                SpringfyBtn.Cursor = Cursors.Default;
-                SpringfyBtn.BackColor = Color.White;
-            }
-        }
-
-
-
-
-
         private void PreviewBtn_Click(object sender, EventArgs e)
         {
             
         }
 
-        private void Springfy_Click(object sender, EventArgs e)
+        private void ExportBtn_Click(object sender, EventArgs e)
+        {
+            //MessageBox.Show("Hello World!");
+        }
+
+        private void debugBtn_Click(object sender, EventArgs e)
         {
             if (currUnit != null && currIdx != -1)
             {
@@ -520,7 +467,7 @@ namespace OndulePlugin
                 //    sufObjId = sufObjRef.ObjectId;
                 //}
 
-                DeformationDesignForm coilwindow = new DeformationDesignForm(currUnit, currIdx,controller);
+                DeformationDesignForm coilwindow = new DeformationDesignForm(currUnit, currIdx, controller);
                 coilwindow.Show();
             }
             else
@@ -528,12 +475,6 @@ namespace OndulePlugin
                 DeformationDesignForm coilwindow = new DeformationDesignForm(controller);
                 coilwindow.Show();
             }
-          
-        }
-
-        private void ExportBtn_Click(object sender, EventArgs e)
-        {
-            //MessageBox.Show("Hello World!");
         }
     }
 }

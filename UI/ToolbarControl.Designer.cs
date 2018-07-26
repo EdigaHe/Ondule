@@ -30,17 +30,16 @@
     {
             this.SimulationLabel = new System.Windows.Forms.Label();
             this.SkeletonLabel = new System.Windows.Forms.Label();
-            this.SpringfyLabel = new System.Windows.Forms.Label();
             this.ExportLabel = new System.Windows.Forms.Label();
             this.pictureBox4 = new System.Windows.Forms.PictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.ExportBtn = new System.Windows.Forms.Button();
             this.PreviewBtn = new System.Windows.Forms.Button();
             this.MATBtn = new System.Windows.Forms.Button();
-            this.SpringfyBtn = new System.Windows.Forms.Button();
             this.pictureBox5 = new System.Windows.Forms.PictureBox();
             this.OnduleUnitFlowPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.OnduleUnitsLabel = new System.Windows.Forms.Label();
+            this.debugBtn = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox5)).BeginInit();
@@ -66,16 +65,6 @@
             this.SkeletonLabel.TabIndex = 71;
             this.SkeletonLabel.Text = "Skeleton";
             this.SkeletonLabel.Click += new System.EventHandler(this.label1_Click);
-            // 
-            // SpringfyLabel
-            // 
-            this.SpringfyLabel.AutoSize = true;
-            this.SpringfyLabel.BackColor = System.Drawing.Color.White;
-            this.SpringfyLabel.Location = new System.Drawing.Point(158, 10);
-            this.SpringfyLabel.Name = "SpringfyLabel";
-            this.SpringfyLabel.Size = new System.Drawing.Size(91, 25);
-            this.SpringfyLabel.TabIndex = 72;
-            this.SpringfyLabel.Text = "Springfy";
             // 
             // ExportLabel
             // 
@@ -154,29 +143,13 @@
             this.MATBtn.MouseLeave += new System.EventHandler(this.MATButton_MouseLeave);
             this.MATBtn.MouseHover += new System.EventHandler(this.MATButton_MouseHover);
             // 
-            // SpringfyBtn
-            // 
-            this.SpringfyBtn.BackColor = System.Drawing.Color.Transparent;
-            this.SpringfyBtn.BackgroundImage = global::SlinkyBar.Properties.Resources.Freeform_default;
-            this.SpringfyBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.SpringfyBtn.ForeColor = System.Drawing.Color.Transparent;
-            this.SpringfyBtn.Location = new System.Drawing.Point(155, 42);
-            this.SpringfyBtn.Name = "SpringfyBtn";
-            this.SpringfyBtn.Size = new System.Drawing.Size(82, 82);
-            this.SpringfyBtn.TabIndex = 54;
-            this.SpringfyBtn.UseVisualStyleBackColor = false;
-            this.SpringfyBtn.Click += new System.EventHandler(this.Springfy_Click);
-            this.SpringfyBtn.MouseEnter += new System.EventHandler(this.FreeFormBtn_MouseEnter);
-            this.SpringfyBtn.MouseLeave += new System.EventHandler(this.FreeFormBtn_MouseLeave);
-            this.SpringfyBtn.MouseHover += new System.EventHandler(this.FreeFormBtn_MouseHover);
-            // 
             // pictureBox5
             // 
             this.pictureBox5.BackColor = System.Drawing.Color.Transparent;
             this.pictureBox5.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.pictureBox5.Image = global::SlinkyBar.Properties.Resources.split_v;
             this.pictureBox5.InitialImage = global::SlinkyBar.Properties.Resources.split_v;
-            this.pictureBox5.Location = new System.Drawing.Point(126, 4);
+            this.pictureBox5.Location = new System.Drawing.Point(178, 4);
             this.pictureBox5.Name = "pictureBox5";
             this.pictureBox5.Size = new System.Drawing.Size(2, 120);
             this.pictureBox5.TabIndex = 80;
@@ -202,24 +175,33 @@
             this.OnduleUnitsLabel.TabIndex = 86;
             this.OnduleUnitsLabel.Text = "Ondule Units";
             // 
+            // debugBtn
+            // 
+            this.debugBtn.Location = new System.Drawing.Point(1559, 42);
+            this.debugBtn.Name = "debugBtn";
+            this.debugBtn.Size = new System.Drawing.Size(105, 33);
+            this.debugBtn.TabIndex = 87;
+            this.debugBtn.Text = "Debug";
+            this.debugBtn.UseVisualStyleBackColor = true;
+            this.debugBtn.Click += new System.EventHandler(this.debugBtn_Click);
+            // 
             // OnduleTopBarControl
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.AutoScroll = true;
             this.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.Controls.Add(this.debugBtn);
             this.Controls.Add(this.OnduleUnitsLabel);
             this.Controls.Add(this.OnduleUnitFlowPanel);
             this.Controls.Add(this.pictureBox5);
             this.Controls.Add(this.pictureBox4);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.ExportLabel);
-            this.Controls.Add(this.SpringfyLabel);
             this.Controls.Add(this.SkeletonLabel);
             this.Controls.Add(this.ExportBtn);
             this.Controls.Add(this.PreviewBtn);
             this.Controls.Add(this.SimulationLabel);
             this.Controls.Add(this.MATBtn);
-            this.Controls.Add(this.SpringfyBtn);
             this.Name = "OnduleTopBarControl";
             this.Size = new System.Drawing.Size(1685, 210);
             this.Style = MetroFramework.MetroColorStyle.White;
@@ -232,18 +214,17 @@
     }
 
     #endregion
-        private System.Windows.Forms.Button SpringfyBtn;
         private System.Windows.Forms.Label SimulationLabel;
         private System.Windows.Forms.Button PreviewBtn;
         private System.Windows.Forms.Button ExportBtn;
         private System.Windows.Forms.Button MATBtn;
         private System.Windows.Forms.Label SkeletonLabel;
-        private System.Windows.Forms.Label SpringfyLabel;
         private System.Windows.Forms.Label ExportLabel;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.PictureBox pictureBox4;
         private System.Windows.Forms.PictureBox pictureBox5;
         private System.Windows.Forms.FlowLayoutPanel OnduleUnitFlowPanel;
         private System.Windows.Forms.Label OnduleUnitsLabel;
+        private System.Windows.Forms.Button debugBtn;
     }
 }
