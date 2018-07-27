@@ -27,6 +27,7 @@ namespace OndulePlugin
         void addBendConstraint(ref OnduleUnit obj, Boolean dir);
         void addLinearTwistConstraint(ref OnduleUnit obj);
         void showClothSpring(List<Guid> IDs, Boolean ishown);
+        void clearInnerStructure(ref OnduleUnit obj);
 
         #region old versions of deformation behaviors
         //void linearTwistDeform(ObjRef obj);
@@ -129,6 +130,10 @@ namespace OndulePlugin
         public void showClothSpring(List<Guid> IDs, Boolean isshown)
         {
             rhinoModel.showClothSpring(IDs, isshown);
+        }
+        public void clearInnerStructure(ref OnduleUnit obj)
+        {
+            rhinoModel.clearInnerStructure(ref obj);
         }
         #region old versions of deforamtion behaviors
         //public void linearDeform(ObjRef objRef)

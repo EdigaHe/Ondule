@@ -303,7 +303,49 @@ namespace OndulePlugin
             //Rhino.DocObjects.ObjRef obj = new Rhino.DocObjects.ObjRef(this._springUnit.UnitID);
             this.ShowOuterSpringCheckBox.Checked = false;
             controller.springGeneration(ref this._tempRenderedSpring);
- 
+
+            // Check if generate the prismatic joint for only linear deformation
+            if (this.LinearOnly_radioButton.Checked)
+            {
+
+                // Get the current compression displacement from LinearConsCompressTrackbar
+                this._tempRenderedSpring.CompressionDis = this.LinearConsCompressTrackbar.Value * 0.1;
+                // Get the current extension displacement from LinearConsStretchTrackbar
+                this._tempRenderedSpring.ExtensionDis = this.LinearConsStretchTrackbar.Value * 0.1;
+                controller.addLinearConstraint(ref this._tempRenderedSpring);
+            }
+            // Check if generate the bearing for only twist deformation
+            else if (this.TwistOnly_radioButton.Checked)
+            {
+                // Get the current twist angle from TwistTrackbar
+                this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
+                controller.addTwistConstraint(ref this._tempRenderedSpring);
+            }
+            // Check if generate the prismatic joint and the bearing for linear + twist deformation
+            else if (this.LinearTwist_radioButton.Checked)
+            {
+                // Get the current compression displacement from LinearConsCompressTrackbar
+                this._tempRenderedSpring.CompressionDis = this.LinearConsCompressTrackbar.Value * 0.1;
+                // Get the current extension displacement from LinearConsStretchTrackbar
+                this._tempRenderedSpring.ExtensionDis = this.LinearConsStretchTrackbar.Value * 0.1;
+                // Get the current twist angle from TwistTrackbar
+                this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
+
+                controller.addLinearTwistConstraint(ref this._tempRenderedSpring);
+            }
+            // Check if generate the joint chain for bending deformation
+            else if (this.BendOnly_radioButton.Checked)
+            {
+                this._tempRenderedSpring.BendAngle = this.BendConsDirectionTrackbar.Value;
+                controller.addBendConstraint(ref this._tempRenderedSpring, isAllDirBending);
+            }
+            // Free form spring generation, clear the innerstructureIDs
+            else
+            {
+                controller.clearInnerStructure(ref this._tempRenderedSpring);
+            }
+
+
         }
 
         private void OKBtn_Click(object sender, EventArgs e)
@@ -353,42 +395,6 @@ namespace OndulePlugin
             this.PitchValLabel.Text = this._springUnit.Pitch.ToString();
         }
 
-        private void TwistOnlyCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!isTwistable)
-            {
-                isTwistable = true;
-                // Get the current twist angle from TwistTrackbar
-                this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
-                controller.addTwistConstraint(ref this._tempRenderedSpring);
-
-                // TO-DO: Update the outer spring to satisfy the expected twiting angle
-            }
-            else
-            {
-                isTwistable = false;
-            }
-            
-        }
-
-        private void LinearOnlyCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!isLinearLimited)
-            {
-                isLinearLimited = true;
-                // Get the current compression displacement from LinearConsCompressTrackbar
-                this._tempRenderedSpring.CompressionDis = this.LinearConsCompressTrackbar.Value * 0.1;
-                // Get the current extension displacement from LinearConsStretchTrackbar
-                this._tempRenderedSpring.ExtensionDis = this.LinearConsStretchTrackbar.Value * 0.1;
-                controller.addLinearConstraint(ref this._tempRenderedSpring);
-
-            }
-            else
-            {
-                isLinearLimited = false;
-            }
-        }
-
         private void LinearConsCompressTrackbar_Scroll(object sender, EventArgs e)
         {
             double c_value = this.LinearConsCompressTrackbar.Value * 0.1;
@@ -405,42 +411,6 @@ namespace OndulePlugin
             double c_value = Math.Round((this._springParam_L - 2*thickness - s_value) / 2, 1);
             this.LinearConsCompressMax.Text = c_value.ToString();
             this.LinearConsCompressTrackbar.Maximum = (int)(c_value / 0.1);
-        }
-
-        private void LinearTwistCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!isLinearTwistLimited)
-            {
-                isLinearTwistLimited = true;
-                // Get the current compression displacement from LinearConsCompressTrackbar
-                this._tempRenderedSpring.CompressionDis = this.LinearConsCompressTrackbar.Value * 0.1;
-                // Get the current extension displacement from LinearConsStretchTrackbar
-                this._tempRenderedSpring.ExtensionDis = this.LinearConsStretchTrackbar.Value * 0.1;
-
-                // Get the current twist angle from TwistTrackbar
-                this._tempRenderedSpring.TwistAngle = this.TwistTrackbar.Value;
-
-                controller.addLinearTwistConstraint(ref this._tempRenderedSpring);
-
-            }
-            else
-            {
-                isLinearTwistLimited = false;
-            }
-        }
-
-        private void BendOnlyCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!isBendable)
-            {
-                isBendable = true;
-                this._tempRenderedSpring.BendAngle = this.BendConsDirectionTrackbar.Value;
-                controller.addBendConstraint(ref this._tempRenderedSpring, isAllDirBending);
-            }
-            else
-            {
-                isBendable = false;
-            }
         }
 
         private void AllDirBendingCheckBox_CheckedChanged(object sender, EventArgs e)

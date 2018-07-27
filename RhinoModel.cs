@@ -73,6 +73,7 @@ namespace OndulePlugin
         void addLinearTwistConstraint(ref OnduleUnit obj);
         void addBendConstraint(ref OnduleUnit obj, Boolean dir);
         void showClothSpring(List<Guid> IDs, Boolean isshown);
+        void clearInnerStructure(ref OnduleUnit obj);
         #endregion
     }
 
@@ -664,20 +665,31 @@ namespace OndulePlugin
 
             #region generate the main spring that leads the deformation behavior
 
+            #region Use orange to color the deformation spring
             var orange_attributes = new ObjectAttributes();
             orange_attributes.ObjectColor = Color.Orange;
             orange_attributes.ColorSource = ObjectColorSource.ColorFromObject;
-
+            #endregion
 
             double sizeOfInnerStructure = 8.6;
             double minCoilDia = objRef.CoilDiameter.Min();
-            double deformCoilD = (minCoilDia - sizeOfInnerStructure) / 2 + sizeOfInnerStructure;
+            double deformCoilD;
+
+            if (isAllCurveSegmentSameLength(objRef.CoilDiameter))
+            {
+                deformCoilD = minCoilDia;
+            }
+            else
+            {
+                deformCoilD = (minCoilDia - sizeOfInnerStructure) / 2 + sizeOfInnerStructure;
+            }
+
             double deformWireD = objRef.WireDiameter;
             double deformPitch = objRef.Pitch + objRef.WireDiameter;
 
             double spiralEndPara;
             objRef.MA.LengthParameter(objRef.MA.GetLength(), out spiralEndPara);
-            Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.MA, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0,0,0)), deformPitch, 0, deformCoilD - deformWireD, deformCoilD - deformWireD, 30);
+            Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.MA, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0, 0, 0)), deformPitch, 0, deformCoilD - deformWireD, deformCoilD - deformWireD, 30);
             Plane crossPln = new Plane(deformSpiralCrv.PointAtStart, deformSpiralCrv.TangentAtStart);
             Curve crossCir = new Circle(crossPln, deformSpiralCrv.PointAtStart, deformWireD / 2).ToNurbsCurve();
             //myDoc.Objects.AddCurve(crossCircle, whiteAttribute);
@@ -716,15 +728,44 @@ namespace OndulePlugin
                 objRef.CappedSpringIDs.Clear();
             }
 
-           
+
             Guid s_ID = myDoc.Objects.AddBrep(middleSpring, orange_attributes);
             objRef.CappedSpringIDs.Add(s_ID);
-           
+
             #endregion
 
             myDoc.Views.Redraw();
         }
    
+        private Boolean isAllCurveSegmentSameLength(List<double> diaList)
+        {
+            Boolean result = true;
+
+            double initial = diaList.ElementAt(0);
+
+            foreach(double dia in diaList)
+            {
+                if(dia != initial)
+                {
+                    result = false;
+                    break;
+                }
+            }
+
+            return result;
+        }
+        public void clearInnerStructure(ref OnduleUnit obj)
+        {
+            if (obj.InnerStructureIDs.Count > 0)
+            {
+                foreach(Guid id in obj.InnerStructureIDs)
+                {
+                    myDoc.Objects.Delete(id, true);
+                }
+            }
+            obj.InnerStructureIDs.Clear();
+            myDoc.Views.Redraw();
+        }
         public void showClothSpring(List<Guid> IDs, Boolean isshown)
         {
             if (isshown)

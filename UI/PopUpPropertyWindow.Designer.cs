@@ -60,10 +60,6 @@
             this.BendAngleLabel = new System.Windows.Forms.Label();
             this.TwistAngleLabel = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.LinearOnlyCheckbox = new System.Windows.Forms.CheckBox();
-            this.BendOnlyCheckbox = new System.Windows.Forms.CheckBox();
-            this.TwistOnlyCheckbox = new System.Windows.Forms.CheckBox();
-            this.LinearTwistCheckbox = new System.Windows.Forms.CheckBox();
             this.compressLabel = new System.Windows.Forms.Label();
             this.BendConsDirectionTrackbar = new System.Windows.Forms.TrackBar();
             this.label3 = new System.Windows.Forms.Label();
@@ -86,6 +82,11 @@
             this.WDValLabel = new System.Windows.Forms.Label();
             this.AllDirBendingCheckBox = new System.Windows.Forms.CheckBox();
             this.ShowOuterSpringCheckBox = new System.Windows.Forms.CheckBox();
+            this.LinearOnly_radioButton = new System.Windows.Forms.RadioButton();
+            this.TwistOnly_radioButton = new System.Windows.Forms.RadioButton();
+            this.LinearTwist_radioButton = new System.Windows.Forms.RadioButton();
+            this.BendOnly_radioButton = new System.Windows.Forms.RadioButton();
+            this.Freeform_radioButton = new System.Windows.Forms.RadioButton();
             ((System.ComponentModel.ISupportInitialize)(this.PitchTrackbar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TwistTrackbar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.WireDiameterTrackbar)).BeginInit();
@@ -105,10 +106,10 @@
             this.CancelBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.CancelBtn.Font = new System.Drawing.Font("Segoe UI Semibold", 8F, System.Drawing.FontStyle.Bold);
             this.CancelBtn.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.CancelBtn.Location = new System.Drawing.Point(594, 1097);
+            this.CancelBtn.Location = new System.Drawing.Point(623, 1097);
             this.CancelBtn.Margin = new System.Windows.Forms.Padding(6);
             this.CancelBtn.Name = "CancelBtn";
-            this.CancelBtn.Size = new System.Drawing.Size(155, 55);
+            this.CancelBtn.Size = new System.Drawing.Size(126, 55);
             this.CancelBtn.TabIndex = 0;
             this.CancelBtn.Text = "Cancel";
             this.CancelBtn.UseVisualStyleBackColor = false;
@@ -192,7 +193,7 @@
             this.OKBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.OKBtn.Font = new System.Drawing.Font("Segoe UI Semibold", 8F, System.Drawing.FontStyle.Bold);
             this.OKBtn.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.OKBtn.Location = new System.Drawing.Point(445, 1097);
+            this.OKBtn.Location = new System.Drawing.Point(474, 1097);
             this.OKBtn.Margin = new System.Windows.Forms.Padding(6);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(137, 55);
@@ -396,12 +397,12 @@
             this.Preview.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.Preview.Font = new System.Drawing.Font("Segoe UI Semibold", 8F, System.Drawing.FontStyle.Bold);
             this.Preview.ForeColor = System.Drawing.SystemColors.ButtonFace;
-            this.Preview.Location = new System.Drawing.Point(32, 1097);
+            this.Preview.Location = new System.Drawing.Point(18, 1097);
             this.Preview.Margin = new System.Windows.Forms.Padding(6);
             this.Preview.Name = "Preview";
-            this.Preview.Size = new System.Drawing.Size(150, 55);
+            this.Preview.Size = new System.Drawing.Size(127, 55);
             this.Preview.TabIndex = 39;
-            this.Preview.Text = "Preview ";
+            this.Preview.Text = "Preview";
             this.Preview.UseVisualStyleBackColor = false;
             this.Preview.Click += new System.EventHandler(this.Preview_Click);
             // 
@@ -502,54 +503,6 @@
             this.pictureBox1.Size = new System.Drawing.Size(313, 147);
             this.pictureBox1.TabIndex = 49;
             this.pictureBox1.TabStop = false;
-            // 
-            // LinearOnlyCheckbox
-            // 
-            this.LinearOnlyCheckbox.AutoSize = true;
-            this.LinearOnlyCheckbox.ForeColor = System.Drawing.Color.White;
-            this.LinearOnlyCheckbox.Location = new System.Drawing.Point(28, 839);
-            this.LinearOnlyCheckbox.Name = "LinearOnlyCheckbox";
-            this.LinearOnlyCheckbox.Size = new System.Drawing.Size(154, 29);
-            this.LinearOnlyCheckbox.TabIndex = 50;
-            this.LinearOnlyCheckbox.Text = "Linear Only";
-            this.LinearOnlyCheckbox.UseVisualStyleBackColor = true;
-            this.LinearOnlyCheckbox.CheckedChanged += new System.EventHandler(this.LinearOnlyCheckbox_CheckedChanged);
-            // 
-            // BendOnlyCheckbox
-            // 
-            this.BendOnlyCheckbox.AutoSize = true;
-            this.BendOnlyCheckbox.ForeColor = System.Drawing.Color.White;
-            this.BendOnlyCheckbox.Location = new System.Drawing.Point(555, 804);
-            this.BendOnlyCheckbox.Name = "BendOnlyCheckbox";
-            this.BendOnlyCheckbox.Size = new System.Drawing.Size(144, 29);
-            this.BendOnlyCheckbox.TabIndex = 51;
-            this.BendOnlyCheckbox.Text = "Bend Only";
-            this.BendOnlyCheckbox.UseVisualStyleBackColor = true;
-            this.BendOnlyCheckbox.CheckedChanged += new System.EventHandler(this.BendOnlyCheckbox_CheckedChanged);
-            // 
-            // TwistOnlyCheckbox
-            // 
-            this.TwistOnlyCheckbox.AutoSize = true;
-            this.TwistOnlyCheckbox.ForeColor = System.Drawing.Color.White;
-            this.TwistOnlyCheckbox.Location = new System.Drawing.Point(197, 839);
-            this.TwistOnlyCheckbox.Name = "TwistOnlyCheckbox";
-            this.TwistOnlyCheckbox.Size = new System.Drawing.Size(144, 29);
-            this.TwistOnlyCheckbox.TabIndex = 52;
-            this.TwistOnlyCheckbox.Text = "Twist Only";
-            this.TwistOnlyCheckbox.UseVisualStyleBackColor = true;
-            this.TwistOnlyCheckbox.CheckedChanged += new System.EventHandler(this.TwistOnlyCheckbox_CheckedChanged);
-            // 
-            // LinearTwistCheckbox
-            // 
-            this.LinearTwistCheckbox.AutoSize = true;
-            this.LinearTwistCheckbox.ForeColor = System.Drawing.Color.White;
-            this.LinearTwistCheckbox.Location = new System.Drawing.Point(362, 839);
-            this.LinearTwistCheckbox.Name = "LinearTwistCheckbox";
-            this.LinearTwistCheckbox.Size = new System.Drawing.Size(178, 29);
-            this.LinearTwistCheckbox.TabIndex = 53;
-            this.LinearTwistCheckbox.Text = "Linear + Twist";
-            this.LinearTwistCheckbox.UseVisualStyleBackColor = true;
-            this.LinearTwistCheckbox.CheckedChanged += new System.EventHandler(this.LinearTwistCheckbox_CheckedChanged);
             // 
             // compressLabel
             // 
@@ -802,13 +755,74 @@
             // 
             this.ShowOuterSpringCheckBox.AutoSize = true;
             this.ShowOuterSpringCheckBox.ForeColor = System.Drawing.Color.White;
-            this.ShowOuterSpringCheckBox.Location = new System.Drawing.Point(197, 1112);
+            this.ShowOuterSpringCheckBox.Location = new System.Drawing.Point(185, 1112);
             this.ShowOuterSpringCheckBox.Name = "ShowOuterSpringCheckBox";
-            this.ShowOuterSpringCheckBox.Size = new System.Drawing.Size(217, 29);
+            this.ShowOuterSpringCheckBox.Size = new System.Drawing.Size(268, 29);
             this.ShowOuterSpringCheckBox.TabIndex = 75;
-            this.ShowOuterSpringCheckBox.Text = "Show outer spring";
+            this.ShowOuterSpringCheckBox.Text = "Show decorative spring";
             this.ShowOuterSpringCheckBox.UseVisualStyleBackColor = true;
             this.ShowOuterSpringCheckBox.CheckedChanged += new System.EventHandler(this.ShowOuterSpringCheckBox_CheckedChanged);
+            // 
+            // LinearOnly_radioButton
+            // 
+            this.LinearOnly_radioButton.AutoSize = true;
+            this.LinearOnly_radioButton.ForeColor = System.Drawing.Color.White;
+            this.LinearOnly_radioButton.Location = new System.Drawing.Point(32, 838);
+            this.LinearOnly_radioButton.Name = "LinearOnly_radioButton";
+            this.LinearOnly_radioButton.Size = new System.Drawing.Size(147, 29);
+            this.LinearOnly_radioButton.TabIndex = 76;
+            this.LinearOnly_radioButton.TabStop = true;
+            this.LinearOnly_radioButton.Text = "LinearOnly";
+            this.LinearOnly_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // TwistOnly_radioButton
+            // 
+            this.TwistOnly_radioButton.AutoSize = true;
+            this.TwistOnly_radioButton.ForeColor = System.Drawing.Color.White;
+            this.TwistOnly_radioButton.Location = new System.Drawing.Point(216, 838);
+            this.TwistOnly_radioButton.Name = "TwistOnly_radioButton";
+            this.TwistOnly_radioButton.Size = new System.Drawing.Size(143, 29);
+            this.TwistOnly_radioButton.TabIndex = 77;
+            this.TwistOnly_radioButton.TabStop = true;
+            this.TwistOnly_radioButton.Text = "Twist Only";
+            this.TwistOnly_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // LinearTwist_radioButton
+            // 
+            this.LinearTwist_radioButton.AutoSize = true;
+            this.LinearTwist_radioButton.ForeColor = System.Drawing.Color.White;
+            this.LinearTwist_radioButton.Location = new System.Drawing.Point(372, 839);
+            this.LinearTwist_radioButton.Name = "LinearTwist_radioButton";
+            this.LinearTwist_radioButton.Size = new System.Drawing.Size(177, 29);
+            this.LinearTwist_radioButton.TabIndex = 78;
+            this.LinearTwist_radioButton.TabStop = true;
+            this.LinearTwist_radioButton.Text = "Linear + Twist";
+            this.LinearTwist_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // BendOnly_radioButton
+            // 
+            this.BendOnly_radioButton.AutoSize = true;
+            this.BendOnly_radioButton.ForeColor = System.Drawing.Color.White;
+            this.BendOnly_radioButton.Location = new System.Drawing.Point(561, 786);
+            this.BendOnly_radioButton.Name = "BendOnly_radioButton";
+            this.BendOnly_radioButton.Size = new System.Drawing.Size(143, 29);
+            this.BendOnly_radioButton.TabIndex = 79;
+            this.BendOnly_radioButton.TabStop = true;
+            this.BendOnly_radioButton.Text = "Bend Only";
+            this.BendOnly_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // Freeform_radioButton
+            // 
+            this.Freeform_radioButton.AutoSize = true;
+            this.Freeform_radioButton.Checked = true;
+            this.Freeform_radioButton.ForeColor = System.Drawing.Color.White;
+            this.Freeform_radioButton.Location = new System.Drawing.Point(366, 696);
+            this.Freeform_radioButton.Name = "Freeform_radioButton";
+            this.Freeform_radioButton.Size = new System.Drawing.Size(129, 29);
+            this.Freeform_radioButton.TabIndex = 80;
+            this.Freeform_radioButton.TabStop = true;
+            this.Freeform_radioButton.Text = "Freeform";
+            this.Freeform_radioButton.UseVisualStyleBackColor = true;
             // 
             // DeformationDesignForm
             // 
@@ -817,6 +831,11 @@
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(774, 1183);
             this.ControlBox = false;
+            this.Controls.Add(this.Freeform_radioButton);
+            this.Controls.Add(this.BendOnly_radioButton);
+            this.Controls.Add(this.LinearTwist_radioButton);
+            this.Controls.Add(this.TwistOnly_radioButton);
+            this.Controls.Add(this.LinearOnly_radioButton);
             this.Controls.Add(this.ShowOuterSpringCheckBox);
             this.Controls.Add(this.AllDirBendingCheckBox);
             this.Controls.Add(this.WDValLabel);
@@ -839,10 +858,6 @@
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.BendConsDirectionTrackbar);
-            this.Controls.Add(this.LinearTwistCheckbox);
-            this.Controls.Add(this.TwistOnlyCheckbox);
-            this.Controls.Add(this.BendOnlyCheckbox);
-            this.Controls.Add(this.LinearOnlyCheckbox);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.TwistAngleLabel);
             this.Controls.Add(this.BendAngleLabel);
@@ -934,10 +949,6 @@
         private System.Windows.Forms.Label BendAngleLabel;
         private System.Windows.Forms.Label TwistAngleLabel;
         private System.Windows.Forms.PictureBox pictureBox1;
-        private System.Windows.Forms.CheckBox LinearOnlyCheckbox;
-        private System.Windows.Forms.CheckBox BendOnlyCheckbox;
-        private System.Windows.Forms.CheckBox TwistOnlyCheckbox;
-        private System.Windows.Forms.CheckBox LinearTwistCheckbox;
         private System.Windows.Forms.Label compressLabel;
         private System.Windows.Forms.TrackBar BendConsDirectionTrackbar;
         private System.Windows.Forms.Label label3;
@@ -960,5 +971,10 @@
         private System.Windows.Forms.Label WDValLabel;
         private System.Windows.Forms.CheckBox AllDirBendingCheckBox;
         private System.Windows.Forms.CheckBox ShowOuterSpringCheckBox;
+        private System.Windows.Forms.RadioButton LinearOnly_radioButton;
+        private System.Windows.Forms.RadioButton TwistOnly_radioButton;
+        private System.Windows.Forms.RadioButton LinearTwist_radioButton;
+        private System.Windows.Forms.RadioButton BendOnly_radioButton;
+        private System.Windows.Forms.RadioButton Freeform_radioButton;
     }
 }
