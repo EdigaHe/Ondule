@@ -771,9 +771,9 @@
             this.LinearOnly_radioButton.Name = "LinearOnly_radioButton";
             this.LinearOnly_radioButton.Size = new System.Drawing.Size(147, 29);
             this.LinearOnly_radioButton.TabIndex = 76;
-            this.LinearOnly_radioButton.TabStop = true;
             this.LinearOnly_radioButton.Text = "LinearOnly";
             this.LinearOnly_radioButton.UseVisualStyleBackColor = true;
+            this.LinearOnly_radioButton.CheckedChanged += new System.EventHandler(this.LinearOnly_radioButton_CheckedChanged);
             // 
             // TwistOnly_radioButton
             // 

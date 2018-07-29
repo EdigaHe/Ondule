@@ -426,5 +426,10 @@ namespace OndulePlugin
                 controller.showClothSpring(this._tempRenderedSpring.ClothIDs, isOuterClothShown);
             }
         }
+
+        private void LinearOnly_radioButton_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
