@@ -527,6 +527,7 @@
             this.BendConsDirectionTrackbar.TabIndex = 55;
             this.BendConsDirectionTrackbar.TickStyle = System.Windows.Forms.TickStyle.None;
             this.BendConsDirectionTrackbar.Value = 1;
+            this.BendConsDirectionTrackbar.Scroll += new System.EventHandler(this.BendConsDirectionTrackbar_Scroll);
             // 
             // label3
             // 

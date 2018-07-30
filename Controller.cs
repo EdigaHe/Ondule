@@ -45,6 +45,8 @@ namespace OndulePlugin
 
         OnduleUnit medialAxisGeneration();
 
+        void selectMASegment(ref OnduleUnit obj);
+
         OnduleUnit getUnitFromGlobal(int index);
         void updateUnitFromGlobal(int index, OnduleUnit newUnit);
         void addUnitToGlobal(OnduleUnit newUnit);
@@ -199,6 +201,11 @@ namespace OndulePlugin
         public OnduleUnit medialAxisGeneration()
         {
             return rhinoModel.maGen();
+        }
+
+        public void selectMASegment(ref OnduleUnit obj)
+        {
+            rhinoModel.selectMASegment(ref obj);
         }
     }
 }

@@ -19,6 +19,7 @@ namespace OndulePlugin
         private double _length;
         private double _G;  // Modulus of rigidity
         private Rhino.Geometry.Curve _ma;
+        private Rhino.Geometry.Curve _selectedSeg;
         private Point3d _startPt;
         private Point3d _endPt;
         //private List<double> _stiffness;
@@ -27,6 +28,10 @@ namespace OndulePlugin
         private int _twistAngle;
         private double _compressionDis;
         private double _extensionDis;
+        private Guid _MAID;
+        private Guid _ctrlPt1ID;
+        private Guid _ctrlPt2ID;
+        private Guid _segID;
         List<Brep> _preservedBrepList = new List<Brep>();   // Record the preserved breps
         List<Brep> _replacedBrepList = new List<Brep>();    // Record the replaced breps
         List<Guid> _capperSpringIDList = new List<Guid>();  // Record the IDs of generated spring breps 
@@ -50,6 +55,27 @@ namespace OndulePlugin
         {
             get { return this._twistAngle; }
             set { this._twistAngle = value; }
+        }
+
+        public Guid MAID
+        {
+            get { return this._MAID; }
+            set { this._MAID = value; }
+        }
+        public Guid CtrlPt1ID
+        {
+            get { return this._ctrlPt1ID; }
+            set { this._ctrlPt1ID = value; }
+        }
+        public Guid CtrlPt2ID
+        {
+            get { return this._ctrlPt2ID; }
+            set { this._ctrlPt2ID = value; }
+        }
+        public Guid SegID
+        {
+            get { return this._segID; }
+            set { this._segID = value; }
         }
         public int BendAngle
         {
@@ -136,7 +162,11 @@ namespace OndulePlugin
             get { return this._coilDiameter; }
             set { this._coilDiameter = value; }
         }
- 
+        public Rhino.Geometry.Curve SelectedSeg
+        {
+            get { return this._selectedSeg; }
+            set { this._selectedSeg = value; }
+        }
         public double Pitch
         {
             get { return this._pitch; }

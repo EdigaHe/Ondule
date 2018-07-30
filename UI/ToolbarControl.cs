@@ -48,16 +48,16 @@ namespace OndulePlugin
         #endregion
 
         #region No Reference
-        private void mt_Select_Click(object sender, EventArgs e)
-        {
-            controller.selection();
-        }
+        //private void mt_Select_Click(object sender, EventArgs e)
+        //{
+        //    controller.selection();
+        //}
 
-        private void mt_wireFrame_Click(object sender, EventArgs e)
-        {
+        //private void mt_wireFrame_Click(object sender, EventArgs e)
+        //{
 
-            controller.wireframe();
-        }
+        //    controller.wireframe();
+        //}
         #endregion
 
         #region deformation triggers (reserved for the other window control)
@@ -106,26 +106,26 @@ namespace OndulePlugin
         //    }
         //}
 
-        private void LinearTwistBend_Click(object sender, EventArgs e)
-        {
-            is_freeform = true;
+        //private void LinearTwistBend_Click(object sender, EventArgs e)
+        //{
+        //    is_freeform = true;
 
-            // ### FOR DEBUG ###
-            String path = @"Resources\FreeForm_mode.png";
-            // ### FOR RELEASE ###
-            //String path = @"OndulePlugin\Resources\FreeForm_mode.png";
+        //    // ### FOR DEBUG ###
+        //    String path = @"Resources\FreeForm_mode.png";
+        //    // ### FOR RELEASE ###
+        //    //String path = @"OndulePlugin\Resources\FreeForm_mode.png";
 
-            //// ask the user to select the medium axis
-            //const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            //Rhino.DocObjects.ObjRef objRef;
-            //Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+        //    //// ask the user to select the medium axis
+        //    //const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+        //    //Rhino.DocObjects.ObjRef objRef;
+        //    //Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
 
-            //if (rc == Rhino.Commands.Result.Success)
-            //{
-            //    // send the object reference to the rhinomodel basically
-            //    controller.allDeform(objRef);
-            //}
-        }
+        //    //if (rc == Rhino.Commands.Result.Success)
+        //    //{
+        //    //    // send the object reference to the rhinomodel basically
+        //    //    controller.allDeform(objRef);
+        //    //}
+        //}
 
         //private void TwistBend_Click(object sender, EventArgs e)
         //{
@@ -150,23 +150,51 @@ namespace OndulePlugin
         //}
         #endregion
 
-        private void SpringGen_Click(object sender, EventArgs e)
+        #region Old linear implementation
+        //private void LinearBtn_Click(object sender, EventArgs e)
+        //{
+        //    // ask the user to select the medium axis
+        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
+        //    Rhino.DocObjects.ObjRef objRef;
+        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
+
+        //    if (rc == Rhino.Commands.Result.Success)
+        //    {
+        //        // send the object reference to the rhinomodel basically
+        //        controller.linearDeform(objRef);
+        //    }
+        //}
+        #endregion
+
+        private void UnitBtn_Click(object sender, EventArgs e)
         {
-            #region Not used
-            //// ask the user to select the medium axis
-            //const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-            //Rhino.DocObjects.ObjRef objRef;
-            //Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
-
-            //if (rc == Rhino.Commands.Result.Success)
-            //{
-            //    controller.springGeneration(objRef.Curve());
-            //}
-            #endregion
-
+            //throw new NotImplementedException();
+            // Pass the current selected part's parameters
+            Button temp = sender as Button;
+            int start = temp.Name.IndexOf('U');
+            int end = temp.Name.IndexOf('_');
+            int idx = Int32.Parse(temp.Name.Substring(start + 1, end - start - 1));
+            currUnit = controller.getUnitFromGlobal(idx);
+            currIdx = idx;
         }
 
-        private void MATButton_Click(object sender, EventArgs e)
+        private void debugBtn_Click(object sender, EventArgs e)
+        {
+            if (currUnit != null && currIdx != -1)
+            {
+                // Currently we don't need to specify the polysurface explicitly
+                // The currUnit includes the GUID of the surface
+                DeformationDesignForm coilwindow = new DeformationDesignForm(currUnit, currIdx, controller);
+                coilwindow.Show();
+            }
+            else
+            {
+                DeformationDesignForm coilwindow = new DeformationDesignForm(controller);
+                coilwindow.Show();
+            }
+        }
+
+        private void ConversionBtn_Click(object sender, EventArgs e)
         {
             // ask the user to select the medium axis
             is_freeform = false;
@@ -174,7 +202,7 @@ namespace OndulePlugin
             String path = @"Resources\FreeForm_default.png";
             // ### FOR RELEASE ###
             //String path = @"OndulePlugin\Resources\FreeForm_default.png";
-            
+
             //ObjRef armOffsetObjRef = new ObjRef(sufObjId);//get the objRef from the GUID
 
             //Brep surfaceBrep = armOffsetObjRef.Brep(); // because we know the geometry is Brep, we directly find it from the objRef 
@@ -194,7 +222,7 @@ namespace OndulePlugin
             List<double> coilDs = new List<double>();
             List<int> coilNs = new List<int>();
             double wireD = 0;   // all discontinued curves share the same wire diameter
-            double springPitch = d_min+gap_min;
+            double springPitch = d_min + gap_min;
             List<double> disLen = new List<double>();
 
             #region Compute the discontinued curves, coil diameters, wire diameter, coild numbers, and pitches
@@ -309,7 +337,7 @@ namespace OndulePlugin
                 // Use the entire central axis and get the average diameter of the spring coil
                 coilDs.Add((r1 + r2) / 2);
                 wireD = d_min;
-                springPitch = d_min+gap_min;
+                springPitch = d_min + gap_min;
 
                 int cn = Convert.ToInt32(Math.Ceiling(tempNewUnit.MA.GetLength() / (d_min + gap_min)));
                 coilNs.Add(cn);
@@ -328,12 +356,12 @@ namespace OndulePlugin
 
             controller.addUnitToGlobal(tempNewUnit);
 
-            if(tempNewUnit.BREPID != Guid.Empty)
+            if (tempNewUnit.BREPID != Guid.Empty)
             {
                 // Add one unit button in the flow panel
                 Button unitBtn = new Button();
-                int crntIdx = controller.getCountGlobal()-1;
-                unitBtn.Name = "OU"+ crntIdx.ToString()+ "_" + tempNewUnit.BREPID.ToString();
+                int crntIdx = controller.getCountGlobal() - 1;
+                unitBtn.Name = "OU" + crntIdx.ToString() + "_" + tempNewUnit.BREPID.ToString();
                 unitBtn.Text = "";
                 unitBtn.BackColor = Color.FromArgb(150, 150, 150);
                 unitBtn.Width = 20;
@@ -341,6 +369,10 @@ namespace OndulePlugin
                 unitBtn.FlatStyle = FlatStyle.Flat;
                 unitBtn.FlatAppearance.BorderSize = 0;
                 unitBtn.Click += UnitBtn_Click;
+
+                currIdx = crntIdx;
+                currUnit = controller.getUnitFromGlobal(crntIdx);
+
                 // Update the database (XML) with the newly added unit
                 //XmlDocument xmlDoc = new XmlDocument();
                 //xmlDoc.Load(@"database\OnduleDB.xml");
@@ -359,91 +391,6 @@ namespace OndulePlugin
 
                 OnduleUnitFlowPanel.Controls.Add(unitBtn);
             }
-
-        }
-
-        private void UnitBtn_Click(object sender, EventArgs e)
-        {
-            //throw new NotImplementedException();
-            // Pass the current selected part's parameters
-            Button temp = sender as Button;
-            int start = temp.Name.IndexOf('U');
-            int end = temp.Name.IndexOf('_');
-            int idx = Int32.Parse(temp.Name.Substring(start + 1, end - start - 1));
-            currUnit = controller.getUnitFromGlobal(idx);
-            currIdx = idx;
-        }
-
-        private void MATButton_MouseEnter(object sender, EventArgs e)
-        {
-            // ### FOR DEBUG ###
-            String path = @"Resources\MAT_active.png";
-            // ### FOR RELEASE ###
-            //String path = @"OndulePlugin\Resources\MAT_active.png";
-
-            MATBtn.BackgroundImage = Image.FromFile(path);
-            MATBtn.Cursor = Cursors.Default;
-            MATBtn.BackColor = Color.White;
-        }
-
-        private void MATButton_MouseLeave(object sender, EventArgs e)
-        {
-            // ### FOR DEBUG ###
-            String path = @"Resources\MAT_default.png";
-            // ### FOR RELEASE ###
-            //String path = @"OndulePlugin\Resources\MAT_default.png";
-
-            MATBtn.BackgroundImage = Image.FromFile(path);
-            MATBtn.BackColor = Color.White;
-            MATBtn.Cursor = Cursors.Default;
-        }
-
-        private void MATButton_MouseHover(object sender, EventArgs e)
-        {
-            // ### FOR DEBUG ###
-            String path = @"Resources\MAT_active.png";
-            // ### FOR RELEASE ###
-            //String path = @"OndulePlugin\Resources\MAT_active.png";
-
-            MATBtn.BackgroundImage = Image.FromFile(path);
-            MATBtn.Cursor = Cursors.Default;
-            MATBtn.BackColor = Color.White;
-        }
-
-        #region Old linear implementation
-        //private void LinearBtn_Click(object sender, EventArgs e)
-        //{
-        //    // ask the user to select the medium axis
-        //    const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.Curve;
-        //    Rhino.DocObjects.ObjRef objRef;
-        //    Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one object", false, filter, out objRef);
-
-        //    if (rc == Rhino.Commands.Result.Success)
-        //    {
-        //        // send the object reference to the rhinomodel basically
-        //        controller.linearDeform(objRef);
-        //    }
-        //}
-        #endregion
-
-        private void LinearLockBtn_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void TwistLockBtn_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void PreviewBtn_Click(object sender, EventArgs e)
-        {
-            
         }
 
         private void ExportBtn_Click(object sender, EventArgs e)
@@ -451,29 +398,27 @@ namespace OndulePlugin
             //MessageBox.Show("Hello World!");
         }
 
-        private void debugBtn_Click(object sender, EventArgs e)
+        private void SimulationBtn_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void SegmentationBtn_Click(object sender, EventArgs e)
         {
             if (currUnit != null && currIdx != -1)
             {
-                // Currently we don't need to specify the polysurface explicitly
-                // The currUnit includes the GUID of the surface
-
-                //const Rhino.DocObjects.ObjectType filter = Rhino.DocObjects.ObjectType.PolysrfFilter;// filter allows us to constrain the type of objects the user can select
-                //Rhino.DocObjects.ObjRef sufObjRef;
-                //Guid sufObjId = Guid.Empty; // all rhino doc objects has a unique ID. We can always find the object by create an objRef with the id
-                //Rhino.Commands.Result rc = Rhino.Input.RhinoGet.GetOneObject("Select one surface to print", false, filter, out sufObjRef);
-                //if (rc == Rhino.Commands.Result.Success)
-                //{
-                //    sufObjId = sufObjRef.ObjectId;
-                //}
-
-                DeformationDesignForm coilwindow = new DeformationDesignForm(currUnit, currIdx, controller);
-                coilwindow.Show();
+                controller.selectMASegment(ref currUnit);
             }
-            else
+        }
+
+        private void OnduleTopBarControl_KeyDown(object sender, KeyEventArgs e)
+        {
+            if( currUnit != null && currIdx != -1)
             {
-                DeformationDesignForm coilwindow = new DeformationDesignForm(controller);
-                coilwindow.Show();
+                if(Control.ModifierKeys == Keys.ShiftKey)
+                {
+                    //If shift key was pressed
+                }
             }
         }
     }

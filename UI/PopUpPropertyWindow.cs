@@ -413,6 +413,12 @@ namespace OndulePlugin
             this.LinearConsCompressTrackbar.Maximum = (int)(c_value / 0.1);
         }
 
+        private void BendConsDirectionTrackbar_Scroll(object sender, EventArgs e)
+        {
+            int angle = this.BendConsDirectionTrackbar.Value;
+            this.BendConsDirectionValue.Text = angle.ToString();
+
+        }
         private void AllDirBendingCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             isAllDirBending = !isAllDirBending;

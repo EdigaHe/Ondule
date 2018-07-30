@@ -68,6 +68,7 @@ namespace OndulePlugin
         #region Functions for new Ondule interface
         void springGen(ref OnduleUnit objRef);
         OnduleUnit maGen();
+        void selectMASegment(ref OnduleUnit obj);
         void addTwistConstraint(ref OnduleUnit obj);
         void addLinearConstraint(ref OnduleUnit obj);
         void addLinearTwistConstraint(ref OnduleUnit obj);
@@ -145,7 +146,16 @@ namespace OndulePlugin
         #endregion
 
         #region local variables for the new interface
-        Guid ctrlPt1, ctrlPt2;
+        Guid ctrlPt1ID, ctrlPt2ID, selectedSegmentID;
+        double ctrlPtRadius = 1.5;
+        Point3d movingCtrlPt;
+        Point3d startCtrlPt;
+        Point3d endCtrlPt;
+        Curve ctrlMedialCrv;
+        Curve medialcurve;
+
+        Boolean isDraggingFirstCtrlPoint = false;
+        Boolean isDraggingSecondCtrlPoint = false;
         #endregion
 
         public IncRhinoModel()
@@ -363,7 +373,7 @@ namespace OndulePlugin
             Brep surfaceBrep = armOffsetObjRef.Brep(); // because we know the geometry is Brep, we directly find it from the objRef 
 
             // Create the tangent planes 
-            Curve centerCrv = objRef.MA;
+            Curve centerCrv = objRef.SelectedSeg;
             Point3d startPt = centerCrv.PointAtStart;
             Point3d endPt = centerCrv.PointAtEnd;
             double startPara = 0, endPara = 0;
@@ -644,7 +654,7 @@ namespace OndulePlugin
                     cappedSpring.Add(rearSphere);
 
                     // Update the Ondule unit's capped spring IDs list
-                    
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
                     foreach (Brep spring in cappedSpring)
                     {
                         Guid cloth_ID = myDoc.Objects.AddBrep(spring, white_attributes);
@@ -701,8 +711,8 @@ namespace OndulePlugin
             double deformPitch = objRef.Pitch + objRef.WireDiameter;
 
             double spiralEndPara;
-            objRef.MA.LengthParameter(objRef.MA.GetLength(), out spiralEndPara);
-            Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.MA, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0, 0, 0)), deformPitch, 0, deformCoilD - deformWireD, deformCoilD - deformWireD, 30);
+            objRef.SelectedSeg.LengthParameter(objRef.SelectedSeg.GetLength(), out spiralEndPara);
+            Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.SelectedSeg, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0, 0, 0)), deformPitch, 0, deformCoilD - deformWireD, deformCoilD - deformWireD, 30);
             Plane crossPln = new Plane(deformSpiralCrv.PointAtStart, deformSpiralCrv.TangentAtStart);
             Curve crossCir = new Circle(crossPln, deformSpiralCrv.PointAtStart, deformWireD / 2).ToNurbsCurve();
             //myDoc.Objects.AddCurve(crossCircle, whiteAttribute);
@@ -808,6 +818,14 @@ namespace OndulePlugin
             var yellow_attributes = new ObjectAttributes();
             yellow_attributes.ObjectColor = Color.Yellow;
             yellow_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+
+            var cadetblue_attributes = new ObjectAttributes();
+            cadetblue_attributes.ObjectColor = Color.CadetBlue;
+            cadetblue_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+
+            var white_attributes = new ObjectAttributes();
+            white_attributes.ObjectColor = Color.White;
+            white_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
 
             // TO-DEBUG: Currently the user has to select one object before click the "Generate Medial Axis" button
@@ -959,18 +977,25 @@ namespace OndulePlugin
                         cvs.Add(ma);
                         joined = Curve.JoinCurves(cvs)[0];
 
-                        myDoc.Objects.AddCurve(joined, yellow_attributes);
-                        rel.MA = joined;
+                        Curve joinedDup = joined.DuplicateCurve();
+                        Guid mid = myDoc.Objects.AddCurve(joined, yellow_attributes);   // Always draw the yellow central line
+                        Guid segid = myDoc.Objects.AddCurve(joinedDup, cadetblue_attributes);
+                         
+                        startCtrlPt = joined.PointAtStart;
+                        endCtrlPt = joined.PointAtEnd;
+                        Sphere startPhere = new Sphere(startCtrlPt, ctrlPtRadius);
+                        Sphere endPhere = new Sphere(endCtrlPt, ctrlPtRadius);
+                        ctrlPt1ID = myDoc.Objects.AddSphere(startPhere, yellow_attributes);
+                        ctrlPt2ID = myDoc.Objects.AddSphere(endPhere, yellow_attributes);
 
-                        Point3d startPt = joined.PointAtStart;
-                        Point3d endPt = joined.PointAtEnd;
-                        Sphere ctrlPtStart = new Sphere(startPt, 1.5);
-                        Sphere ctrlPtEnd = new Sphere(endPt, 1.5);
-                        // TO-DO: should hide the control points when the deformation design interface is called
-                        ctrlPt1 = myDoc.Objects.AddSphere(ctrlPtStart, yellow_attributes);
-                        ctrlPt2 = myDoc.Objects.AddSphere(ctrlPtEnd, yellow_attributes);
-                        rel.endPt = endPt;
-                        rel.startPt = startPt;
+                        rel.MA = joined;
+                        rel.SelectedSeg = joinedDup;
+                        rel.endPt = startCtrlPt;
+                        rel.startPt = endCtrlPt;
+                        rel.MAID = mid;
+                        rel.SegID = segid;
+                        rel.CtrlPt1ID = ctrlPt1ID;
+                        rel.CtrlPt2ID = ctrlPt2ID;
 
                         myDoc.Views.Redraw();
                     }
@@ -989,6 +1014,7 @@ namespace OndulePlugin
             return rel;
         }
 
+
         /// <summary>
         /// Add the bend constraint for only bending deformation
         /// </summary>
@@ -997,8 +1023,8 @@ namespace OndulePlugin
         public void addBendConstraint(ref OnduleUnit obj, Boolean dir)
         {
             // Hide the control points
-            myDoc.Objects.Hide(ctrlPt1, true);// hide the original shell
-            myDoc.Objects.Hide(ctrlPt2, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt1ID, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt2ID, true);// hide the original shell
 
             #region Get the outer brep surface
             ObjRef armOffsetObjRef = new ObjRef(obj.BREPID);    //get the objRef from the GUID
@@ -1006,7 +1032,7 @@ namespace OndulePlugin
             #endregion
 
             # region Get the start and end planes
-            Curve centerCrv = obj.MA;
+            Curve centerCrv = obj.SelectedSeg;
             Point3d startPt = centerCrv.PointAtStart;
             Point3d endPt = centerCrv.PointAtEnd;
             double startPara = 0, endPara = 0;
@@ -1028,8 +1054,8 @@ namespace OndulePlugin
         public void addLinearTwistConstraint(ref OnduleUnit obj)
         {
             // Hide the control points
-            myDoc.Objects.Hide(ctrlPt1, true);// hide the original shell
-            myDoc.Objects.Hide(ctrlPt2, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt1ID, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt2ID, true);// hide the original shell
 
             double cmpressDis = obj.CompressionDis;
             double tensionDis = obj.ExtensionDis;
@@ -1040,7 +1066,7 @@ namespace OndulePlugin
             #endregion
 
             # region Get the start and end planes
-            Curve centerCrv = obj.MA;
+            Curve centerCrv = obj.SelectedSeg;
             Point3d startPt = centerCrv.PointAtStart;
             Point3d endPt = centerCrv.PointAtEnd;
             double startPara = 0, endPara = 0;
@@ -1063,8 +1089,8 @@ namespace OndulePlugin
         {
             // Hide the control points
             
-            myDoc.Objects.Hide(ctrlPt1, true);// hide the original shell
-            myDoc.Objects.Hide(ctrlPt2, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt1ID, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt2ID, true);// hide the original shell
 
             double cmpressDis = obj.CompressionDis;
             double tensionDis = obj.ExtensionDis;
@@ -1075,7 +1101,7 @@ namespace OndulePlugin
             #endregion
 
             # region Get the start and end planes
-            Curve centerCrv = obj.MA;
+            Curve centerCrv = obj.SelectedSeg;
             Point3d startPt = centerCrv.PointAtStart;
             Point3d endPt = centerCrv.PointAtEnd;
             double startPara = 0, endPara = 0;
@@ -1098,8 +1124,8 @@ namespace OndulePlugin
         public void addTwistConstraint(ref OnduleUnit obj)
         {
             // Hide the control points
-            myDoc.Objects.Hide(ctrlPt1, true);// hide the original shell
-            myDoc.Objects.Hide(ctrlPt2, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt1ID, true);// hide the original shell
+            myDoc.Objects.Hide(ctrlPt2ID, true);// hide the original shell
 
             #region Get the outer brep surface
             ObjRef armOffsetObjRef = new ObjRef(obj.BREPID);    //get the objRef from the GUID
@@ -1107,7 +1133,7 @@ namespace OndulePlugin
             #endregion
 
             # region Get the start and end planes
-            Curve centerCrv = obj.MA;
+            Curve centerCrv = obj.SelectedSeg;
             Point3d startPt = centerCrv.PointAtStart;
             Point3d endPt = centerCrv.PointAtEnd;
             double startPara = 0, endPara = 0;
@@ -2572,6 +2598,144 @@ namespace OndulePlugin
             }
 
             myDoc.Views.Redraw();
+        }
+
+        public void selectMASegment(ref OnduleUnit obj)
+        {
+            isDraggingFirstCtrlPoint = false;
+            isDraggingSecondCtrlPoint = false;
+
+            myDoc.Objects.Show(obj.MAID, true);
+
+            var blue_attributes = new ObjectAttributes();
+            blue_attributes.ObjectColor = Color.FromArgb(13,156,247);
+            blue_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+
+            this.selectedSegmentID = obj.SegID;
+            this.ctrlPt1ID = obj.CtrlPt1ID;
+            this.ctrlPt2ID = obj.CtrlPt2ID;
+            this.startCtrlPt = obj.startPt;
+            this.endCtrlPt = obj.endPt;
+            this.ctrlMedialCrv = obj.SelectedSeg;
+            this.medialcurve = obj.MA;
+
+            Rhino.Input.Custom.GetPoint ctrl_first_pt_sel = new Rhino.Input.Custom.GetPoint();
+            ctrl_first_pt_sel.SetCommandPrompt("Set the first end of the segment");
+            ctrl_first_pt_sel.MouseMove += Ctrl_first_pt_sel_MouseMove;
+            ctrl_first_pt_sel.DynamicDraw += Ctrl_first_pt_sel_DynamicDraw;
+            ctrl_first_pt_sel.Get(true);
+
+            double t1, t2;
+            this.medialcurve.ClosestPoint(ctrl_first_pt_sel.Point(),out t1);
+            Point3d start_point = this.medialcurve.PointAt(t1);
+
+            // Show the first control point in the model
+            myDoc.Objects.Delete(this.ctrlPt1ID, true);
+            obj.CtrlPt1ID = myDoc.Objects.AddSphere(new Sphere(start_point, ctrlPtRadius), blue_attributes);
+            myDoc.Views.Redraw();
+
+            Rhino.Input.Custom.GetPoint ctrl_second_pt_sel = new Rhino.Input.Custom.GetPoint();
+            ctrl_second_pt_sel.SetCommandPrompt("Set the second end of the segment");
+            ctrl_second_pt_sel.MouseMove += Ctrl_second_pt_sel_MouseMove;
+            ctrl_second_pt_sel.DynamicDraw += Ctrl_second_pt_sel_DynamicDraw;
+            ctrl_second_pt_sel.Get(true);
+
+            this.medialcurve.ClosestPoint(ctrl_second_pt_sel.Point(), out t2);
+            Point3d end_point = this.medialcurve.PointAt(t2);
+
+            // Show the second control point in the model
+            myDoc.Objects.Delete(this.ctrlPt2ID, true);
+            obj.CtrlPt2ID = myDoc.Objects.AddSphere(new Sphere(end_point, ctrlPtRadius), blue_attributes);
+            myDoc.Views.Redraw();
+
+
+            // Update the parameters in the obj unit
+            double t_len;
+            this.medialcurve.LengthParameter(this.medialcurve.GetLength(), out t_len);
+            if(t1 <= t2)
+            {
+                if (t1 == 0 && t2 != t_len)
+                {
+                    obj.SelectedSeg = this.medialcurve.Split(t2)[0];
+                }
+                else if (t1 != 0 && t2 == t_len)
+                {
+                    obj.SelectedSeg = this.medialcurve.Split(t1)[1];
+                }
+                else if (t1 == 0 && t2 == t_len)
+                {
+                    obj.SelectedSeg = this.medialcurve;
+                }
+                else
+                {
+                    Curve seg1 = this.medialcurve.Split(t1)[1];
+                    obj.SelectedSeg = seg1.Split(t2)[0];
+                }
+            }
+            else
+            {
+                if (t2 == 0 && t1 != t_len)
+                {
+                    obj.SelectedSeg = this.medialcurve.Split(t1)[0];
+                }
+                else if (t2 != 0 && t1 == t_len)
+                {
+                    obj.SelectedSeg = this.medialcurve.Split(t2)[1];
+                }
+                else if (t2 == 0 && t1 == t_len)
+                {
+                    obj.SelectedSeg = this.medialcurve;
+                }
+                else
+                {
+                    Curve seg1 = this.medialcurve.Split(t2)[1];
+                    obj.SelectedSeg = seg1.Split(t1)[0];
+                }
+                
+            }
+
+            myDoc.Objects.Hide(obj.MAID, true);
+            myDoc.Objects.Delete(this.selectedSegmentID, true);
+            obj.SegID = myDoc.Objects.AddCurve(obj.SelectedSeg, blue_attributes);
+            myDoc.Views.Redraw();
+        }
+
+        private void Ctrl_second_pt_sel_DynamicDraw(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
+        {
+            if (isDraggingSecondCtrlPoint)
+            {
+                e.Display.DrawSphere(new Sphere(this.movingCtrlPt, ctrlPtRadius), Color.White);
+            }
+        }
+
+        private void Ctrl_second_pt_sel_MouseMove(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
+        {
+            double t;
+            this.medialcurve.ClosestPoint(e.Point, out t);
+
+            Point3d pointONCurve = this.medialcurve.PointAt(t);
+    
+            isDraggingSecondCtrlPoint = true;
+            this.movingCtrlPt = pointONCurve;
+   
+        }
+
+        private void Ctrl_first_pt_sel_DynamicDraw(object sender, Rhino.Input.Custom.GetPointDrawEventArgs e)
+        {
+            if (isDraggingFirstCtrlPoint)
+            {
+                e.Display.DrawSphere(new Sphere(this.movingCtrlPt, ctrlPtRadius), Color.White);
+            }
+        }
+
+        private void Ctrl_first_pt_sel_MouseMove(object sender, Rhino.Input.Custom.GetPointMouseEventArgs e)
+        {
+            double t;
+            this.medialcurve.ClosestPoint(e.Point, out t);
+
+            Point3d pointONCurve = this.medialcurve.PointAt(t);
+            isDraggingFirstCtrlPoint = true;
+            this.movingCtrlPt = pointONCurve;
         }
 
         #region Old versions of generating the deformation constraints
