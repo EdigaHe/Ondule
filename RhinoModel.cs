@@ -360,6 +360,9 @@ namespace OndulePlugin
         /// </summary>
         public void springGen(ref OnduleUnit objRef)
         {
+            myDoc.Objects.Hide(objRef.CtrlPt1ID, true);// hide the control points
+            myDoc.Objects.Hide(objRef.CtrlPt2ID, true);// hide the control points
+
             #region The generated spring is in white
             var white_attributes = new ObjectAttributes();
             white_attributes.ObjectColor = Color.White;
@@ -446,7 +449,8 @@ namespace OndulePlugin
 
                 foreach (Brep b in finalPreservedBrepList)
                 {
-                    myDoc.Objects.AddBrep(b);
+                    Guid b_ID = myDoc.Objects.AddBrep(b);
+                    objRef.PreservedBrepIDs.Add(b_ID);
                 }
 
                 #endregion
@@ -1023,8 +1027,8 @@ namespace OndulePlugin
         public void addBendConstraint(ref OnduleUnit obj, Boolean dir)
         {
             // Hide the control points
-            myDoc.Objects.Hide(ctrlPt1ID, true);// hide the original shell
-            myDoc.Objects.Hide(ctrlPt2ID, true);// hide the original shell
+            myDoc.Objects.Hide(obj.CtrlPt1ID, true);// hide the control points
+            myDoc.Objects.Hide(obj.CtrlPt2ID, true);// hide the control points
 
             #region Get the outer brep surface
             ObjRef armOffsetObjRef = new ObjRef(obj.BREPID);    //get the objRef from the GUID
@@ -1054,8 +1058,8 @@ namespace OndulePlugin
         public void addLinearTwistConstraint(ref OnduleUnit obj)
         {
             // Hide the control points
-            myDoc.Objects.Hide(ctrlPt1ID, true);// hide the original shell
-            myDoc.Objects.Hide(ctrlPt2ID, true);// hide the original shell
+            myDoc.Objects.Hide(obj.CtrlPt1ID, true);// hide the control points
+            myDoc.Objects.Hide(obj.CtrlPt2ID, true);// hide the control points
 
             double cmpressDis = obj.CompressionDis;
             double tensionDis = obj.ExtensionDis;
@@ -1088,9 +1092,8 @@ namespace OndulePlugin
         public void addLinearConstraint(ref OnduleUnit obj)
         {
             // Hide the control points
-            
-            myDoc.Objects.Hide(ctrlPt1ID, true);// hide the original shell
-            myDoc.Objects.Hide(ctrlPt2ID, true);// hide the original shell
+            myDoc.Objects.Hide(obj.CtrlPt1ID, true);// hide the control points
+            myDoc.Objects.Hide(obj.CtrlPt2ID, true);// hide the control points
 
             double cmpressDis = obj.CompressionDis;
             double tensionDis = obj.ExtensionDis;
@@ -1124,8 +1127,8 @@ namespace OndulePlugin
         public void addTwistConstraint(ref OnduleUnit obj)
         {
             // Hide the control points
-            myDoc.Objects.Hide(ctrlPt1ID, true);// hide the original shell
-            myDoc.Objects.Hide(ctrlPt2ID, true);// hide the original shell
+            myDoc.Objects.Hide(obj.CtrlPt1ID, true);// hide the control points
+            myDoc.Objects.Hide(obj.CtrlPt2ID, true);// hide the control points
 
             #region Get the outer brep surface
             ObjRef armOffsetObjRef = new ObjRef(obj.BREPID);    //get the objRef from the GUID
@@ -2697,6 +2700,18 @@ namespace OndulePlugin
             myDoc.Objects.Hide(obj.MAID, true);
             myDoc.Objects.Delete(this.selectedSegmentID, true);
             obj.SegID = myDoc.Objects.AddCurve(obj.SelectedSeg, blue_attributes);
+            myDoc.Views.Redraw();
+
+            // for updates on the segmentation
+            obj.PreservedBreps.Clear();
+
+            foreach(Guid id in obj.PreservedBrepIDs)
+            {
+                myDoc.Objects.Delete(id, true);
+            }
+            obj.PreservedBrepIDs.Clear();
+            obj.ReplacedBreps.Clear();
+            myDoc.Objects.Show(obj.BREPID, true);
             myDoc.Views.Redraw();
         }
 

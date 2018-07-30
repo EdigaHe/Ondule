@@ -37,6 +37,7 @@ namespace OndulePlugin
         List<Guid> _capperSpringIDList = new List<Guid>();  // Record the IDs of generated spring breps 
         List<Guid> _clothIDList = new List<Guid>();         // Record the IDs of the generated spring cloth
         List<Guid> _innerStructureIDList = new List<Guid>();// Record the IDs of the inner constraint structure
+        List<Guid> _preservedBrepsIDList = new List<Guid>();// Record the IDs of the preserved breps
         public OnduleUnit()
         {
 
@@ -161,6 +162,11 @@ namespace OndulePlugin
         {
             get { return this._coilDiameter; }
             set { this._coilDiameter = value; }
+        }
+        public List<Guid> PreservedBrepIDs
+        {
+            get { return this._preservedBrepsIDList; }
+            set { this._preservedBrepsIDList = value; }
         }
         public Rhino.Geometry.Curve SelectedSeg
         {
