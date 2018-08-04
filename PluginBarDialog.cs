@@ -34,7 +34,6 @@ namespace OndulePlugin
             SetDockBarFlag(control_bar_flags.cbf_show_name_when_docked_vert, false);
 
             ShowCaptionButton(caption_button.cb_close, false);
-
         }
 
         /// <summary>

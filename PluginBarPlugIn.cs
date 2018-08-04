@@ -58,23 +58,24 @@ namespace OndulePlugin
             Controller control = new IncController(DockBarUserControl, rhinoModel);
 
             // Create our dock bar
-            DockBarDialog = new PluginBarDialog(PluginBarDialog.DockBarId(), "Ondule Plugin", DockBarUserControl);
+            DockBarDialog = new PluginBarDialog(PluginBarDialog.DockBarId(), "Ondule Plugin Topbar", DockBarUserControl);
 
             // Register our dock bar
             MRhinoDockBarManager.CreateRhinoDockBar(
               this,
               DockBarDialog,
               false, // Don't show yet...
-              MRhinoUiDockBar.DockLocation.top,
-              MRhinoUiDockBar.DockStyle.top,
+              MRhinoUiDockBar.DockLocation.right,
+              MRhinoUiDockBar.DockStyle.right,
               new Point(0, 0)
               );
 
-
+            
             DockBarDialog.Initialize();
-            DockBarDialog.ResizeFloating(new Size(200, 48));
+            DockBarDialog.ResizeFloating(new Size(400, 740));
+            DockBarDialog.SetInitialSizeDockedVert(new Size(400, 730));
+            DockBarDialog.SetSizeRange(MRhinoUiDockBar.DockLocation.right, new Size(400, 100), new Size(400, 730));
             MRhinoDockBarManager.ShowDockBar(PluginBarDialog.DockBarId(), true, false);
-
 
             return LoadReturnCode.Success;
         }

@@ -1158,7 +1158,9 @@ namespace OndulePlugin
             double thickness = 2;       // the thickness of the stopper and the cap
             double gap = 0.6;
             double wall = 1;
-            double tensionDisNew = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
+            //double tensionDisNew = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
+
+            double tensionDisNew = (tensionDis <= (centerCrv.GetLength() - 2 * thickness - 2 * compreDis))? tensionDis: (centerCrv.GetLength() - 2 * thickness - 2 * compreDis);
 
             // create sweep function
             var sweep = new Rhino.Geometry.SweepOneRail();
@@ -1376,16 +1378,16 @@ namespace OndulePlugin
             Point3d[] sliderWallPts = new Point3d[5];
             double slotW = sliderW + gap * 2;
             double slotH = sliderH;
-            Transform txp_r1 = Transform.Translation(wallPln.XAxis * (slotW / 2));
-            Transform typ_r1 = Transform.Translation(wallPln.YAxis * slotH);
-            Transform txn_r1 = Transform.Translation(wallPln.XAxis * -(slotW / 2));
-            Transform tyn_r1 = Transform.Translation(wallPln.YAxis * 0);
+            Transform txp_r1 = Transform.Translation(stopperPln.XAxis * (slotW / 2));
+            Transform typ_r1 = Transform.Translation(stopperPln.YAxis * slotH);
+            Transform txn_r1 = Transform.Translation(stopperPln.XAxis * -(slotW / 2));
+            Transform tyn_r1 = Transform.Translation(stopperPln.YAxis * 0);
 
-            sliderWallPts[0] = capCrv.PointAtStart;
-            sliderWallPts[1] = capCrv.PointAtStart;
-            sliderWallPts[2] = capCrv.PointAtStart;
-            sliderWallPts[3] = capCrv.PointAtStart;
-            sliderWallPts[4] = capCrv.PointAtStart;
+            sliderWallPts[0] = stopperCrv.PointAtStart;
+            sliderWallPts[1] = stopperCrv.PointAtStart;
+            sliderWallPts[2] = stopperCrv.PointAtStart;
+            sliderWallPts[3] = stopperCrv.PointAtStart;
+            sliderWallPts[4] = stopperCrv.PointAtStart;
 
             sliderWallPts[0].Transform(txp_r1); sliderWallPts[0].Transform(typ_r1);
             sliderWallPts[1].Transform(txn_r1); sliderWallPts[1].Transform(typ_r1);
@@ -1393,27 +1395,44 @@ namespace OndulePlugin
             sliderWallPts[3].Transform(txp_r1); sliderWallPts[3].Transform(tyn_r1);
             sliderWallPts[4] = sliderWallPts[0];
 
+            List<Curve> CrvPath1 = new List<Curve>();
+            CrvPath1.Add(stopperCrv);
+            CrvPath1.Add(compCrvRear);
+            Curve crvP1 = Curve.JoinCurves(CrvPath1)[0];
+            Curve crvP2 = tensionCrv;
+
             Curve slotRect1 = new Polyline(sliderWallPts).ToNurbsCurve();
-            var slotBrep1 = sweep.PerformSweep(wallCrv, slotRect1)[0];
-            slotBrep1 = slotBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-            
+            var slotBrep1Part1 = sweep.PerformSweep(crvP1, slotRect1)[0];
+            slotBrep1Part1 = slotBrep1Part1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+            var slotBrep1Part2 = sweep.PerformSweep(crvP2, slotRect1)[0];
+            slotBrep1Part2 = slotBrep1Part2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
             Curve slotRect2 = slotRect1;
-            slotRect2.Rotate((2 * Math.PI) / 3, capCrv.TangentAtStart, capCrv.PointAtStart);
-            var slotBrep2 = sweep.PerformSweep(wallCrv, slotRect2)[0];
-            slotBrep2 = slotBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+            slotRect2.Rotate((2 * Math.PI) / 3, stopperCrv.TangentAtStart, stopperCrv.PointAtStart);
+            var slotBrep2Part1 = sweep.PerformSweep(crvP1, slotRect2)[0];
+            slotBrep2Part1 = slotBrep2Part1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+            var slotBrep2Part2 = sweep.PerformSweep(crvP2, slotRect2)[0];
+            slotBrep2Part2 = slotBrep2Part2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
             Curve slotRect3 = slotRect2;
-            slotRect3.Rotate((2 * Math.PI) / 3, capCrv.TangentAtStart, capCrv.PointAtStart);
-            var slotBrep3 = sweep.PerformSweep(wallCrv, slotRect3)[0];
-            slotBrep3 = slotBrep3.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+            slotRect3.Rotate((2 * Math.PI) / 3, stopperCrv.TangentAtStart, stopperCrv.PointAtStart);
+            var slotBrep3Part1 = sweep.PerformSweep(crvP1, slotRect3)[0];
+            slotBrep3Part1 = slotBrep3Part1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+            var slotBrep3Part2 = sweep.PerformSweep(crvP2, slotRect3)[0];
+            slotBrep3Part2 = slotBrep3Part2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-            List<Brep> cutoutUnion = new List<Brep>();
-            cutoutUnion.Add(slotBrep1);
-            cutoutUnion.Add(slotBrep2);
-            cutoutUnion.Add(slotBrep3);
- 
-            var linearWalls = Brep.CreateBooleanDifference(sliderWalls, cutoutUnion, myDoc.ModelAbsoluteTolerance);
-            
+            List<Brep> cutoutUnion1 = new List<Brep>();
+            List<Brep> cutoutUnion2 = new List<Brep>();
+            cutoutUnion1.Add(slotBrep1Part1);
+            cutoutUnion1.Add(slotBrep2Part1);
+            cutoutUnion1.Add(slotBrep3Part1);
+            cutoutUnion2.Add(slotBrep3Part2);
+
+            var linearWallsInter = Brep.CreateBooleanDifference(sliderWalls, cutoutUnion1, myDoc.ModelAbsoluteTolerance);
+            var lw1 = Brep.CreateBooleanIntersection(linearWallsInter[0], slotBrep1Part2, myDoc.ModelAbsoluteTolerance)[0];
+            var lw2s = Brep.CreateBooleanIntersection(lw1, slotBrep2Part2, myDoc.ModelAbsoluteTolerance);
+            var linearWalls = Brep.CreateBooleanIntersection(lw2s, cutoutUnion2, myDoc.ModelAbsoluteTolerance);
+
             foreach(Brep linearWall in linearWalls)
             {
                 Guid linearWallID = myDoc.Objects.AddBrep(linearWall, red_attributes);
