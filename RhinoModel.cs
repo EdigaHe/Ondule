@@ -1156,9 +1156,9 @@ namespace OndulePlugin
         private void generateLinearSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis, ref OnduleUnit obj)
         {
             double thickness = 2;       // the thickness of the stopper and the cap
-            double gap = 0.6;
+            double gap = 0.5;
             double wall = 1;
-            //double tensionDisNew = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
+            //double tensionDisNe5w = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
 
             double tensionDisNew = (tensionDis <= (centerCrv.GetLength() - 2 * thickness - 2 * compreDis))? tensionDis: (centerCrv.GetLength() - 2 * thickness - 2 * compreDis);
 
@@ -1554,7 +1554,7 @@ namespace OndulePlugin
 
             // compute the base height and generate the guide curves
             double t;
-            double gap_bearing_stopper = 0.6;
+            double gap_bearing_stopper = 0.5;
             double stopperheight = 2 + gap_bearing_stopper * 2;
             centerCrv.LengthParameter(centerCrv.GetLength() - stopperheight, out t); 
             Curve guiderCrv = centerCrv.Split(t)[1];            // indicates the length of the bearing wall
@@ -1725,7 +1725,7 @@ namespace OndulePlugin
         private void generateLinearTwistSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis, ref OnduleUnit obj)
         {
             double thickness = 2;       // the thickness of the stopper and the cap
-            double gap = 0.6;
+            double gap = 0.5;
             double wall = 1.0;
             double tensionDisNew = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
 
@@ -1935,7 +1935,7 @@ namespace OndulePlugin
             double chainUnitLen = 8;    // the length of the chain unit
             double chainLen = centerCrv.GetLength();
             double paddingLen = (chainLen - Math.Floor(chainLen / chainUnitLen) * chainUnitLen) / 2;     // padding for the first chain and the last chain units 
-            double gap = 0.6;
+            double gap = 0.5;
             double holderThickness = 1.0;
 
             if (obj.InnerStructureIDs.Count > 0)
