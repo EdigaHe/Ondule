@@ -680,7 +680,14 @@ namespace OndulePlugin
             #region generate the main spring that leads the deformation behavior
 
             #region Use orange to color the deformation spring
-            var orange_attributes = new ObjectAttributes();
+            int index = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat = myDoc.Materials[index];
+            mat.DiffuseColor = System.Drawing.Color.Orange;
+            mat.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes orange_attributes = new Rhino.DocObjects.ObjectAttributes();
+            orange_attributes.MaterialIndex = index;
+            orange_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
             orange_attributes.ObjectColor = Color.Orange;
             orange_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
