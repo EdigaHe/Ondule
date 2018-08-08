@@ -72,9 +72,9 @@ namespace OndulePlugin
 
             
             DockBarDialog.Initialize();
-            DockBarDialog.ResizeFloating(new Size(400, 740));
-            DockBarDialog.SetInitialSizeDockedVert(new Size(400, 730));
-            DockBarDialog.SetSizeRange(MRhinoUiDockBar.DockLocation.right, new Size(400, 100), new Size(400, 730));
+            DockBarDialog.ResizeFloating(new Size(400, 622));
+            DockBarDialog.SetInitialSizeDockedVert(new Size(400, 622));
+            DockBarDialog.SetSizeRange(MRhinoUiDockBar.DockLocation.right, new Size(368, 100), new Size(368, 622));
             MRhinoDockBarManager.ShowDockBar(PluginBarDialog.DockBarId(), true, false);
 
             return LoadReturnCode.Success;

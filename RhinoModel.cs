@@ -364,7 +364,15 @@ namespace OndulePlugin
             myDoc.Objects.Hide(objRef.CtrlPt2ID, true);// hide the control points
 
             #region The generated spring is in white
-            var white_attributes = new ObjectAttributes();
+
+            int index_white = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_white = myDoc.Materials[index_white];
+            mat_white.DiffuseColor = System.Drawing.Color.White;
+            mat_white.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes white_attributes = new Rhino.DocObjects.ObjectAttributes();
+            white_attributes.MaterialIndex = index_white;
+            white_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
             white_attributes.ObjectColor = Color.White;
             white_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
@@ -469,7 +477,7 @@ namespace OndulePlugin
 
                     #region generate the spiral that fits in the geometry
 
-                    double pitch = 2.4;   // The outer cloth always has the minimun pitch
+                    double pitch = 4.2;   // The outer cloth always has the minimun pitch
                     double clothWireDiameter = 1.6; // The outer cloth always has the minimum wire diameter
 
                     //DEBUG: Currently the bug is the center curve is only cut when there is a discontinuity, this is not good enough to have a nice spring approximation to the outer shell's shape.
@@ -1162,7 +1170,7 @@ namespace OndulePlugin
 
         private void generateLinearSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis, ref OnduleUnit obj)
         {
-            double thickness = 2;       // the thickness of the stopper and the cap
+            double thickness = 3;       // the thickness of the stopper and the cap
             double gap = 0.5;
             double wall = 1;
             //double tensionDisNe5w = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
@@ -1237,7 +1245,15 @@ namespace OndulePlugin
             //myDoc.Views.Redraw();
             #endregion
 
-            var red_attributes = new ObjectAttributes();
+            int index_red = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_red = myDoc.Materials[index_red];
+            mat_red.DiffuseColor = System.Drawing.Color.Red;
+            mat_red.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes red_attributes = new Rhino.DocObjects.ObjectAttributes();
+            red_attributes.MaterialIndex = index_red;
+            red_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+
             red_attributes.ObjectColor = Color.Red;
             red_attributes.ColorSource = ObjectColorSource.ColorFromObject;
 
@@ -1251,7 +1267,7 @@ namespace OndulePlugin
             Curve pjRodCrv = Curve.JoinCurves(cylinCrvList)[0];
 
             Point3d centerCylin = compCrvFront.PointAtStart;
-            double cylinBaseSideRadius = 1;   // the radius of the central bone
+            double cylinBaseSideRadius = 1.5;   // the radius of the central bone
             Curve cylinCircle = new Circle(startPln, centerCylin, cylinBaseSideRadius).ToNurbsCurve();
             var cylinBreps = sweep.PerformSweep(pjRodCrv, cylinCircle);
             Brep cylinBrep = cylinBreps[0];
@@ -1571,7 +1587,15 @@ namespace OndulePlugin
             Curve guiderCrvLeftover = guiderCrv.Split(t)[1];    // indicates the length of the bearing block + the gap between the block and the bottom
 
             #region The generated structure is in red
-            var red_attributes = new ObjectAttributes();
+            int index_red = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_red = myDoc.Materials[index_red];
+            mat_red.DiffuseColor = System.Drawing.Color.Red;
+            mat_red.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes red_attributes = new Rhino.DocObjects.ObjectAttributes();
+            red_attributes.MaterialIndex = index_red;
+            red_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+
             red_attributes.ObjectColor = Color.Red;
             red_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
@@ -1597,7 +1621,7 @@ namespace OndulePlugin
             Curve cylinCrvAll = Curve.JoinCurves(cylinCrvList)[0];   // the central bone part
 
             Point3d centerCylin = centerCrv.PointAtStart;
-            double cylinBaseSideRadius = 1;   // the radius of the central bone
+            double cylinBaseSideRadius = 1.5;   // the radius of the central bone
             Curve cylinCircle = new Circle(startSuf, centerCylin, cylinBaseSideRadius).ToNurbsCurve();
             var cylinBreps = sweep.PerformSweep(cylinCrvAll, cylinCircle);
             Brep cylinBrep = cylinBreps[0];
@@ -1804,7 +1828,15 @@ namespace OndulePlugin
             //myDoc.Views.Redraw();
             #endregion
 
-            var red_attributes = new ObjectAttributes();
+            int index_red = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_red = myDoc.Materials[index_red];
+            mat_red.DiffuseColor = System.Drawing.Color.Red;
+            mat_red.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes red_attributes = new Rhino.DocObjects.ObjectAttributes();
+            red_attributes.MaterialIndex = index_red;
+            red_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+
             red_attributes.ObjectColor = Color.Red;
             red_attributes.ColorSource = ObjectColorSource.ColorFromObject;
 
@@ -1818,7 +1850,7 @@ namespace OndulePlugin
             Curve pjRodCrv = Curve.JoinCurves(cylinCrvList)[0];
 
             Point3d centerCylin = compCrvFront.PointAtStart;
-            double cylinBaseSideRadius = 1;   // the radius of the central bone
+            double cylinBaseSideRadius = 1.5;   // the radius of the central bone
             Curve cylinCircle = new Circle(startPln, centerCylin, cylinBaseSideRadius).ToNurbsCurve();
             var cylinBreps = sweep.PerformSweep(pjRodCrv, cylinCircle);
             Brep cylinBrep = cylinBreps[0];
@@ -1962,11 +1994,28 @@ namespace OndulePlugin
             #endregion
 
             #region create the color
-            var red_attributes = new ObjectAttributes();
+
+
+            int index_red = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_red = myDoc.Materials[index_red];
+            mat_red.DiffuseColor = System.Drawing.Color.Red;
+            mat_red.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes red_attributes = new Rhino.DocObjects.ObjectAttributes();
+            red_attributes.MaterialIndex = index_red;
+            red_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+
             red_attributes.ObjectColor = Color.Red;
             red_attributes.ColorSource = ObjectColorSource.ColorFromObject;
 
-            var black_attributes = new ObjectAttributes();
+            int index_black = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_black= myDoc.Materials[index_black];
+            mat_black.DiffuseColor = System.Drawing.Color.Black;
+            mat_black.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes black_attributes = new Rhino.DocObjects.ObjectAttributes();
+            black_attributes.MaterialIndex = index_black;
+            black_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
             black_attributes.ObjectColor = Color.Black;
             black_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion

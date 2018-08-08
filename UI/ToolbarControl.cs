@@ -176,6 +176,8 @@ namespace OndulePlugin
             int idx = Int32.Parse(temp.Name.Substring(start + 1, end - start - 1));
             currUnit = controller.getUnitFromGlobal(idx);
             currIdx = idx;
+
+            // Enable the spring control panel if it is not enabled
         }
 
         private void debugBtn_Click(object sender, EventArgs e)
@@ -364,8 +366,8 @@ namespace OndulePlugin
                 unitBtn.Name = "OU" + crntIdx.ToString() + "_" + tempNewUnit.BREPID.ToString();
                 unitBtn.Text = "";
                 unitBtn.BackColor = Color.FromArgb(150, 150, 150);
-                unitBtn.Width = 20;
-                unitBtn.Height = 90;
+                unitBtn.Width = 12;
+                unitBtn.Height = 40;
                 unitBtn.FlatStyle = FlatStyle.Flat;
                 unitBtn.FlatAppearance.BorderSize = 0;
                 unitBtn.Click += UnitBtn_Click;
@@ -420,6 +422,11 @@ namespace OndulePlugin
                     //If shift key was pressed
                 }
             }
+        }
+
+        private void StiffnessTrackBar_Scroll(object sender, EventArgs e)
+        {
+
         }
     }
 }
