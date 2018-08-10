@@ -28,6 +28,14 @@ namespace OndulePlugin
         private double gap_min = 0.4;
         private List<double> stiffRange = new List<double>();
 
+        #region Variables for the new parameter control panel
+        //private OnduleUnit _springUnit = new OnduleUnit();
+        //private OnduleUnit _tempRenderedSpring = new OnduleUnit();
+        Boolean isOuterClothShown = false;
+
+
+        #endregion
+
         #region Initialization & Construction
         Controller controller;
         public void setController(Controller cont)
@@ -44,6 +52,19 @@ namespace OndulePlugin
         public OnduleTopBarControl()
         {
             InitializeComponent();
+
+            set_control_panel_statues(false);
+            // Hide some components in the control panel
+            this.WDTitleLabel.Hide();
+            this.MinWDLabel.Hide();
+            this.MaxWDLabel.Hide();
+            this.TurnGapTitleLabel.Hide();
+            this.MinTGLabel.Hide();
+            this.MaxTGLabel.Hide();
+            this.WireDiameterTrackBar.Hide();
+            this.TurnGapTrackBar.Hide();
+            this.WDValueLabel.Hide();
+            this.TGValueLabel.Hide();
         }
         #endregion
 
@@ -166,6 +187,79 @@ namespace OndulePlugin
         //}
         #endregion
 
+        private void set_control_panel_statues(Boolean isactivated)
+        {
+            this.StiffnessRadioButton.Enabled = isactivated;
+            this.AdvancedRadioButton.Enabled = isactivated;
+            this.WireDiameterTrackBar.Enabled = isactivated;
+            this.TurnGapTrackBar.Enabled = isactivated;
+            this.StiffnessTrackBar.Enabled = isactivated;
+            this.OnduleConstraintCheckbox.Enabled = isactivated;
+            this.LinearConstraintRadioButton.Enabled = isactivated;
+            this.TwistConstraintRadioButton.Enabled = isactivated;
+            this.LinearTwistConstraintRadioButton.Enabled = isactivated;
+            this.BendConstraintRadioButton.Enabled = isactivated;
+            this.AllDirectionsCheckBox.Enabled = isactivated;
+            this.ClothBox.Enabled = isactivated;
+            this.MinStiffnessLabel.Enabled = isactivated;
+            this.MaxStiffnessLabel.Enabled = isactivated;
+            this.MinWDLabel.Enabled = isactivated;
+            this.MaxWDLabel.Enabled = isactivated;
+            this.MinTGLabel.Enabled = isactivated;
+            this.MaxTGLabel.Enabled = isactivated;
+            this.OnduleSpringGenerationTitleLabel.Enabled = isactivated;
+            this.WDValueLabel.Enabled = isactivated;
+            this.TGValueLabel.Enabled = isactivated;
+        }
+        private void initialize_parameter_panel(OnduleUnit currUnit, int curridx)
+        {
+            this.StiffnessRadioButton.Checked = true;
+
+            if(currUnit.WireDiameter == -1)
+            {
+                this.WireDiameterTrackBar.Value = this.WireDiameterTrackBar.Minimum;
+                this.WDValueLabel.Text = Convert.ToDouble(this.WireDiameterTrackBar.Minimum * 0.1).ToString();
+                currUnit.WireDiameter = Convert.ToDouble(this.WireDiameterTrackBar.Minimum * 0.1);
+            }
+            else
+            {
+                this.WireDiameterTrackBar.Value = Convert.ToInt32(currUnit.WireDiameter / 0.1);
+                this.WDValueLabel.Text = currUnit.WireDiameter.ToString();
+            }
+
+            if(currUnit.Pitch == -1)
+            {
+                this.TurnGapTrackBar.Value = this.TurnGapTrackBar.Minimum;
+                this.TGValueLabel.Text = Convert.ToDouble(this.TurnGapTrackBar.Minimum * 0.1).ToString();
+                currUnit.Pitch = Convert.ToDouble(this.TurnGapTrackBar.Minimum * 0.1);
+            }
+            else
+            {
+                this.TurnGapTrackBar.Value = Convert.ToInt32(currUnit.Pitch / 0.1);
+                this.TGValueLabel.Text = currUnit.Pitch.ToString();
+            }
+
+            // Calculate the stiffness and update the stiffness track bar
+            double coilD = currUnit.CoilDiameter.ElementAt(0);
+            int turnN = Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter)));
+
+            int turnN_max = Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (0.6 + 1.6)));
+            int turnN_min = 1;
+            
+            double k = currUnit.WireDiameter * currUnit.WireDiameter * currUnit.WireDiameter * currUnit.WireDiameter * 1000 / (8 * turnN * coilD * coilD * coilD);
+            double k_min = 1.6 * 1.6 * 1.6 * 1.6 * 1000 / (8 * coilD * coilD * coilD * turnN_max);
+            double k_max = 7.6 * 7.6 * 7.6 * 7.6 * 1000 / (8 * coilD * coilD * coilD * turnN_min);
+            this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min / 0.1);
+            this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max / 0.1);
+            this.StiffnessTrackBar.Value = Convert.ToInt32(k / 0.1);
+
+            currUnit.Stiffness = k;
+            currUnit.CoilNum = turnN;
+
+            // Update the currently selected unit
+            controller.updateUnitFromGlobal(curridx, currUnit);
+
+        }
         private void UnitBtn_Click(object sender, EventArgs e)
         {
             //throw new NotImplementedException();
@@ -177,7 +271,12 @@ namespace OndulePlugin
             currUnit = controller.getUnitFromGlobal(idx);
             currIdx = idx;
 
+            controller.springGeneration(ref currUnit);
             // Enable the spring control panel if it is not enabled
+            set_control_panel_statues(true);
+
+            // Initial the parameter panel
+            initialize_parameter_panel(currUnit, currIdx);
         }
 
         private void debugBtn_Click(object sender, EventArgs e)
@@ -350,7 +449,7 @@ namespace OndulePlugin
             // initial the parameters for the generated unit
             tempNewUnit.CoilDiameter = coilDs;
             tempNewUnit.WireDiameter = wireD;
-            tempNewUnit.CoilNum = coilNs;
+            //tempNewUnit.CoilNum = coilNs;
             tempNewUnit.DiscontinuedLengths = disLen;
             tempNewUnit.ID = controller.getCountGlobal();
             tempNewUnit.Pitch = springPitch;
@@ -366,8 +465,8 @@ namespace OndulePlugin
                 unitBtn.Name = "OU" + crntIdx.ToString() + "_" + tempNewUnit.BREPID.ToString();
                 unitBtn.Text = "";
                 unitBtn.BackColor = Color.FromArgb(150, 150, 150);
-                unitBtn.Width = 12;
-                unitBtn.Height = 40;
+                unitBtn.Width = 15;
+                unitBtn.Height = 34;
                 unitBtn.FlatStyle = FlatStyle.Flat;
                 unitBtn.FlatAppearance.BorderSize = 0;
                 unitBtn.Click += UnitBtn_Click;
@@ -392,6 +491,7 @@ namespace OndulePlugin
                 //}
 
                 OnduleUnitFlowPanel.Controls.Add(unitBtn);
+                
             }
         }
 
@@ -427,6 +527,51 @@ namespace OndulePlugin
         private void StiffnessTrackBar_Scroll(object sender, EventArgs e)
         {
 
+        }
+
+        private void StiffnessRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            this.WDTitleLabel.Hide();
+            this.MinWDLabel.Hide();
+            this.MaxWDLabel.Hide();
+            this.TurnGapTitleLabel.Hide();
+            this.MinTGLabel.Hide();
+            this.MaxTGLabel.Hide();
+            this.WireDiameterTrackBar.Hide();
+            this.TurnGapTrackBar.Hide();
+            this.WDValueLabel.Hide();
+            this.TGValueLabel.Hide();
+
+            this.MinStiffnessLabel.Show();
+            this.MaxStiffnessLabel.Show();
+            this.StiffnessTrackBar.Show();
+        }
+
+        private void AdvancedRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            this.WDTitleLabel.Show();
+            this.MinWDLabel.Show();
+            this.MaxWDLabel.Show();
+            this.TurnGapTitleLabel.Show();
+            this.MinTGLabel.Show();
+            this.MaxTGLabel.Show();
+            this.WireDiameterTrackBar.Show();
+            this.TurnGapTrackBar.Show();
+            this.WDValueLabel.Show();
+            this.TGValueLabel.Show();
+
+            this.MinStiffnessLabel.Hide();
+            this.MaxStiffnessLabel.Hide();
+            this.StiffnessTrackBar.Hide();
+        }
+
+        private void ClothBox_CheckedChanged(object sender, EventArgs e)
+        {
+            isOuterClothShown = !isOuterClothShown;
+            if (currUnit.ClothIDs.Count > 0)
+            {
+                controller.showClothSpring(currUnit.ClothIDs, isOuterClothShown);
+            }
         }
     }
 }

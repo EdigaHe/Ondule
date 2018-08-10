@@ -24,7 +24,7 @@ namespace OndulePlugin
         private int _springIndex = -1;
         private double _springParam_d = 0;          // wire diameter
         private List<double> _springParam_D = new List<double>();        // coil diameter
-        private List<int> _springParam_CoilNum = new List<int>();       // spring coil turns
+        private int _springParam_CoilNum;       // spring coil turns
         private double _springParam_G = 350000;     // PLA's Shear Modulus/Modulus of Rigidity
         private double _springParam_L = 1.0;        // spring length
         private double _springParamPitch;     // Pitch between two consecutive turns
@@ -57,7 +57,7 @@ namespace OndulePlugin
             this._springParam_d = 1.6;
             this._springParam_D.Add(30);
             this._springParamPitch = 4;
-            this._springParam_CoilNum.Add(2);
+            this._springParam_CoilNum = 2;
             //this._springPropStiffness = this._springParam_G * Math.Pow(this._springParam_d, 4) / (8 * this._springParam_CoilNum.ElementAt(0) * Math.Pow(this._springParam_D.ElementAt(0), 3));
             //this._springPropLinearDeflection = 1 / ((this._springPropStiffness == 0) ? 1: this._springPropStiffness);
         }
@@ -179,123 +179,126 @@ namespace OndulePlugin
             }    
         }
 
-        private void InverseComputeSpringParameters(double expectLinearDeflection, 
-            double expectStiffness, double expectBendAngle, double expectTwistAngle, OnduleUnit prevUnit, out OnduleUnit updatedUnit)
-        {
-            updatedUnit = prevUnit;
-            double prevWireDiameter = prevUnit.WireDiameter;
-            List<double> prevDisLens = prevUnit.DiscontinuedLengths;
-            List<int> prevCoilNum = prevUnit.CoilNum;
+        #region Old implementation of reversly computing the flexibility
+        //private void InverseComputeSpringParameters(double expectLinearDeflection, 
+        //    double expectStiffness, double expectBendAngle, double expectTwistAngle, OnduleUnit prevUnit, out OnduleUnit updatedUnit)
+        //{
+        //    updatedUnit = prevUnit;
+        //    double prevWireDiameter = prevUnit.WireDiameter;
+        //    List<double> prevDisLens = prevUnit.DiscontinuedLengths;
+        //    List<int> prevCoilNum = prevUnit.CoilNum;
 
-            double updatedWireDiameter = prevWireDiameter;
-            List<int> updatedCoilNum = new List<int>();
-            foreach(int cn in prevUnit.CoilNum)
-            {
-                updatedCoilNum.Add(cn);
-            }
+        //    double updatedWireDiameter = prevWireDiameter;
+        //    List<int> updatedCoilNum = new List<int>();
+        //    foreach(int cn in prevUnit.CoilNum)
+        //    {
+        //        updatedCoilNum.Add(cn);
+        //    }
 
-            // First, we test if the expected stiffness falls in the range where valid wire diameter (d_min to d_max) applies.
-            double minStiffness = 0;
-            double maxStiffness = 0;
-            double d_min_updated = d_min;
-            double d_max_updated = d_max;
-           
-            int idx = 0;
-            foreach(double Dia in prevUnit.CoilDiameter)
-            {
-                minStiffness += prevUnit.G * Math.Pow(d_min_updated, 4) / (8 * Math.Pow(Dia, 3) * prevUnit.CoilNum.ElementAt(idx));
-                maxStiffness += prevUnit.G * Math.Pow(d_max_updated, 4) / (8 * Math.Pow(Dia, 3) * prevUnit.CoilNum.ElementAt(idx));
-                idx++;
-            }
-            if (expectStiffness >= minStiffness && expectStiffness <= maxStiffness)
-            {
-                // only change the wire diameter
-                double f = 0;
-                int t = 0;
-                foreach(double D in prevUnit.CoilDiameter)
-                {
-                    f += prevUnit.G / (8 * prevUnit.CoilNum.ElementAt(t) * Math.Pow(D, 3));
-                    t++;
-                }
-                updatedWireDiameter = Math.Sqrt(Math.Sqrt(expectStiffness / f));
-            }
-            else if(expectStiffness < minStiffness)
-            {
-                // use d_min_updated as the wire diameter and increase the coil number
-                double minStiffnessUpdated = 0;
+        //    // First, we test if the expected stiffness falls in the range where valid wire diameter (d_min to d_max) applies.
+        //    double minStiffness = 0;
+        //    double maxStiffness = 0;
+        //    double d_min_updated = d_min;
+        //    double d_max_updated = d_max;
 
-                do
-                {
-                    int t = 0;
-                    foreach (double D in prevUnit.CoilDiameter)
-                    {
-                        int N = updatedCoilNum.ElementAt(t);
-                        // test if the updated pitch is still bigger than the wire diameter
-                        if (prevUnit.DiscontinuedLengths.ElementAt(t) / (N + 1) > d_min_updated)
-                        {
-                            updatedCoilNum[t] = N + 1;
-                        }
-                        t++;
-                    }
+        //    int idx = 0;
+        //    foreach(double Dia in prevUnit.CoilDiameter)
+        //    {
+        //        minStiffness += prevUnit.G * Math.Pow(d_min_updated, 4) / (8 * Math.Pow(Dia, 3) * prevUnit.CoilNum.ElementAt(idx));
+        //        maxStiffness += prevUnit.G * Math.Pow(d_max_updated, 4) / (8 * Math.Pow(Dia, 3) * prevUnit.CoilNum.ElementAt(idx));
+        //        idx++;
+        //    }
+        //    if (expectStiffness >= minStiffness && expectStiffness <= maxStiffness)
+        //    {
+        //        // only change the wire diameter
+        //        double f = 0;
+        //        int t = 0;
+        //        foreach(double D in prevUnit.CoilDiameter)
+        //        {
+        //            f += prevUnit.G / (8 * prevUnit.CoilNum.ElementAt(t) * Math.Pow(D, 3));
+        //            t++;
+        //        }
+        //        updatedWireDiameter = Math.Sqrt(Math.Sqrt(expectStiffness / f));
+        //    }
+        //    else if(expectStiffness < minStiffness)
+        //    {
+        //        // use d_min_updated as the wire diameter and increase the coil number
+        //        double minStiffnessUpdated = 0;
 
-                    int ix = 0;
-                    foreach (double Dia in prevUnit.CoilDiameter)
-                    {
-                        minStiffnessUpdated += prevUnit.G * Math.Pow(d_min_updated, 4) / (8 * Math.Pow(Dia, 3) * updatedCoilNum.ElementAt(ix));
-                        ix++;
-                    }
-                } while (expectStiffness < minStiffnessUpdated);
+        //        do
+        //        {
+        //            int t = 0;
+        //            foreach (double D in prevUnit.CoilDiameter)
+        //            {
+        //                int N = updatedCoilNum.ElementAt(t);
+        //                // test if the updated pitch is still bigger than the wire diameter
+        //                if (prevUnit.DiscontinuedLengths.ElementAt(t) / (N + 1) > d_min_updated)
+        //                {
+        //                    updatedCoilNum[t] = N + 1;
+        //                }
+        //                t++;
+        //            }
 
-                double f = 0;
-                int ii = 0;
-                foreach (double D in prevUnit.CoilDiameter)
-                {
-                    f += prevUnit.G / (8 * updatedCoilNum.ElementAt(ii) * Math.Pow(D, 3));
-                    ii++;
-                }
-                updatedWireDiameter = Math.Sqrt(Math.Sqrt(expectStiffness / f));
+        //            int ix = 0;
+        //            foreach (double Dia in prevUnit.CoilDiameter)
+        //            {
+        //                minStiffnessUpdated += prevUnit.G * Math.Pow(d_min_updated, 4) / (8 * Math.Pow(Dia, 3) * updatedCoilNum.ElementAt(ix));
+        //                ix++;
+        //            }
+        //        } while (expectStiffness < minStiffnessUpdated);
 
-            }
-            else if(expectStiffness > maxStiffness)
-            {
-                // use d_max_updated as the wire diameter and decrease the coil number
-                double maxStiffnessUpdated = 0;
+        //        double f = 0;
+        //        int ii = 0;
+        //        foreach (double D in prevUnit.CoilDiameter)
+        //        {
+        //            f += prevUnit.G / (8 * updatedCoilNum.ElementAt(ii) * Math.Pow(D, 3));
+        //            ii++;
+        //        }
+        //        updatedWireDiameter = Math.Sqrt(Math.Sqrt(expectStiffness / f));
 
-                do
-                {
-                    int t = 0;
-                    foreach (double D in prevUnit.CoilDiameter)
-                    {
-                        int N = updatedCoilNum.ElementAt(t);
-                        // test if the updated pitch is still bigger than the wire diameter
-                        if (N > 1 && prevUnit.DiscontinuedLengths.ElementAt(t) / (N - 1) > d_max_updated)
-                        {
-                            updatedCoilNum[t] = N - 1;
-                        }
-                        t++;
-                    }
+        //    }
+        //    else if(expectStiffness > maxStiffness)
+        //    {
+        //        // use d_max_updated as the wire diameter and decrease the coil number
+        //        double maxStiffnessUpdated = 0;
 
-                    int ix = 0;
-                    foreach (double Dia in prevUnit.CoilDiameter)
-                    {
-                        maxStiffnessUpdated += prevUnit.G * Math.Pow(d_max_updated, 4) / (8 * Math.Pow(Dia, 3) * updatedCoilNum.ElementAt(ix));
-                        ix++;
-                    }
-                } while (expectStiffness > maxStiffnessUpdated);
+        //        do
+        //        {
+        //            int t = 0;
+        //            foreach (double D in prevUnit.CoilDiameter)
+        //            {
+        //                int N = updatedCoilNum.ElementAt(t);
+        //                // test if the updated pitch is still bigger than the wire diameter
+        //                if (N > 1 && prevUnit.DiscontinuedLengths.ElementAt(t) / (N - 1) > d_max_updated)
+        //                {
+        //                    updatedCoilNum[t] = N - 1;
+        //                }
+        //                t++;
+        //            }
 
-                double f = 0;
-                int ii = 0;
-                foreach (double D in prevUnit.CoilDiameter)
-                {
-                    f += prevUnit.G / (8 * updatedCoilNum.ElementAt(ii) * Math.Pow(D, 3));
-                    ii++;
-                }
-                updatedWireDiameter = Math.Sqrt(Math.Sqrt(expectStiffness / f));
-            }
+        //            int ix = 0;
+        //            foreach (double Dia in prevUnit.CoilDiameter)
+        //            {
+        //                maxStiffnessUpdated += prevUnit.G * Math.Pow(d_max_updated, 4) / (8 * Math.Pow(Dia, 3) * updatedCoilNum.ElementAt(ix));
+        //                ix++;
+        //            }
+        //        } while (expectStiffness > maxStiffnessUpdated);
 
-            updatedUnit.CoilNum = updatedCoilNum;
-            updatedUnit.WireDiameter = updatedWireDiameter;
-        }
+        //        double f = 0;
+        //        int ii = 0;
+        //        foreach (double D in prevUnit.CoilDiameter)
+        //        {
+        //            f += prevUnit.G / (8 * updatedCoilNum.ElementAt(ii) * Math.Pow(D, 3));
+        //            ii++;
+        //        }
+        //        updatedWireDiameter = Math.Sqrt(Math.Sqrt(expectStiffness / f));
+        //    }
+
+        //    updatedUnit.CoilNum = updatedCoilNum;
+        //    updatedUnit.WireDiameter = updatedWireDiameter;
+        //}
+
+        #endregion
 
         private void Preview_Click(object sender, EventArgs e)
         {

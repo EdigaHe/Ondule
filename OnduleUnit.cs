@@ -11,7 +11,7 @@ namespace OndulePlugin
     {
         private int _ID;       // the ID of the Ondule unit
         private Guid _brepID;   // the GUID of the selected brep 
-        private List<int> _coilNum = new List<int>();   // By default: length/(d_min+gap_min)
+        private int _coilNum;
         private List<double> _coilDiameter = new List<double>();
         private double _pitch;   // By default: d_min+gap_min
         private List<double> _discontinueLengths = new List<double>();
@@ -32,6 +32,7 @@ namespace OndulePlugin
         private Guid _ctrlPt1ID;
         private Guid _ctrlPt2ID;
         private Guid _segID;
+        private double _stiffness;
         List<Brep> _preservedBrepList = new List<Brep>();   // Record the preserved breps
         List<Brep> _replacedBrepList = new List<Brep>();    // Record the replaced breps
         List<Guid> _capperSpringIDList = new List<Guid>();  // Record the IDs of generated spring breps 
@@ -40,7 +41,25 @@ namespace OndulePlugin
         List<Guid> _preservedBrepsIDList = new List<Guid>();// Record the IDs of the preserved breps
         public OnduleUnit()
         {
-
+            this._ID = -1;
+            this._brepID = new Guid();
+            this._pitch = -1;
+            this._length = -1;
+            this._G = -1;
+            this._bendAngle = -1;
+            this._twistAngle = -1;
+            this._compressionDis = -1;
+            this._extensionDis = -1;
+            this._MAID = new Guid();
+            this._ctrlPt1ID = new Guid();
+            this._ctrlPt2ID = new Guid();
+            this._segID = new Guid();
+            this._coilNum = -1;
+        }
+        public double Stiffness
+        {
+            get { return this._stiffness; }
+            set { this._stiffness = value; }
         }
         public double CompressionDis
         {
@@ -84,7 +103,7 @@ namespace OndulePlugin
             set { this._bendAngle = value; }
         }
 
-        public OnduleUnit(int id, Guid brepid, List<int> cNum, List<double> cDia, double p, double wDia, double L, double G, Curve MA, Point3d strPt, Point3d endPt)
+        public OnduleUnit(int id, Guid brepid, int cNum, List<double> cDia, double p, double wDia, double L, double G, Curve MA, Point3d strPt, Point3d endPt)
         {
             this._ID = id;
             this._brepID = brepid;
@@ -148,7 +167,7 @@ namespace OndulePlugin
             get { return this._length; }
             set { this._length = value; }
         }
-        public List<int> CoilNum
+        public int CoilNum
         {
             get { return this._coilNum; }
             set { this._coilNum = value; }

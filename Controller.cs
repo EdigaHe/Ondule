@@ -80,17 +80,34 @@ namespace OndulePlugin
         /// <param name="globalUnits">the list that stores all elements</param>
         public void updateUnitFromGlobal(int index, OnduleUnit newUnit)
         {
+            globalUnits.ElementAt(index).ID = newUnit.ID;
+            globalUnits.ElementAt(index).BREPID = newUnit.BREPID;
             globalUnits.ElementAt(index).CoilDiameter = newUnit.CoilDiameter;
             globalUnits.ElementAt(index).CoilNum = newUnit.CoilNum;
-            globalUnits.ElementAt(index).WireDiameter = newUnit.WireDiameter;
-            globalUnits.ElementAt(index).endPt = newUnit.endPt;
-            globalUnits.ElementAt(index).G = newUnit.G;
-            globalUnits.ElementAt(index).Length = newUnit.Length;
-            globalUnits.ElementAt(index).MA = newUnit.MA;
             globalUnits.ElementAt(index).Pitch = newUnit.Pitch;
+            globalUnits.ElementAt(index).Length = newUnit.Length;
+            globalUnits.ElementAt(index).WireDiameter = newUnit.WireDiameter;
+            globalUnits.ElementAt(index).G = newUnit.G;
             globalUnits.ElementAt(index).startPt = newUnit.startPt;
-            globalUnits.ElementAt(index).BREPID = newUnit.BREPID;
-            globalUnits.ElementAt(index).ID = newUnit.ID;
+            globalUnits.ElementAt(index).endPt = newUnit.endPt;
+            globalUnits.ElementAt(index).MA = newUnit.MA;
+            globalUnits.ElementAt(index).DiscontinuedLengths = newUnit.DiscontinuedLengths;
+            globalUnits.ElementAt(index).SelectedSeg = newUnit.SelectedSeg;
+            globalUnits.ElementAt(index).BendAngle = newUnit.BendAngle;
+            globalUnits.ElementAt(index).TwistAngle = newUnit.TwistAngle;
+            globalUnits.ElementAt(index).CompressionDis = newUnit.CompressionDis;
+            globalUnits.ElementAt(index).ExtensionDis = newUnit.ExtensionDis;
+            globalUnits.ElementAt(index).MAID = newUnit.MAID;
+            globalUnits.ElementAt(index).CtrlPt1ID = newUnit.CtrlPt1ID;
+            globalUnits.ElementAt(index).CtrlPt2ID = newUnit.CtrlPt2ID;
+            globalUnits.ElementAt(index).SegID = newUnit.SegID;
+            globalUnits.ElementAt(index).Stiffness = newUnit.Stiffness;
+            globalUnits.ElementAt(index).PreservedBreps = newUnit.PreservedBreps;
+            globalUnits.ElementAt(index).ReplacedBreps = newUnit.ReplacedBreps;
+            globalUnits.ElementAt(index).CappedSpringIDs = newUnit.CappedSpringIDs;
+            globalUnits.ElementAt(index).ClothIDs = newUnit.ClothIDs;
+            globalUnits.ElementAt(index).InnerStructureIDs = newUnit.InnerStructureIDs;
+            globalUnits.ElementAt(index).PreservedBrepIDs = newUnit.PreservedBrepIDs;
         }
         public void addUnitToGlobal(OnduleUnit newUnit)
         {

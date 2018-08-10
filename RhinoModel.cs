@@ -477,7 +477,7 @@ namespace OndulePlugin
 
                     #region generate the spiral that fits in the geometry
 
-                    double pitch = 4.2;   // The outer cloth always has the minimun pitch
+                    double pitch = 2.5;   // The outer cloth always has the minimun pitch
                     double clothWireDiameter = 1.6; // The outer cloth always has the minimum wire diameter
 
                     //DEBUG: Currently the bug is the center curve is only cut when there is a discontinuity, this is not good enough to have a nice spring approximation to the outer shell's shape.
@@ -779,6 +779,10 @@ namespace OndulePlugin
                 objRef.ClothIDs.Add(s_ID);
             }
 
+
+            // Update the object's coil diameter
+            objRef.CoilDiameter.Clear();
+            objRef.CoilDiameter.Add(deformCoilD);
             #endregion
 
             myDoc.Views.Redraw();
