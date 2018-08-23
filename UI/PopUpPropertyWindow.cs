@@ -24,7 +24,7 @@ namespace OndulePlugin
         private int _springIndex = -1;
         private double _springParam_d = 0;          // wire diameter
         private List<double> _springParam_D = new List<double>();        // coil diameter
-        private int _springParam_CoilNum;       // spring coil turns
+        private double _springParam_CoilNum;       // spring coil turns
         private double _springParam_G = 350000;     // PLA's Shear Modulus/Modulus of Rigidity
         private double _springParam_L = 1.0;        // spring length
         private double _springParamPitch;     // Pitch between two consecutive turns

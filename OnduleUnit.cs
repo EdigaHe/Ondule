@@ -11,8 +11,9 @@ namespace OndulePlugin
     {
         private int _ID;       // the ID of the Ondule unit
         private Guid _brepID;   // the GUID of the selected brep 
-        private int _coilNum;
+        private double _coilNum;
         private List<double> _coilDiameter = new List<double>();
+        private double _meanCoilDiameter;
         private double _pitch;   // By default: d_min+gap_min
         private List<double> _discontinueLengths = new List<double>();
         private double _wireDiameter = 1.6; // By default: d_min 
@@ -60,6 +61,11 @@ namespace OndulePlugin
         {
             get { return this._stiffness; }
             set { this._stiffness = value; }
+        }
+        public double MeanCoilDiameter
+        {
+            get { return this._meanCoilDiameter; }
+            set { this._meanCoilDiameter = value; }
         }
         public double CompressionDis
         {
@@ -167,7 +173,7 @@ namespace OndulePlugin
             get { return this._length; }
             set { this._length = value; }
         }
-        public int CoilNum
+        public double CoilNum
         {
             get { return this._coilNum; }
             set { this._coilNum = value; }

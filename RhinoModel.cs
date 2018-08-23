@@ -754,7 +754,7 @@ namespace OndulePlugin
             deformSpringBreps.Add(deformSpringBrep);
             deformSpringBreps.Add(deformSpringEndSphere.ToBrep());
 
-            Brep middleSpring = Brep.CreateBooleanUnion(deformSpringBreps, myDoc.ModelAbsoluteTolerance)[0];
+            //Brep middleSpring = Brep.CreateBooleanUnion(deformSpringBreps, myDoc.ModelAbsoluteTolerance)[0];
             //myDoc.Objects.AddBrep(middleSpring, orange_attributes);
             //myDoc.Objects.AddSphere(deformSpringStartSphere, orange_attributes);
             //myDoc.Objects.AddSphere(deformSpringEndSphere, orange_attributes);
@@ -771,18 +771,23 @@ namespace OndulePlugin
             }
 
 
-            Guid s_ID = myDoc.Objects.AddBrep(middleSpring, orange_attributes);
-            objRef.CappedSpringIDs.Add(s_ID);
+            Guid s_ID1 = myDoc.Objects.AddBrep(deformSpringStartSphere.ToBrep(), orange_attributes);
+            objRef.CappedSpringIDs.Add(s_ID1);
+            Guid s_ID2 = myDoc.Objects.AddBrep(deformSpringBrep, orange_attributes);
+            objRef.CappedSpringIDs.Add(s_ID2);
+            Guid s_ID3 = myDoc.Objects.AddBrep(deformSpringEndSphere.ToBrep(), orange_attributes);
+            objRef.CappedSpringIDs.Add(s_ID3);
 
             if (isRegular)
             {
-                objRef.ClothIDs.Add(s_ID);
+                objRef.ClothIDs.Add(s_ID1);
+                objRef.ClothIDs.Add(s_ID2);
+                objRef.ClothIDs.Add(s_ID3);
             }
 
 
-            // Update the object's coil diameter
-            objRef.CoilDiameter.Clear();
-            objRef.CoilDiameter.Add(deformCoilD);
+            // Update the object's average coil diameter
+            objRef.MeanCoilDiameter = deformCoilD;
             #endregion
 
             myDoc.Views.Redraw();
@@ -792,7 +797,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min > 0.5)
+            if (max - min > 0.2)
                 result = false;
             else
                 result = true;
@@ -2784,12 +2789,43 @@ namespace OndulePlugin
             // for updates on the segmentation
             obj.PreservedBreps.Clear();
 
-            foreach(Guid id in obj.PreservedBrepIDs)
+            if(obj.PreservedBrepIDs.Count != 0)
             {
-                myDoc.Objects.Delete(id, true);
+                foreach (Guid id in obj.PreservedBrepIDs)
+                {
+                    myDoc.Objects.Delete(id, true);
+                }
+                obj.PreservedBrepIDs.Clear();
             }
-            obj.PreservedBrepIDs.Clear();
+           
             obj.ReplacedBreps.Clear();
+
+            if(obj.ClothIDs.Count != 0)
+            {
+                foreach (Guid id in obj.ClothIDs)
+                {
+                    myDoc.Objects.Delete(id, true);
+                }
+                obj.ClothIDs.Clear();
+            }
+            
+            if(obj.CappedSpringIDs.Count != 0)
+            {
+                foreach (Guid id in obj.CappedSpringIDs)
+                {
+                    myDoc.Objects.Delete(id, true);
+                }
+                obj.CappedSpringIDs.Clear();
+            }
+            
+            if(obj.InnerStructureIDs.Count != 0)
+            {
+                foreach(Guid id in obj.InnerStructureIDs)
+                {
+                    myDoc.Objects.Delete(id, true);
+                }
+                obj.InnerStructureIDs.Clear();
+            }
             myDoc.Objects.Show(obj.BREPID, true);
             myDoc.Views.Redraw();
         }

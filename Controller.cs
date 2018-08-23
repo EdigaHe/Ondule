@@ -108,6 +108,7 @@ namespace OndulePlugin
             globalUnits.ElementAt(index).ClothIDs = newUnit.ClothIDs;
             globalUnits.ElementAt(index).InnerStructureIDs = newUnit.InnerStructureIDs;
             globalUnits.ElementAt(index).PreservedBrepIDs = newUnit.PreservedBrepIDs;
+            globalUnits.ElementAt(index).MeanCoilDiameter = newUnit.MeanCoilDiameter;
         }
         public void addUnitToGlobal(OnduleUnit newUnit)
         {

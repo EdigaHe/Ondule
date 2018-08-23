@@ -10,6 +10,7 @@ using Rhino.UI;
 using System.Xml;
 using Rhino.DocObjects;
 using Rhino.Geometry;
+using System.Drawing.Drawing2D;
 
 namespace OndulePlugin
 {
@@ -17,22 +18,87 @@ namespace OndulePlugin
     {
         private bool is_freeform = false;
         private bool is_LinearConstraint = false;
-        
+        private int power = 4;
+
         public OnduleUnit currUnit = new OnduleUnit();
         public int currIdx = 0;
 
         private double d_min = 1.6;
         private double d_max = 7.6;
-        private int N_min = 1;
-        private int N_max = 10;
-        private double gap_min = 0.4;
+        private double tg_min = 0.6;
+
+        private double gap_min = 0.6;
+        private double E = 1000;
         private List<double> stiffRange = new List<double>();
 
+        private bool isAllDir = false;
+
         #region Variables for the new parameter control panel
+
+        double printing_tolerance = 0.6;
+
         //private OnduleUnit _springUnit = new OnduleUnit();
         //private OnduleUnit _tempRenderedSpring = new OnduleUnit();
         Boolean isOuterClothShown = false;
+        string specifier = "F1";
+        string specifier1 = "F0";
 
+        #region Constraint control related variables
+        float bendDirCenterX = 65, bendDirCenterY = 30, bendDirRadius = 7;
+        float bendAngleCenterX=130, bendAngleCenterY=30, bendAngleRadius = 7;
+        bool isBendDir = false;
+        bool isBendAngle = false;
+        float bend_dir_traj_centerX = 65;
+        float bend_dir_traj_centerY = 70;
+        float bend_dir_traj_r = 40;
+        float bend_angle_traj_centerX = 130;
+        float bend_angle_traj_centerY = 70;
+        float bend_angle_traj_r = 40;
+        double bend_dir_angle = 0;
+        double bend_angle = 0;
+        Label bendDirValueLabel;
+        Label bendAngleValueLabel;
+
+        float linearCenterX = 117, linearCenterY = 55, linearRadius = 7;
+        float defaultStateX = 117;
+        bool isLinearChange = false;
+        double compDis = 0.6;
+        double tenDis = 0.6;
+        float compOffset = 0;
+        float tenOffset = 0;
+        Label compressDisValueLabel;
+        Label tensionDisValueLabel;
+        float initialLen = 80;
+
+        float twistCenterX = 60, twistCenterY = 30, twistRadius = 7;
+        float twist_angle_traj_centerX = 60;
+        float twist_angle_traj_centerY = 70;
+        float twist_angle_traj_r = 40;
+        bool isTwistAngle = false;
+        double twist_angle = 0;
+        Label twistValueLabel;
+
+        float ltLinearCenterX = 117, ltLinearCenterY = 30, ltLinearRadius = 7;
+        float ltAngleCenterX = 40, ltAngleCenterY = 100, ltAngleRadius = 7;
+        float lt_twist_angle_traj_centerX = 40;
+        float lt_twist_angle_traj_centerY = 120;
+        float lt_twist_angle_traj_r = 20;
+        float lt_compOffset = 0;
+        float lt_tenOffset = 0;
+        double lt_compDis = 0.6;
+        double lt_tenDis = 0.6;
+        double lt_twist_angle = 0;
+        bool isLTDisChange = false;
+        bool isLTAngle = false;
+        Label ltTwistValueLabel;
+        Label ltCompressDisValueLabel;
+        Label ltTensionDisValueLabel;
+
+        int currConstraintCtrl = -1; // 0: linear only
+                                     // 1: twist only
+                                     // 2: linear + twist
+                                     // 3: bend only
+        #endregion
 
         #endregion
 
@@ -49,22 +115,59 @@ namespace OndulePlugin
             }
         }
 
+        //public void SetDoubleBuffered(System.Windows.Forms.Control c)
+        //{
+        //    if (System.Windows.Forms.SystemInformation.TerminalServerSession)
+        //        return;
+        //    System.Reflection.PropertyInfo aProp = typeof(System.Windows.Forms.Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        //    aProp.SetValue(c, true, null);
+        //}
+
+        //protected override CreateParams CreateParams
+        //{
+        //    get
+        //    {
+        //        CreateParams cp = base.CreateParams;
+        //        cp.ExStyle |= 0x02000000;
+        //        return cp;
+        //    }
+        //}
+
+        public static void SetDouble(Control cc)
+        {
+            cc.GetType().GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance |
+                         System.Reflection.BindingFlags.NonPublic).SetValue(cc, true, null);
+        }
+
+
         public OnduleTopBarControl()
         {
+
+           
+
+            //SetDoubleBuffered(this.ConstraintCanvas);
+
             InitializeComponent();
 
             set_control_panel_statues(false);
+            SetDouble(this);
+            SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+
+            this.BackColor = Color.FromArgb(255, 255, 255, 255);
+
+            //SetDouble(this.ConstraintCanvas);
+
             // Hide some components in the control panel
-            this.WDTitleLabel.Hide();
-            this.MinWDLabel.Hide();
-            this.MaxWDLabel.Hide();
-            this.TurnGapTitleLabel.Hide();
-            this.MinTGLabel.Hide();
-            this.MaxTGLabel.Hide();
-            this.WireDiameterTrackBar.Hide();
-            this.TurnGapTrackBar.Hide();
-            this.WDValueLabel.Hide();
-            this.TGValueLabel.Hide();
+            //this.WDTitleLabel.Hide();
+            //this.MinWDLabel.Hide();
+            //this.MaxWDLabel.Hide();
+            //this.TurnGapTitleLabel.Hide();
+            //this.MinTGLabel.Hide();
+            //this.MaxTGLabel.Hide();
+            //this.WireDiameterTrackBar.Hide();
+            //this.TurnGapTrackBar.Hide();
+            //this.WDValueLabel.Hide();
+            //this.TGValueLabel.Hide();
         }
         #endregion
 
@@ -191,69 +294,126 @@ namespace OndulePlugin
         {
             this.StiffnessRadioButton.Enabled = isactivated;
             this.AdvancedRadioButton.Enabled = isactivated;
-            this.WireDiameterTrackBar.Enabled = isactivated;
-            this.TurnGapTrackBar.Enabled = isactivated;
+            this.WireDiameterTrackBar.Enabled = false;
+            this.TurnGapTrackBar.Enabled = false;
             this.StiffnessTrackBar.Enabled = isactivated;
             this.OnduleConstraintCheckbox.Enabled = isactivated;
-            this.LinearConstraintRadioButton.Enabled = isactivated;
-            this.TwistConstraintRadioButton.Enabled = isactivated;
-            this.LinearTwistConstraintRadioButton.Enabled = isactivated;
-            this.BendConstraintRadioButton.Enabled = isactivated;
-            this.AllDirectionsCheckBox.Enabled = isactivated;
+            this.LinearConstraintRadioButton.Enabled = false;
+            this.TwistConstraintRadioButton.Enabled = false;
+            this.LinearTwistConstraintRadioButton.Enabled = false;
+            this.BendConstraintRadioButton.Enabled = false;
+            this.AllDirectionsCheckBox.Enabled = false;
             this.ClothBox.Enabled = isactivated;
+            this.ClothBox.Checked = false;
             this.MinStiffnessLabel.Enabled = isactivated;
             this.MaxStiffnessLabel.Enabled = isactivated;
-            this.MinWDLabel.Enabled = isactivated;
-            this.MaxWDLabel.Enabled = isactivated;
-            this.MinTGLabel.Enabled = isactivated;
-            this.MaxTGLabel.Enabled = isactivated;
+            this.MinWDLabel.Enabled = false;
+            this.MaxWDLabel.Enabled = false;
+            this.MinTGLabel.Enabled = false;
+            this.MaxTGLabel.Enabled = false;
             this.OnduleSpringGenerationTitleLabel.Enabled = isactivated;
-            this.WDValueLabel.Enabled = isactivated;
-            this.TGValueLabel.Enabled = isactivated;
+            this.WDValueLabel.Enabled = false;
+            this.TGValueLabel.Enabled = false;
+            this.WDTitleLabel.Enabled = false;
+            this.TurnGapTitleLabel.Enabled = false;
         }
-        private void initialize_parameter_panel(OnduleUnit currUnit, int curridx)
+        private void initialize_parameter_panel(ref OnduleUnit currUnit, int curridx)
         {
             this.StiffnessRadioButton.Checked = true;
+            string specifier = "F1";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 
-            if(currUnit.WireDiameter == -1)
+            // Initial the wire diameter trackbar and the turn gap trackbar
+
+            this.WireDiameterTrackBar.Minimum = Convert.ToInt32(d_min / 0.1);
+            double d_max_initial, d_max_real;
+            d_max_initial = ((currUnit.MA.GetLength() - tg_min) < d_max) ? (currUnit.MA.GetLength() - tg_min) : d_max;
+            if (currUnit.Pitch != -1)
+            {
+                d_max_real = ((currUnit.MA.GetLength() - currUnit.Pitch) < d_max) ? (currUnit.MA.GetLength() - currUnit.Pitch) : d_max;
+            }
+            else
+            {
+                d_max_real = ((currUnit.MA.GetLength() - tg_min) < d_max) ? (currUnit.MA.GetLength() - tg_min) : d_max;
+            }
+
+            this.WireDiameterTrackBar.Maximum = Convert.ToInt32(d_max_initial / 0.1);
+            this.MinWDLabel.Text = d_min.ToString(specifier);
+            this.MaxWDLabel.Text = d_max_initial.ToString(specifier);
+
+            if (currUnit.WireDiameter == -1)
             {
                 this.WireDiameterTrackBar.Value = this.WireDiameterTrackBar.Minimum;
-                this.WDValueLabel.Text = Convert.ToDouble(this.WireDiameterTrackBar.Minimum * 0.1).ToString();
+                this.WDValueLabel.Text = Convert.ToDouble(this.WireDiameterTrackBar.Minimum * 0.1).ToString(specifier) + " mm";
                 currUnit.WireDiameter = Convert.ToDouble(this.WireDiameterTrackBar.Minimum * 0.1);
             }
             else
             {
-                this.WireDiameterTrackBar.Value = Convert.ToInt32(currUnit.WireDiameter / 0.1);
-                this.WDValueLabel.Text = currUnit.WireDiameter.ToString();
+                if (currUnit.WireDiameter > d_max_real)
+                {
+                    // if the current wire diameter exceeds the actual max wire diameter (not the calculated one)
+                    this.WireDiameterTrackBar.Value = Convert.ToInt32(d_max_real / 0.1);
+                    this.WDValueLabel.Text = d_max_real.ToString(specifier) + " mm";
+                    currUnit.WireDiameter = d_max_real;
+                }
+                else
+                {
+                    this.WireDiameterTrackBar.Value = Convert.ToInt32(currUnit.WireDiameter / 0.1);
+                    this.WDValueLabel.Text = currUnit.WireDiameter.ToString(specifier) + " mm";
+                }
             }
 
-            if(currUnit.Pitch == -1)
+            double tg_max_initial, tg_max_real;
+            tg_max_initial = currUnit.MA.GetLength() - d_min;
+
+            this.TurnGapTrackBar.Minimum = Convert.ToInt32(tg_min / 0.1);
+            this.MinTGLabel.Text = tg_min.ToString(specifier);
+            tg_max_real = currUnit.MA.GetLength() - this.WireDiameterTrackBar.Value * 0.1;
+            this.MaxTGLabel.Text = tg_max_initial.ToString(specifier);
+            this.TurnGapTrackBar.Maximum = Convert.ToInt32(tg_max_initial / 0.1);
+
+            if (currUnit.Pitch == -1)
             {
                 this.TurnGapTrackBar.Value = this.TurnGapTrackBar.Minimum;
-                this.TGValueLabel.Text = Convert.ToDouble(this.TurnGapTrackBar.Minimum * 0.1).ToString();
+                this.TGValueLabel.Text = Convert.ToDouble(this.TurnGapTrackBar.Minimum * 0.1).ToString(specifier) + " mm";
                 currUnit.Pitch = Convert.ToDouble(this.TurnGapTrackBar.Minimum * 0.1);
             }
             else
             {
-                this.TurnGapTrackBar.Value = Convert.ToInt32(currUnit.Pitch / 0.1);
-                this.TGValueLabel.Text = currUnit.Pitch.ToString();
+                if(currUnit.Pitch > tg_max_real){
+                    // if the curent turn gap exceeds the real max turn gap, set the current turn gap the max real turn gap
+                    this.TurnGapTrackBar.Value = Convert.ToInt32(tg_max_real / 0.1);
+                    this.TGValueLabel.Text = tg_max_real.ToString(specifier) + " mm";
+                    currUnit.Pitch = tg_max_real;
+                }
+                else {
+                    this.TurnGapTrackBar.Value = Convert.ToInt32(currUnit.Pitch / 0.1);
+                    this.TGValueLabel.Text = currUnit.Pitch.ToString(specifier) + " mm";
+                }
             }
 
             // Calculate the stiffness and update the stiffness track bar
-            double coilD = currUnit.CoilDiameter.ElementAt(0);
-            int turnN = Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter)));
+            double coilD = currUnit.MeanCoilDiameter;
+            double turnN = currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter);
 
-            int turnN_max = Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (0.6 + 1.6)));
-            int turnN_min = 1;
-            
-            double k = currUnit.WireDiameter * currUnit.WireDiameter * currUnit.WireDiameter * currUnit.WireDiameter * 1000 / (8 * turnN * coilD * coilD * coilD);
-            double k_min = 1.6 * 1.6 * 1.6 * 1.6 * 1000 / (8 * coilD * coilD * coilD * turnN_max);
-            double k_max = 7.6 * 7.6 * 7.6 * 7.6 * 1000 / (8 * coilD * coilD * coilD * turnN_min);
-            this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min / 0.1);
-            this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max / 0.1);
-            this.StiffnessTrackBar.Value = Convert.ToInt32(k / 0.1);
+            double turnN_max = currUnit.MA.GetLength() / (d_min + tg_min);
+            double turnN_min = currUnit.MA.GetLength() / (d_max_real + tg_max_real);
+            //double turnN_min = 1;
 
-            currUnit.Stiffness = k;
+            //double k = Math.Pow(currUnit.WireDiameter, power) / turnN;
+            //double k_min = Math.Pow(currUnit.WireDiameter, power) / turnN_max;
+            //double k_max = Math.Pow(currUnit.WireDiameter, power) / turnN_min;
+            //this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 1000);
+            //this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 1000);
+            //this.StiffnessTrackBar.Value = Convert.ToInt32(k * 1000);
+
+            double k_max = (d_max_real + tg_max_real)/2;
+            double k_min = d_min + tg_min;
+            double k = (currUnit.WireDiameter + currUnit.Pitch)>=((d_max_real + tg_max_real) / 2)?((d_max_real + tg_max_real) / 2): (currUnit.WireDiameter + currUnit.Pitch);
+            this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 100);
+            this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 100);
+            this.StiffnessTrackBar.Value = Convert.ToInt32(k * 100);
+
+            currUnit.Stiffness = (currUnit.WireDiameter + currUnit.Pitch) * Math.Pow(currUnit.WireDiameter, power)/ currUnit.MA.GetLength();
             currUnit.CoilNum = turnN;
 
             // Update the currently selected unit
@@ -264,6 +424,10 @@ namespace OndulePlugin
         {
             //throw new NotImplementedException();
             // Pass the current selected part's parameters
+
+            ProcessingWarningWindow processingwindow = new ProcessingWarningWindow();
+            processingwindow.Show();
+
             Button temp = sender as Button;
             int start = temp.Name.IndexOf('U');
             int end = temp.Name.IndexOf('_');
@@ -275,8 +439,11 @@ namespace OndulePlugin
             // Enable the spring control panel if it is not enabled
             set_control_panel_statues(true);
 
+
+
             // Initial the parameter panel
-            initialize_parameter_panel(currUnit, currIdx);
+            initialize_parameter_panel(ref currUnit, currIdx);
+            processingwindow.Dispose();
         }
 
         private void debugBtn_Click(object sender, EventArgs e)
@@ -297,6 +464,30 @@ namespace OndulePlugin
 
         private void ConversionBtn_Click(object sender, EventArgs e)
         {
+
+            #region Start the loading 
+            //Panel loadingLayerBk = new Panel();
+            //loadingLayerBk.Size = new System.Drawing.Size(this.Size.Width, this.Size.Height);
+
+            //loadingLayerBk.Location = new System.Drawing.Point(0, 0);
+            //this.Controls.Add(loadingLayerBk);
+            //loadingLayerBk.BringToFront();
+            //loadingLayerBk.BackColor = Color.FromArgb(125, 255, 255, 255);
+
+            //PictureBox loadingLayer = new PictureBox();
+            //loadingLayer.Size = new System.Drawing.Size(200, 200);
+            //loadingLayer.Location = new System.Drawing.Point(90, 190);
+            //Image img = Image.FromFile(@"Resources\loading2.gif");
+            //loadingLayer.Image = img;
+            //loadingLayerBk.Controls.Add(loadingLayer);
+            //loadingLayer.BringToFront();
+            //loadingLayer.BackColor = Color.FromArgb(255, 255, 255);
+
+            ProcessingWarningWindow processingwindow = new ProcessingWarningWindow();
+            processingwindow.Show();
+
+            #endregion
+
             // ask the user to select the medium axis
             is_freeform = false;
             // ### FOR DEBUG ###
@@ -452,7 +643,7 @@ namespace OndulePlugin
             //tempNewUnit.CoilNum = coilNs;
             tempNewUnit.DiscontinuedLengths = disLen;
             tempNewUnit.ID = controller.getCountGlobal();
-            tempNewUnit.Pitch = springPitch;
+            tempNewUnit.Pitch = springPitch-wireD;
             tempNewUnit.Length = tempNewUnit.MA.GetLength();
 
             controller.addUnitToGlobal(tempNewUnit);
@@ -474,25 +665,24 @@ namespace OndulePlugin
                 currIdx = crntIdx;
                 currUnit = controller.getUnitFromGlobal(crntIdx);
 
-                // Update the database (XML) with the newly added unit
-                //XmlDocument xmlDoc = new XmlDocument();
-                //xmlDoc.Load(@"database\OnduleDB.xml");
-                //XmlNodeList elemList = xmlDoc.GetElementsByTagName("Ondule");
-                //for(int i=0; i<elemList.Count; ++i)
-                //{
-                //    // Create the node of the selected part
-                //    XmlNode node = xmlDoc.CreateNode(XmlNodeType.Element, unitBtn.Name ,null);
-                //    XmlNode nodeCoilNum = xmlDoc.CreateElement("CoilNum");
-                //    nodeCoilNum.InnerText = "5";
-                //    XmlNode nodeDiameter = xmlDoc.CreateElement("Diameter");
-                //    XmlNode nodePitch = xmlDoc.CreateElement("Pitch");
-                //    XmlNode nodeCoilDia = xmlDoc.CreateElement("CoilDiameter");
-                //    elemList[i].AppendChild(node);
-                //}
-
                 OnduleUnitFlowPanel.Controls.Add(unitBtn);
-                
+
+                #region Automatically convert the current unit into a spring
+               
+                controller.springGeneration(ref currUnit);
+                // Enable the spring control panel if it is not enabled
+                set_control_panel_statues(true);
+
+                // Initial the parameter panel
+                initialize_parameter_panel(ref currUnit, currIdx);
+
+                #endregion
+
             }
+
+            //this.Controls.Remove(loadingLayer);
+            //this.Controls.Remove(loadingLayerBk);
+            processingwindow.Dispose();
         }
 
         private void ExportBtn_Click(object sender, EventArgs e)
@@ -509,7 +699,24 @@ namespace OndulePlugin
         {
             if (currUnit != null && currIdx != -1)
             {
+
+                set_control_panel_statues(false);
+                //// Hide some components in the control panel
+                //this.WDTitleLabel.Hide();
+                //this.MinWDLabel.Hide();
+                //this.MaxWDLabel.Hide();
+                //this.TurnGapTitleLabel.Hide();
+                //this.MinTGLabel.Hide();
+                //this.MaxTGLabel.Hide();
+                //this.WireDiameterTrackBar.Hide();
+                //this.TurnGapTrackBar.Hide();
+                //this.WDValueLabel.Hide();
+                //this.TGValueLabel.Hide();
+
                 controller.selectMASegment(ref currUnit);
+                controller.updateUnitFromGlobal(currIdx, currUnit);
+
+                
             }
         }
 
@@ -524,45 +731,912 @@ namespace OndulePlugin
             }
         }
 
-        private void StiffnessTrackBar_Scroll(object sender, EventArgs e)
-        {
-
-        }
+    
 
         private void StiffnessRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            this.WDTitleLabel.Hide();
-            this.MinWDLabel.Hide();
-            this.MaxWDLabel.Hide();
-            this.TurnGapTitleLabel.Hide();
-            this.MinTGLabel.Hide();
-            this.MaxTGLabel.Hide();
-            this.WireDiameterTrackBar.Hide();
-            this.TurnGapTrackBar.Hide();
-            this.WDValueLabel.Hide();
-            this.TGValueLabel.Hide();
+            this.WDTitleLabel.Enabled = false;
+            this.MinWDLabel.Enabled = false;
+            this.MaxWDLabel.Enabled = false;
+            this.TurnGapTitleLabel.Enabled = false;
+            this.MinTGLabel.Enabled = false;
+            this.MaxTGLabel.Enabled = false;
+            this.WireDiameterTrackBar.Enabled = false;
+            this.TurnGapTrackBar.Enabled = false;
+            this.WDValueLabel.Enabled = false;
+            this.TGValueLabel.Enabled = false;
 
-            this.MinStiffnessLabel.Show();
-            this.MaxStiffnessLabel.Show();
-            this.StiffnessTrackBar.Show();
+            this.MinStiffnessLabel.Enabled = true;
+            this.MaxStiffnessLabel.Enabled = true;
+            this.StiffnessTrackBar.Enabled = true;
         }
 
         private void AdvancedRadioButton_CheckedChanged(object sender, EventArgs e)
         {
-            this.WDTitleLabel.Show();
-            this.MinWDLabel.Show();
-            this.MaxWDLabel.Show();
-            this.TurnGapTitleLabel.Show();
-            this.MinTGLabel.Show();
-            this.MaxTGLabel.Show();
-            this.WireDiameterTrackBar.Show();
-            this.TurnGapTrackBar.Show();
-            this.WDValueLabel.Show();
-            this.TGValueLabel.Show();
+            this.WDTitleLabel.Enabled = true;
+            this.MinWDLabel.Enabled = true;
+            this.MaxWDLabel.Enabled = true;
+            this.TurnGapTitleLabel.Enabled = true;
+            this.MinTGLabel.Enabled = true;
+            this.MaxTGLabel.Enabled = true;
+            this.WireDiameterTrackBar.Enabled = true;
+            this.TurnGapTrackBar.Enabled = true;
+            this.WDValueLabel.Enabled = true;
+            this.TGValueLabel.Enabled = true;
 
-            this.MinStiffnessLabel.Hide();
-            this.MaxStiffnessLabel.Hide();
-            this.StiffnessTrackBar.Hide();
+            this.MinStiffnessLabel.Enabled = false;
+            this.MaxStiffnessLabel.Enabled = false;
+            this.StiffnessTrackBar.Enabled = false;
+        }
+
+        private void ConstraintCanvas_MouseDown(object sender, MouseEventArgs e)
+        {
+            switch (currConstraintCtrl)
+            {
+                case 0:
+                    {
+                        // listening the mousedown event when the linear only mode is activated
+                        if(Math.Sqrt(Math.Pow(e.X - linearCenterX, 2) + Math.Pow(e.Y - linearCenterY, 2)) <= linearRadius)
+                        {
+                            isLinearChange = true;
+                            defaultStateX = e.X;
+                        }
+                    }break;
+                case 1:
+                    {
+                        // listening the mousedown event when the twist only mode is activated
+                        if (Math.Sqrt(Math.Pow(e.X - twistCenterX, 2) + Math.Pow(e.Y - twistCenterY, 2)) <= twistRadius)
+                        {
+                            isTwistAngle = true;
+                        }
+                    }
+                    break;
+                case 2:
+                    {
+                        // listening the mousedown event when the linear + twist mode is activated
+                        if(Math.Sqrt(Math.Pow(e.X - ltLinearCenterX, 2) + Math.Pow(e.Y - ltLinearCenterY, 2)) <= ltLinearRadius)
+                        {
+                            isLTDisChange = true;
+                            defaultStateX = e.X;
+                        }
+
+                        if(Math.Sqrt(Math.Pow(e.X - ltAngleCenterX, 2) + Math.Pow(e.Y - ltAngleCenterY, 2)) <= ltAngleRadius)
+                        {
+                            isLTAngle = true;
+                        }
+                    }
+                    break;
+                case 3:
+                    {
+                        // listening the mousedown event when the bend only mode is activated
+                        if (!isAllDir)
+                        {
+                            if (Math.Sqrt(Math.Pow(e.X - bendDirCenterX, 2) + Math.Pow(e.Y - bendDirCenterY, 2)) <= bendDirRadius)
+                            {
+                                isBendDir = true;
+                            }
+                        }
+
+                        if(Math.Sqrt(Math.Pow(e.X - bendAngleCenterX, 2) + Math.Pow(e.Y - bendAngleCenterY, 2)) <= bendAngleRadius)
+                        {
+                            isBendAngle = true;
+                        }
+                    }
+                    break;
+                default:break;
+            }
+        }
+
+        private void ConstraintCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            switch (currConstraintCtrl)
+            {
+                case 0:
+                    {
+                        // listening the mousemove event when the linear only mode is activated
+                        if (isLinearChange)
+                        {
+                            if(e.X == defaultStateX)
+                            {
+                                //compDis = 0;
+                                //tenDis = 0;
+
+                                compOffset = 0;
+                                tenOffset = 0;
+                            }
+                            else if(e.X < defaultStateX)
+                            {
+                                //tenDis = 0;
+                                tenOffset = 0;
+
+                                double min_dis = printing_tolerance / (currUnit.MA.GetLength() / 2) * initialLen;
+
+                                if (defaultStateX - e.X <= min_dis)
+                                {
+                                    linearCenterX = 117 - (float)min_dis;
+                                    compOffset = (float)min_dis;
+                                    compDis = printing_tolerance;
+
+                                }
+                                else if(defaultStateX - e.X <= initialLen)
+                                {
+                                    linearCenterX = 117 - (defaultStateX - e.X);
+                                    compOffset = defaultStateX - e.X;
+                                    double ratio = (defaultStateX - e.X) / initialLen;
+                                    compDis = ratio * currUnit.MA.GetLength() / 2;
+                                }
+                                else
+                                {
+                                    linearCenterX = 117 - initialLen;
+                                    compOffset = initialLen;
+                                    compDis = currUnit.MA.GetLength() / 2;
+                                }
+                            }
+                            else if(e.X > defaultStateX)
+                            {
+                                //compDis = 0;
+                                compOffset = 0;
+
+                                double min_dis = printing_tolerance / currUnit.MA.GetLength() * initialLen;
+
+                                if (e.X - defaultStateX <= min_dis)
+                                {
+                                    linearCenterX = 117 + (float)min_dis;
+                                    tenOffset = (float)min_dis;
+                                    tenDis = printing_tolerance;
+                                }
+                                else if (e.X - defaultStateX <= initialLen)
+                                {
+                                    linearCenterX = 117 + e.X - defaultStateX;
+                                    tenOffset = e.X - defaultStateX;
+                                    double ratio = (e.X - defaultStateX) / initialLen;
+                                    tenDis = ratio * currUnit.MA.GetLength();
+                                }
+                                else
+                                {
+                                    linearCenterX = 117 + initialLen;
+                                    tenOffset = initialLen;
+                                    tenDis = currUnit.MA.GetLength();
+                                }
+                            }
+
+                            double compRatio = compDis / (currUnit.MA.GetLength() / 2) * 100;
+                            double tenRatio = tenDis / currUnit.MA.GetLength() * 100;
+                            compressDisValueLabel.Text = compDis.ToString(specifier) + " mm (" + compRatio.ToString(specifier) + "%)";
+                            tensionDisValueLabel.Text = tenDis.ToString(specifier) + " mm (" + tenRatio.ToString(specifier) + "%)";
+                            this.ConstraintCanvas.Refresh();
+                        }
+                        
+                    }
+                    break;
+                case 1:
+                    {
+                        // listening the mousemove event when the twist only mode is activated
+                        if (isTwistAngle)
+                        {
+                            float new_X, new_Y;
+                            float c_X = e.X;
+                            float c_Y = e.Y;
+
+                            if ((c_X - twist_angle_traj_centerX) > 0)
+                            {
+                                float k = (c_Y - twist_angle_traj_centerY) / (c_X - twist_angle_traj_centerX);
+                                new_X = twist_angle_traj_centerX + twist_angle_traj_r / ((float)Math.Sqrt(1 + k * k));
+                                new_Y = (new_X - twist_angle_traj_centerX) * k + twist_angle_traj_centerY;
+
+                                twistCenterX = new_X;
+                                twistCenterY = new_Y;
+
+                                // update the bend direction angle
+                                Vector2d v1 = new Vector2d(0, -twist_angle_traj_r);
+                                Vector2d v2 = new Vector2d(twistCenterX - twist_angle_traj_centerX, twistCenterY - twist_angle_traj_centerY);
+                                twist_angle = Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length)) * 180 / Math.PI;
+                                twistValueLabel.Text = twist_angle.ToString(specifier1) + "°";
+
+                                this.ConstraintCanvas.Refresh();
+                            }
+                            else if ((c_X - twist_angle_traj_centerX) < 0)
+                            {
+                                float k = (c_Y - twist_angle_traj_centerY) / (c_X - twist_angle_traj_centerX);
+                                new_X = twist_angle_traj_centerX - twist_angle_traj_r / ((float)Math.Sqrt(1 + k * k));
+                                new_Y = (new_X - twist_angle_traj_centerX) * k + twist_angle_traj_centerY;
+
+                                twistCenterX = new_X;
+                                twistCenterY = new_Y;
+
+                                // update the bend direction angle
+                                Vector2d v1 = new Vector2d(0, -twist_angle_traj_r);
+                                Vector2d v2 = new Vector2d(twistCenterX - twist_angle_traj_centerX, twistCenterY - twist_angle_traj_centerY);
+                                twist_angle = 360 - Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length)) * 180 / Math.PI;
+                                twistValueLabel.Text = twist_angle.ToString(specifier1) + "°";
+
+                                this.ConstraintCanvas.Refresh();
+                            }
+                        }
+                    }
+                    break;
+                case 2:
+                    {
+                        // listening the mousemove event when the linear + twist mode is activated
+                        if (isLTDisChange)
+                        {
+                            if (e.X == defaultStateX)
+                            {
+                                //lt_compDis = 0;
+                                //lt_tenDis = 0;
+
+                                lt_compOffset = 0;
+                                lt_tenOffset = 0;
+                            }
+                            else if (e.X < defaultStateX)
+                            {
+                                //lt_tenDis = 0;
+                                lt_tenOffset = 0;
+
+                                double min_dis = printing_tolerance / (currUnit.MA.GetLength() / 2) * initialLen;
+
+                                if (defaultStateX - e.X <= min_dis)
+                                {
+                                    ltLinearCenterX = 117 - (float)min_dis;
+                                    lt_compOffset = (float)min_dis;
+                                    lt_compDis = printing_tolerance;
+                                }
+                                else if (defaultStateX - e.X <= initialLen)
+                                {
+                                    ltLinearCenterX = 117 - (defaultStateX - e.X);
+                                    lt_compOffset = defaultStateX - e.X;
+                                    double ratio = (defaultStateX - e.X) / initialLen;
+                                    lt_compDis = ratio * currUnit.MA.GetLength() / 2;
+                                }
+                                else
+                                {
+                                    ltLinearCenterX = 117 - initialLen;
+                                    lt_compOffset = initialLen;
+                                    lt_compDis = currUnit.MA.GetLength() / 2;
+                                }
+                            }
+                            else if (e.X > defaultStateX)
+                            {
+                                //lt_compDis = 0;
+                                lt_compOffset = 0;
+
+                                double min_dis = printing_tolerance / currUnit.MA.GetLength() * initialLen;
+
+                                if (e.X - defaultStateX <= min_dis)
+                                {
+                                    ltLinearCenterX = 117 + (float)min_dis;
+                                    lt_tenOffset = (float)min_dis;
+                                    lt_tenDis = printing_tolerance;
+                                }
+                                else if (e.X - defaultStateX <= initialLen)
+                                {
+                                    ltLinearCenterX = 117 + e.X - defaultStateX;
+                                    lt_tenOffset = e.X - defaultStateX;
+                                    double ratio = (e.X - defaultStateX) / initialLen;
+                                    lt_tenDis = ratio * currUnit.MA.GetLength();
+                                }
+                                else
+                                {
+                                    ltLinearCenterX = 117 + initialLen;
+                                    lt_tenOffset = initialLen;
+                                    lt_tenDis = currUnit.MA.GetLength();
+                                }
+                            }
+
+                            double lt_compRatio = lt_compDis / (currUnit.MA.GetLength() / 2) * 100;
+                            double lt_tenRatio = lt_tenDis / currUnit.MA.GetLength() * 100;
+                            ltCompressDisValueLabel.Text = lt_compDis.ToString(specifier) + " mm (" + lt_compRatio.ToString(specifier) + "%)";
+                            ltTensionDisValueLabel.Text = lt_tenDis.ToString(specifier) + " mm (" + lt_tenRatio.ToString(specifier) + "%)";
+                            this.ConstraintCanvas.Refresh();
+                        }
+
+                        if (isLTAngle)
+                        {
+                            float new_X, new_Y;
+                            float c_X = e.X;
+                            float c_Y = e.Y;
+
+                            if ((c_X - lt_twist_angle_traj_centerX) > 0)
+                            {
+                                float k = (c_Y - lt_twist_angle_traj_centerY) / (c_X - lt_twist_angle_traj_centerX);
+                                new_X = lt_twist_angle_traj_centerX + lt_twist_angle_traj_r / ((float)Math.Sqrt(1 + k * k));
+                                new_Y = (new_X - lt_twist_angle_traj_centerX) * k + lt_twist_angle_traj_centerY;
+
+                                ltAngleCenterX = new_X;
+                                ltAngleCenterY = new_Y;
+
+                                // update the bend direction angle
+                                Vector2d v1 = new Vector2d(0, -lt_twist_angle_traj_r);
+                                Vector2d v2 = new Vector2d(ltAngleCenterX - lt_twist_angle_traj_centerX, ltAngleCenterY - lt_twist_angle_traj_centerY);
+                                lt_twist_angle = Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length)) * 180 / Math.PI;
+                                ltTwistValueLabel.Text = lt_twist_angle.ToString(specifier1) + "°";
+
+                                this.ConstraintCanvas.Refresh();
+                            }
+                            else if ((c_X - lt_twist_angle_traj_centerX) < 0)
+                            {
+                                float k = (c_Y - lt_twist_angle_traj_centerY) / (c_X - lt_twist_angle_traj_centerX);
+                                new_X = lt_twist_angle_traj_centerX - lt_twist_angle_traj_r / ((float)Math.Sqrt(1 + k * k));
+                                new_Y = (new_X - lt_twist_angle_traj_centerX) * k + lt_twist_angle_traj_centerY;
+
+                                ltAngleCenterX = new_X;
+                                ltAngleCenterY = new_Y;
+
+                                // update the bend direction angle
+                                Vector2d v1 = new Vector2d(0, -lt_twist_angle_traj_r);
+                                Vector2d v2 = new Vector2d(ltAngleCenterX - lt_twist_angle_traj_centerX, ltAngleCenterY - lt_twist_angle_traj_centerY);
+                                lt_twist_angle = 360 - Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length)) * 180 / Math.PI;
+                                ltTwistValueLabel.Text = lt_twist_angle.ToString(specifier1) + "°";
+
+                                this.ConstraintCanvas.Refresh();
+                            }
+                        }
+                    }
+                    break;
+                case 3:
+                    {
+                        // listening the mousemove event when the bend only mode is activated
+                        if (isBendDir)
+                        {
+                            float new_X, new_Y;
+                            float c_X = e.X;
+                            float c_Y = e.Y;
+
+                            if((c_X - bend_dir_traj_centerX) > 0)
+                            {
+                                float k = (c_Y - bend_dir_traj_centerY) / (c_X - bend_dir_traj_centerX);
+                                new_X = bend_dir_traj_centerX + bend_dir_traj_r / ((float)Math.Sqrt(1 + k*k));
+                                new_Y = (new_X - bend_dir_traj_centerX) * k + bend_dir_traj_centerY;
+
+                                bendDirCenterX = new_X;
+                                bendDirCenterY = new_Y;
+
+                                // update the bend direction angle
+                                Vector2d v1 = new Vector2d(0, -bend_dir_traj_r);
+                                Vector2d v2 = new Vector2d(bendDirCenterX - bend_dir_traj_centerX, bendDirCenterY - bend_dir_traj_centerY);
+                                bend_dir_angle = Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length))*180/Math.PI;
+                                bendDirValueLabel.Text = bend_dir_angle.ToString(specifier1) + "°";
+
+                                this.ConstraintCanvas.Refresh();
+                            }
+                            else if((c_X - bend_dir_traj_centerX) < 0)
+                            {
+                                float k = (c_Y - bend_dir_traj_centerY) / (c_X - bend_dir_traj_centerX);
+                                new_X = bend_dir_traj_centerX - bend_dir_traj_r / ((float)Math.Sqrt(1 + k * k));
+                                new_Y = (new_X - bend_dir_traj_centerX) * k + bend_dir_traj_centerY;
+
+                                bendDirCenterX = new_X;
+                                bendDirCenterY = new_Y;
+
+                                // update the bend direction angle
+                                Vector2d v1 = new Vector2d(0, -bend_dir_traj_r);
+                                Vector2d v2 = new Vector2d(bendDirCenterX - bend_dir_traj_centerX, bendDirCenterY - bend_dir_traj_centerY);
+                                bend_dir_angle = 360 - Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length))*180/Math.PI;
+                                bendDirValueLabel.Text = bend_dir_angle.ToString(specifier1) + "°";
+
+                                this.ConstraintCanvas.Refresh();
+                            }
+                            
+                        }
+
+                        if (isBendAngle)
+                        {
+                            float new_X, new_Y;
+                            float c_X = e.X;
+                            float c_Y = e.Y;
+
+                            if ((c_X - bend_angle_traj_centerX) > 0)
+                            {
+                                float k = (c_Y - bend_angle_traj_centerY) / (c_X - bend_angle_traj_centerX);
+                                new_X = bend_angle_traj_centerX + bend_angle_traj_r / ((float)Math.Sqrt(1 + k * k));
+                                new_Y = (new_X - bend_angle_traj_centerX) * k + bend_angle_traj_centerY;
+
+                                bendAngleCenterX = new_X;
+                                bendAngleCenterY = new_Y;
+
+                                if (bendAngleCenterX < bend_angle_traj_centerX && bendAngleCenterY <= bend_angle_traj_centerY)
+                                {
+                                    bendAngleCenterX = bend_angle_traj_centerX;
+                                    bendAngleCenterY = bend_angle_traj_centerY - bend_angle_traj_r;
+                                }
+                                else if (bendAngleCenterX < bend_angle_traj_centerX && bendAngleCenterY > bend_angle_traj_centerY)
+                                {
+                                    bendAngleCenterX = bend_angle_traj_centerX;
+                                    bendAngleCenterY = bend_angle_traj_centerY + bend_angle_traj_r;
+                                }
+
+                                Vector2d v1 = new Vector2d(0, -bend_angle_traj_r);
+                                Vector2d v2 = new Vector2d(bendAngleCenterX - bend_angle_traj_centerX, bendAngleCenterY - bend_angle_traj_centerY);
+                                bend_angle = Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length)) * 180 / Math.PI;
+                                bendAngleValueLabel.Text = bend_angle.ToString(specifier1) + "°";
+
+                                this.ConstraintCanvas.Refresh();
+                            }
+                            else if ((c_X - bend_angle_traj_centerX) < 0)
+                            {
+                                float k = (c_Y - bend_angle_traj_centerY) / (c_X - bend_angle_traj_centerX);
+                                new_X = bend_angle_traj_centerX - bend_angle_traj_r / ((float)Math.Sqrt(1 + k * k));
+                                new_Y = (new_X - bend_angle_traj_centerX) * k + bend_angle_traj_centerY;
+
+                                bendAngleCenterX = new_X;
+                                bendAngleCenterY = new_Y;
+
+                                if (bendAngleCenterX < bend_angle_traj_centerX && bendAngleCenterY <= bend_angle_traj_centerY)
+                                {
+                                    bendAngleCenterX = bend_angle_traj_centerX;
+                                    bendAngleCenterY = bend_angle_traj_centerY - bend_angle_traj_r;
+
+                                    bend_angle = 0;
+                                    bendAngleValueLabel.Text = bend_angle.ToString(specifier1) + "°";
+                                }
+                                else if (bendAngleCenterX < bend_angle_traj_centerX && bendAngleCenterY > bend_angle_traj_centerY)
+                                {
+                                    bendAngleCenterX = bend_angle_traj_centerX;
+                                    bendAngleCenterY = bend_angle_traj_centerY + bend_angle_traj_r;
+
+                                    bend_angle = 180;
+                                    bendAngleValueLabel.Text = bend_angle.ToString(specifier1) + "°";
+                                }
+
+                                this.ConstraintCanvas.Refresh();
+                            }
+                        }
+                    }
+                    break;
+                default: break;
+            }
+        }
+
+        private void ConstraintCanvas_MouseUp(object sender, MouseEventArgs e)
+        {
+            switch (currConstraintCtrl)
+            {
+                case 0:
+                    {
+                        // listening the mouseup event when the linear only mode is activated
+                        if (isLinearChange)
+                        {
+                            isLinearChange = !isLinearChange;
+
+                            compOffset = 0;
+                            tenOffset = 0;
+                            linearCenterX = 117;
+                            defaultStateX = 117;
+
+                            double min_dis = printing_tolerance / (currUnit.MA.GetLength() / 2) * initialLen;
+
+                            if (compDis <= min_dis)
+                            {
+                                compOffset = (float)min_dis;
+                                compDis = printing_tolerance;
+                            }
+
+                            min_dis = printing_tolerance / currUnit.MA.GetLength() * initialLen;
+
+                            if (tenDis <= min_dis)
+                            {
+                                tenOffset = (float)min_dis;
+                                tenDis = printing_tolerance;
+                            }
+
+                            this.ConstraintCanvas.Refresh();
+                        }
+                    }
+                    break;
+                case 1:
+                    {
+                        // listening the mouseup event when the twist only mode is activated
+                        if (isTwistAngle) isTwistAngle = !isTwistAngle;
+                    }
+                    break;
+                case 2:
+                    {
+                        // listening the mouseup event when the linear + twist mode is activated
+                        if (isLTDisChange)
+                        {
+                            isLTDisChange = !isLTDisChange;
+
+                            lt_compOffset = 0;
+                            lt_tenOffset = 0;
+                            ltLinearCenterX = 117;
+                            defaultStateX = 117;
+
+                            double min_dis = printing_tolerance / (currUnit.MA.GetLength() / 2) * initialLen;
+
+                            if (lt_compDis <= min_dis)
+                            {
+                                lt_compOffset = (float)min_dis;
+                                lt_compDis = printing_tolerance;
+                            }
+
+                            min_dis = printing_tolerance / currUnit.MA.GetLength() * initialLen;
+
+                            if (lt_tenDis <= min_dis)
+                            {
+                                lt_tenOffset = (float)min_dis;
+                                lt_tenDis = printing_tolerance;
+                            }
+
+                            this.ConstraintCanvas.Refresh();
+
+                        }
+
+                        if (isLTAngle) isLTAngle = !isLTAngle;
+                    }
+                    break;
+                case 3:
+                    {
+                        // listening the mouseup event when the bend only mode is activated
+                        if (isBendDir) isBendDir = !isBendDir;
+                        if (isBendAngle) isBendAngle = !isBendAngle;
+                        // apply the selected angle
+                    }
+                    break;
+                default: break;
+            }
+        }
+
+        private void ConstraintCanvas_Paint(object sender, PaintEventArgs e)
+        {
+            
+            switch (currConstraintCtrl)
+            {
+                case 0:
+                    {
+                        // Linear only interface
+
+                        Rectangle rectangle = e.ClipRectangle;
+                        BufferedGraphicsContext GraphicsContext = BufferedGraphicsManager.Current;
+                        BufferedGraphics myBuffer = GraphicsContext.Allocate(e.Graphics, e.ClipRectangle);
+                        Graphics g = myBuffer.Graphics;
+                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        g.SmoothingMode = SmoothingMode.HighQuality;
+                        g.Clear(BackColor);
+                        SolidBrush bkBrush = new SolidBrush(Color.FromArgb(224, 224, 224));
+                        g.FillRectangle(bkBrush, rectangle);
+
+                        Pen p = new Pen(Color.FromArgb(158, 158, 158), 4);
+                        Pen p_spring = new Pen(Color.FromArgb(158, 158, 158), 2);
+                        Pen p_angle = new Pen(Color.FromArgb(108, 180, 241), 1);
+                        Pen p_angle1 = new Pen(Color.FromArgb(108, 180, 241), 3);
+                        Pen b_outline = new Pen(Color.FromArgb(255, 255, 255), 2);
+                        SolidBrush blockBrush = new SolidBrush(Color.FromArgb(110, 159, 239));
+
+                        float l_centerX = linearCenterX;
+                        float l_centerY = linearCenterY;
+                        float l_radius = linearRadius;
+                        float l_l, l_t, l_w, l_h;
+                        circle_drawing_coordinates_conversion(l_centerX, l_centerY, l_radius, out l_l, out l_t, out l_w, out l_h);
+                        
+                        // Draw the compression line and the tension line
+                        SolidBrush p_compress = new SolidBrush(Color.FromArgb(125, 87, 167, 242));
+                        SolidBrush p_tension = new SolidBrush(Color.FromArgb(125, 223, 199, 41));
+
+
+                        float c_dis = (float)(compDis / (currUnit.MA.GetLength() / 2) * initialLen);
+                        float t_dis = (float)(tenDis / (currUnit.MA.GetLength()) * initialLen);
+
+                        if (c_dis != 0)
+                        {
+                            g.FillRectangle(p_compress, 117 - c_dis, 20, c_dis, 70);
+                        }
+
+                        if (t_dis != 0)
+                        {
+                            g.FillRectangle(p_tension, 117, 20, t_dis, 70);
+                        }
+
+                        g.DrawLine(p, new PointF(20, 90), new PointF(20, 20));
+                        g.DrawLine(p_spring, new PointF(20, 55), new PointF(25,55));
+                        g.DrawLine(p_spring, new PointF(linearCenterX - linearRadius-5, 55), new PointF(linearCenterX-linearRadius, 55));
+                        g.DrawEllipse(b_outline, l_l, l_t, l_w, l_h);
+                        g.FillEllipse(blockBrush, l_l, l_t, l_w, l_h);
+
+                        double gap = (initialLen - compOffset + tenOffset)/20;
+                        double offset1 = 0;
+                        double offset2 = 0;
+                        double amp = 10;
+
+                        for(int i = 0; i<20; i++)
+                        {
+                            int left = i % 4;
+
+                            if (left == 0)
+                            {
+                                offset1 = 0;
+                                offset2 = amp*(-1);
+                            }   
+                            else if (left == 1)
+                            {
+                                offset1 = amp * (-1);
+                                offset2 = 0;
+                            }      
+                            else if (left == 2)
+                            {
+                                offset1 = 0;
+                                offset2 = amp;
+                            }
+                            else if(left == 3)
+                            {
+                                offset1 = amp;
+                                offset2 = 0;
+                            }
+
+                            g.DrawLine(p_spring, new PointF((float)(25 + i * gap), (float)(linearCenterY + offset1)), new PointF((float)(25 + (i + 1) * gap), (float)(linearCenterY+offset2)));
+                        }
+
+                       
+
+
+                        myBuffer.Render(e.Graphics);
+                        g.Dispose();
+                        myBuffer.Dispose();
+
+
+                    }
+                    break;
+                case 1:
+                    {
+                        // Twist only interface
+
+                        Rectangle rectangle = e.ClipRectangle;
+                        BufferedGraphicsContext GraphicsContext = BufferedGraphicsManager.Current;
+                        BufferedGraphics myBuffer = GraphicsContext.Allocate(e.Graphics, e.ClipRectangle);
+                        Graphics g = myBuffer.Graphics;
+                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        g.SmoothingMode = SmoothingMode.HighQuality;
+                        g.Clear(BackColor);
+                        SolidBrush bkBrush = new SolidBrush(Color.FromArgb(224, 224, 224));
+                        g.FillRectangle(bkBrush, rectangle);
+
+                        Pen p = new Pen(Color.FromArgb(158, 158, 158), 2);
+                        Pen p_angle = new Pen(Color.FromArgb(108, 180, 241), 1);
+                        Pen p_angle1 = new Pen(Color.FromArgb(108, 180, 241), 3);
+                        Pen b_outline = new Pen(Color.FromArgb(255, 255, 255), 2);
+                        SolidBrush blockBrush = new SolidBrush(Color.FromArgb(110, 159, 239));
+
+                        float t_centerX = twistCenterX;
+                        float t_centerY = twistCenterY;
+                        float t_r = twistRadius;
+
+                        float traj_l, traj_t, traj_w, traj_h;
+                        float t_l, t_t, t_w, t_h;
+                        circle_drawing_coordinates_conversion(twist_angle_traj_centerX, twist_angle_traj_centerY, twist_angle_traj_r, out traj_l, out traj_t, out traj_w, out traj_h);
+                        circle_drawing_coordinates_conversion(t_centerX, t_centerY, t_r, out t_l, out t_t, out t_w, out t_h);
+
+                        g.DrawEllipse(p, traj_l, traj_t, traj_w, traj_h);
+                        g.DrawLine(p_angle, new PointF(twist_angle_traj_centerX, twist_angle_traj_centerY), new PointF(twist_angle_traj_centerX, twist_angle_traj_centerY - twist_angle_traj_r));
+                        g.DrawArc(p_angle1, twist_angle_traj_centerX - twist_angle_traj_r, twist_angle_traj_centerY - twist_angle_traj_r, 2 * twist_angle_traj_r, 2 * twist_angle_traj_r, -90, (float)twist_angle);
+                        g.DrawLine(p_angle, new PointF(twist_angle_traj_centerX, twist_angle_traj_centerY), new PointF(twistCenterX, twistCenterY));
+                        g.DrawEllipse(b_outline, t_l, t_t, t_w, t_h);
+                        g.FillEllipse(blockBrush, t_l, t_t, t_w, t_h);
+
+                        myBuffer.Render(e.Graphics);
+                        g.Dispose();
+                        myBuffer.Dispose();
+
+                    }
+                    break;
+                case 2:
+                    {
+                        // Linear + twist interface
+                        Rectangle rectangle = e.ClipRectangle;
+                        BufferedGraphicsContext GraphicsContext = BufferedGraphicsManager.Current;
+                        BufferedGraphics myBuffer = GraphicsContext.Allocate(e.Graphics, e.ClipRectangle);
+                        Graphics g = myBuffer.Graphics;
+                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        g.SmoothingMode = SmoothingMode.HighQuality;
+                        g.Clear(BackColor);
+                        SolidBrush bkBrush = new SolidBrush(Color.FromArgb(224, 224, 224));
+                        g.FillRectangle(bkBrush, rectangle);
+
+                        Pen p = new Pen(Color.FromArgb(158, 158, 158), 4);
+                        Pen p_spring = new Pen(Color.FromArgb(158, 158, 158), 2);
+                        Pen p_angle = new Pen(Color.FromArgb(108, 180, 241), 1);
+                        Pen p_angle1 = new Pen(Color.FromArgb(108, 180, 241), 3);
+                        Pen b_outline = new Pen(Color.FromArgb(255, 255, 255), 2);
+                        SolidBrush blockBrush = new SolidBrush(Color.FromArgb(110, 159, 239));
+
+                        float lt_centerX = ltLinearCenterX;
+                        float lt_centerY = ltLinearCenterY;
+                        float lt_radius = ltLinearRadius;
+                        float lt_l, lt_t, lt_w, lt_h;
+                        circle_drawing_coordinates_conversion(lt_centerX, lt_centerY, lt_radius, out lt_l, out lt_t, out lt_w, out lt_h);
+
+                        // Draw the compression line and the tension line
+                        SolidBrush p_compress = new SolidBrush(Color.FromArgb(125, 87, 167, 242));
+                        SolidBrush p_tension = new SolidBrush(Color.FromArgb(125, 223, 199, 41));
+
+
+                        float c_dis = (float)(lt_compDis / (currUnit.MA.GetLength() / 2) * initialLen);
+                        float t_dis = (float)(lt_tenDis / (currUnit.MA.GetLength()) * initialLen);
+
+                        if (c_dis != 0)
+                        {
+                            g.FillRectangle(p_compress, 117 - c_dis, 20, c_dis, 20);
+                        }
+                        if (t_dis != 0)
+                        {
+                            g.FillRectangle(p_tension, 117, 20, t_dis, 20);
+                        }
+
+                        g.DrawLine(p, new PointF(20, 40), new PointF(20, 20));
+                        g.DrawLine(p_spring, new PointF(20, 30), new PointF(25, 30));
+                        g.DrawLine(p_spring, new PointF(ltLinearCenterX - ltLinearRadius - 5, ltLinearCenterY), new PointF(ltLinearCenterX - ltLinearRadius, ltLinearCenterY));
+                        g.DrawEllipse(b_outline, lt_l, lt_t, lt_w, lt_h);
+                        g.FillEllipse(blockBrush, lt_l, lt_t, lt_w, lt_h);
+
+                        double gap = (initialLen - lt_compOffset + lt_tenOffset) / 20;
+                        double offset1 = 0;
+                        double offset2 = 0;
+                        double amp = 10;
+
+                        for (int i = 0; i < 20; i++)
+                        {
+                            int left = i % 4;
+
+                            if (left == 0)
+                            {
+                                offset1 = 0;
+                                offset2 = amp * (-1);
+                            }
+                            else if (left == 1)
+                            {
+                                offset1 = amp * (-1);
+                                offset2 = 0;
+                            }
+                            else if (left == 2)
+                            {
+                                offset1 = 0;
+                                offset2 = amp;
+                            }
+                            else if (left == 3)
+                            {
+                                offset1 = amp;
+                                offset2 = 0;
+                            }
+
+                            g.DrawLine(p_spring, new PointF((float)(25 + i * gap), (float)(ltLinearCenterY + offset1)), new PointF((float)(25 + (i + 1) * gap), (float)(ltLinearCenterY + offset2)));
+                        }
+
+                        // Draw the twisting angle selection part
+                        float lt_angle_centerX = ltAngleCenterX;
+                        float lt_angle_centerY = ltAngleCenterY;
+                        float lt_angle_r = ltAngleRadius;
+
+                        float lt_traj_l, lt_traj_t, lt_traj_w, lt_traj_h;
+                        float lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h;
+                        circle_drawing_coordinates_conversion(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY, lt_twist_angle_traj_r, out lt_traj_l, out lt_traj_t, out lt_traj_w, out lt_traj_h);
+                        circle_drawing_coordinates_conversion(lt_angle_centerX, lt_angle_centerY, lt_angle_r, out lt_angle_l, out lt_angle_t, out lt_angle_w, out lt_angle_h);
+
+                        g.DrawEllipse(p, lt_traj_l, lt_traj_t, lt_traj_w, lt_traj_h);
+                        g.DrawLine(p_angle, new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY), new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY - lt_twist_angle_traj_r));
+                        g.DrawArc(p_angle1, lt_twist_angle_traj_centerX - lt_twist_angle_traj_r, lt_twist_angle_traj_centerY - lt_twist_angle_traj_r, 2 * lt_twist_angle_traj_r, 2 * lt_twist_angle_traj_r, -90, (float)lt_twist_angle);
+                        g.DrawLine(p_angle, new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY), new PointF(ltAngleCenterX, ltAngleCenterY));
+                        g.DrawEllipse(b_outline, lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h);
+                        g.FillEllipse(blockBrush, lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h);
+
+
+                        myBuffer.Render(e.Graphics);
+                        g.Dispose();
+                        myBuffer.Dispose();
+                    }
+                    break;
+                case 3:
+                    {
+                        // Bend interface
+                        if (!isAllDir)
+                        {
+                            // C# GDI+ & double buffered approach
+                            Rectangle rectangle = e.ClipRectangle;
+                            BufferedGraphicsContext GraphicsContext = BufferedGraphicsManager.Current;
+                            BufferedGraphics myBuffer = GraphicsContext.Allocate(e.Graphics, e.ClipRectangle);
+                            Graphics g = myBuffer.Graphics;
+                            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                            g.SmoothingMode = SmoothingMode.HighQuality;
+                            g.Clear(BackColor);
+                            SolidBrush bkBrush = new SolidBrush(Color.FromArgb(224, 224, 224));
+                            g.FillRectangle(bkBrush, rectangle);
+
+                            Pen p = new Pen(Color.FromArgb(158, 158, 158), 2);
+                            Pen p_angle = new Pen(Color.FromArgb(108, 180, 241), 1);
+                            Pen p_angle1 = new Pen(Color.FromArgb(108, 180, 241), 3);
+                            Pen b_outline = new Pen(Color.FromArgb(255, 255, 255), 2);
+                            SolidBrush blockBrush = new SolidBrush(Color.FromArgb(110, 159, 239));
+
+                            float b_centerX = bendDirCenterX;
+                            float b_centerY = bendDirCenterY;
+                            float b_r = bendDirRadius;
+
+                            float a_centerX = bendAngleCenterX;
+                            float a_centerY = bendAngleCenterY;
+                            float a_r = bendAngleRadius;
+
+                            float traj_l, traj_t, traj_w, traj_h;
+                            float b_l, b_t, b_w, b_h;
+                            float a_l, a_t, a_w, a_h;
+                            circle_drawing_coordinates_conversion(bend_dir_traj_centerX, bend_dir_traj_centerY, bend_dir_traj_r, out traj_l, out traj_t, out traj_w, out traj_h);
+                            circle_drawing_coordinates_conversion(b_centerX, b_centerY, b_r, out b_l, out b_t, out b_w, out b_h);
+                            circle_drawing_coordinates_conversion(a_centerX, a_centerY, a_r, out a_l, out a_t, out a_w, out a_h);
+
+                            g.DrawEllipse(p, traj_l, traj_t, traj_w, traj_h);
+                            g.DrawLine(p_angle, new PointF(bend_dir_traj_centerX, bend_dir_traj_centerY), new PointF(bend_dir_traj_centerX, bend_dir_traj_centerY - bend_dir_traj_r));
+                            g.DrawArc(p_angle1, bend_dir_traj_centerX - bend_dir_traj_r, bend_dir_traj_centerY - bend_dir_traj_r, 2 * bend_dir_traj_r, 2 * bend_dir_traj_r, -90, (float)bend_dir_angle);
+                            g.DrawLine(p_angle, new PointF(bend_dir_traj_centerX, bend_dir_traj_centerY), new PointF(bendDirCenterX,bendDirCenterY));
+                            g.DrawEllipse(b_outline, b_l, b_t, b_w, b_h);
+                            g.FillEllipse(blockBrush, b_l, b_t, b_w, b_h);
+
+                            g.DrawLine(p, new PointF(bend_angle_traj_centerX, bend_angle_traj_centerY), new PointF(bend_angle_traj_centerX, bend_angle_traj_centerY - bend_angle_traj_r));
+                            g.DrawLine(p, new PointF(bend_angle_traj_centerX, bend_angle_traj_centerY), new PointF(bendAngleCenterX, bendAngleCenterY));
+                            g.DrawArc(p_angle1, bend_angle_traj_centerX - bend_angle_traj_r, bend_angle_traj_centerY - bend_angle_traj_r, 2 * bend_angle_traj_r, 2 * bend_angle_traj_r, -90, (float)bend_angle);
+                            g.DrawEllipse(b_outline, a_l, a_t, a_w, a_h);
+                            g.FillEllipse(blockBrush, a_l, a_t, a_w, a_h);
+
+                            myBuffer.Render(e.Graphics);
+                            g.Dispose();
+                            myBuffer.Dispose();
+                        }
+                        else
+                        {
+                            Rectangle rectangle = e.ClipRectangle;
+                            BufferedGraphicsContext GraphicsContext = BufferedGraphicsManager.Current;
+                            BufferedGraphics myBuffer = GraphicsContext.Allocate(e.Graphics, e.ClipRectangle);
+                            Graphics g = myBuffer.Graphics;
+                            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                            g.SmoothingMode = SmoothingMode.HighQuality;
+                            g.Clear(BackColor);
+                            SolidBrush bkBrush = new SolidBrush(Color.FromArgb(224, 224, 224));
+                            g.FillRectangle(bkBrush, rectangle);
+
+                            Pen p = new Pen(Color.FromArgb(175, 175, 175), 2);
+                            Pen p_angle = new Pen(Color.FromArgb(175, 175, 175), 1);
+                            Pen p_angle1 = new Pen(Color.FromArgb(175, 175, 175), 3);
+                            Pen b_outline = new Pen(Color.FromArgb(255, 255, 255), 2);
+                            SolidBrush blockBrush = new SolidBrush(Color.FromArgb(175, 175, 175));
+
+
+                            Pen p_active = new Pen(Color.FromArgb(158, 158, 158), 2);
+                            Pen p_angle_active = new Pen(Color.FromArgb(108, 180, 241), 1);
+                            Pen p_angle1_active = new Pen(Color.FromArgb(108, 180, 241), 3);
+                            Pen b_outline_active = new Pen(Color.FromArgb(255, 255, 255), 2);
+                            SolidBrush blockBrush_active = new SolidBrush(Color.FromArgb(110, 159, 239));
+
+                            float b_centerX = bendDirCenterX;
+                            float b_centerY = bendDirCenterY;
+                            float b_r = bendDirRadius;
+
+                            float a_centerX = bendAngleCenterX;
+                            float a_centerY = bendAngleCenterY;
+                            float a_r = bendAngleRadius;
+
+                            float traj_l, traj_t, traj_w, traj_h;
+                            float b_l, b_t, b_w, b_h;
+                            float a_l, a_t, a_w, a_h;
+                            circle_drawing_coordinates_conversion(bend_dir_traj_centerX, bend_dir_traj_centerY, bend_dir_traj_r, out traj_l, out traj_t, out traj_w, out traj_h);
+                            circle_drawing_coordinates_conversion(b_centerX, b_centerY, b_r, out b_l, out b_t, out b_w, out b_h);
+                            circle_drawing_coordinates_conversion(a_centerX, a_centerY, a_r, out a_l, out a_t, out a_w, out a_h);
+
+                            g.DrawEllipse(p, traj_l, traj_t, traj_w, traj_h);
+                            g.DrawLine(p_angle, new PointF(bend_dir_traj_centerX, bend_dir_traj_centerY), new PointF(bend_dir_traj_centerX, bend_dir_traj_centerY - bend_dir_traj_r));
+                            g.DrawArc(p_angle1, bend_dir_traj_centerX - bend_dir_traj_r, bend_dir_traj_centerY - bend_dir_traj_r, 2 * bend_dir_traj_r, 2 * bend_dir_traj_r, -90, (float)bend_dir_angle);
+                            g.DrawLine(p_angle, new PointF(bend_dir_traj_centerX, bend_dir_traj_centerY), new PointF(bendDirCenterX, bendDirCenterY));
+                            g.DrawEllipse(b_outline, b_l, b_t, b_w, b_h);
+                            g.FillEllipse(blockBrush, b_l, b_t, b_w, b_h);
+
+                            g.DrawLine(p_active, new PointF(bend_angle_traj_centerX, bend_angle_traj_centerY), new PointF(bend_angle_traj_centerX, bend_angle_traj_centerY - bend_angle_traj_r));
+                            g.DrawLine(p_active, new PointF(bend_angle_traj_centerX, bend_angle_traj_centerY), new PointF(bendAngleCenterX, bendAngleCenterY));
+                            g.DrawArc(p_angle1_active, bend_angle_traj_centerX - bend_angle_traj_r, bend_angle_traj_centerY - bend_angle_traj_r, 2 * bend_angle_traj_r, 2 * bend_angle_traj_r, -90, (float)bend_angle);
+                            g.DrawEllipse(b_outline_active, a_l, a_t, a_w, a_h);
+                            g.FillEllipse(blockBrush_active, a_l, a_t, a_w, a_h);
+
+                            myBuffer.Render(e.Graphics);
+                            g.Dispose();
+                            myBuffer.Dispose();
+                        }
+                    }
+                    break;
+                default: break;
+            }
         }
 
         private void ClothBox_CheckedChanged(object sender, EventArgs e)
@@ -573,5 +1647,464 @@ namespace OndulePlugin
                 controller.showClothSpring(currUnit.ClothIDs, isOuterClothShown);
             }
         }
+
+        private void WireDiameterTrackBar_Scroll(object sender, EventArgs e)
+        {
+            double wd = this.WireDiameterTrackBar.Value * 0.1;
+            double len = currUnit.MA.GetLength();
+
+            // Update the wire diameter track bar with the selected turn gap (in the case the user 
+            // comes back from the stiffness track bar)
+            double d_max_real= ((len - currUnit.Pitch) < d_max) ? (len - currUnit.Pitch) : d_max;
+            if(wd > d_max_real)
+            {
+                wd = d_max_real;
+                this.WireDiameterTrackBar.Value = Convert.ToInt32(wd / 0.1);
+            }
+            currUnit.WireDiameter = wd;
+            string specifier = "F1";
+            this.WDValueLabel.Text = wd.ToString(specifier) + " mm";
+
+            // Update the turn gap trackbar, using the updated wire diameter value
+            double tg_max_real = len - wd;
+            if (currUnit.Pitch > tg_max_real)
+            {
+                currUnit.Pitch = tg_max_real;
+                this.TurnGapTrackBar.Value = Convert.ToInt32(currUnit.Pitch / 0.1);
+                this.TGValueLabel.Text = currUnit.Pitch.ToString(specifier);
+            }
+
+            // Update the stiffness trackbar, using the updated wire diameter value 
+            double coilD = currUnit.MeanCoilDiameter;
+            //int turnN = Convert.ToInt32(Math.Floor((currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter))>=1? (currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter)) : 1));
+            double turnN = currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter);
+            //int turnN_max = Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (currUnit.Pitch + d_min)));
+            //int turnN_min = Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (currUnit.Pitch + d_max_real)))>=1? Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (currUnit.Pitch + d_max_real))) : 1;
+
+            double turnN_max = currUnit.MA.GetLength() / (d_min + tg_min);
+            double turnN_min = currUnit.MA.GetLength() / (d_max_real + tg_max_real);
+
+            //double k_max = Math.Pow(currUnit.WireDiameter, power) / turnN_min;
+            //double k = Math.Pow(currUnit.WireDiameter, power) / turnN;
+            //double k_min = Math.Pow(currUnit.WireDiameter, power) / turnN_max;
+
+            //this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 1000);
+            //this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 1000);
+            //this.StiffnessTrackBar.Value = Convert.ToInt32(k * 1000);
+
+
+            double k_max = (d_max_real + tg_max_real)/2;
+            double k_min = d_min + tg_min;
+            double k = (currUnit.WireDiameter + currUnit.Pitch)>=((d_max_real + tg_max_real) / 2)?((d_max_real + tg_max_real) / 2):(currUnit.WireDiameter + currUnit.Pitch);
+            this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 100);
+            this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 100);
+            this.StiffnessTrackBar.Value = Convert.ToInt32(k * 100);
+
+            currUnit.Stiffness = (currUnit.WireDiameter + currUnit.Pitch) *Math.Pow(currUnit.WireDiameter, power) / currUnit.MA.GetLength();
+            currUnit.CoilNum =turnN;
+        }
+
+        private void WireDiameterTrackBar_MouseUp(object sender, MouseEventArgs e)
+        {
+            // Redraw the scene to render the spring
+            this.ClothBox.Checked = false;
+            controller.springGeneration(ref currUnit);
+
+            // Update the current unit
+            controller.updateUnitFromGlobal(currIdx, currUnit);
+        }
+
+        private void TurnGapTrackBar_Scroll(object sender, EventArgs e)
+        {
+            double p = this.TurnGapTrackBar.Value * 0.1;
+            double len = currUnit.MA.GetLength();
+
+            // Update the turn gap track bar with selected wire diameter (in the case the user 
+            // comes back from the stiffness track bar)
+            double tg_max_real = len - currUnit.WireDiameter;
+            if(p > tg_max_real)
+            {
+                p = tg_max_real;
+                this.TurnGapTrackBar.Value = Convert.ToInt32(p / 0.1);
+            }
+            currUnit.Pitch = p;
+            string specifier = "F1";
+            this.TGValueLabel.Text = p.ToString(specifier) + " mm";
+
+            // Update the wire diameter trackbar, using the updated turn gap value
+            double d_max_real = ((len - p) < d_max) ? (len - p) : d_max;
+            if(currUnit.WireDiameter > d_max_real)
+            {
+                currUnit.WireDiameter = d_max_real;
+                this.WireDiameterTrackBar.Value = Convert.ToInt32(currUnit.WireDiameter / 0.1);
+                this.WDValueLabel.Text = currUnit.WireDiameter.ToString(specifier);
+            }
+            
+
+            // Update the stiffness trackbar, using the updated turn gap value
+            double coilD = currUnit.MeanCoilDiameter;
+            //int turnN = Convert.ToInt32(Math.Floor((currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter))>=1? (currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter)) : 1));
+            double turnN = currUnit.MA.GetLength() / (currUnit.Pitch + currUnit.WireDiameter);
+            //int turnN_max = Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (currUnit.WireDiameter + tg_min)));
+            //int turnN_min = Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (currUnit.WireDiameter + tg_max_real)))>=1? Convert.ToInt32(Math.Floor(currUnit.MA.GetLength() / (currUnit.WireDiameter + tg_max_real))): 1; 
+            //double turnN_max = currUnit.MA.GetLength() / (currUnit.WireDiameter + tg_min);
+            //double turnN_min = currUnit.MA.GetLength() / (currUnit.WireDiameter + tg_max_real);
+            double turnN_max = currUnit.MA.GetLength() / (d_min + tg_min);
+            double turnN_min = currUnit.MA.GetLength() / (d_max_real + tg_max_real);
+            //double turnN_min = 1;
+            //double turnN_max = d_min + tg_min;
+
+            //double k = Math.Pow(currUnit.WireDiameter, power) / turnN;
+            //double k_min = Math.Pow(currUnit.WireDiameter, power) / turnN_max;
+            //double k_max = Math.Pow(currUnit.WireDiameter, power) / turnN_min;
+            //this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 1000);
+            //this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 1000);
+            //this.StiffnessTrackBar.Value = Convert.ToInt32(k * 1000);
+
+            double k_max = (d_max_real + tg_max_real)/2;
+            double k_min = d_min + tg_min;
+            double k = (currUnit.WireDiameter + currUnit.Pitch) >= ((d_max_real + tg_max_real) / 2) ? ((d_max_real + tg_max_real) / 2) : (currUnit.WireDiameter + currUnit.Pitch);
+            this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 100);
+            this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 100);
+            this.StiffnessTrackBar.Value = Convert.ToInt32(k * 100);
+
+            currUnit.Stiffness = (currUnit.WireDiameter + currUnit.Pitch) * Math.Pow(currUnit.WireDiameter, power) / currUnit.MA.GetLength();
+            currUnit.CoilNum = turnN;
+        }
+
+        private void TurnGapTrackBar_MouseUp(object sender, MouseEventArgs e)
+        {
+            // Redraw the scene to render the spring
+            this.ClothBox.Checked = false;
+            controller.springGeneration(ref currUnit);
+
+            // Update the current unit
+            controller.updateUnitFromGlobal(currIdx, currUnit);
+        }
+
+        private void StiffnessTrackBar_MouseUp(object sender, MouseEventArgs e)
+        {
+            // Redraw the scene to render the spring
+            this.ClothBox.Checked = false;
+            controller.springGeneration(ref currUnit);
+
+            // Update the current unit
+            controller.updateUnitFromGlobal(currIdx, currUnit);
+        }
+        private void get_updated_wd_tg(double k, double len, double d_max, double tg_max, ref double wd, ref double tg)
+        {
+            double num = len /(wd + tg);
+            double old_k = wd+tg;
+            double new_k = old_k;
+            double old_wd = wd;
+            double old_tg = tg;
+
+            double ratio = (k - old_k) / ((d_max + tg_max)/2 - tg_min - d_min);
+
+            double tg_updated = ratio * (tg_max / 2 - tg_min) + tg;
+ 
+            if(tg_updated < tg_min)
+            {
+                tg = tg_min;
+                wd = k - tg;
+            }
+            else if(tg_updated > tg_max)
+            {
+                tg = tg_max;
+                wd = k - tg;
+            }
+            else
+            {
+                wd = ratio * (d_max / 2 - d_min) + wd;
+
+                if (wd < d_min)
+                {
+                    wd = d_min;
+                    tg = k - wd;
+                }
+                else if (wd > d_max)
+                {
+                    wd = d_max;
+                    tg = k - wd;
+                }
+                else
+                {
+                    tg = tg_updated;
+                }
+            }
+        }
+
+        private void StiffnessTrackBar_Scroll(object sender, EventArgs e)
+        {
+            double current_k = Convert.ToDouble(this.StiffnessTrackBar.Value) /100.0;
+            double len = currUnit.MA.GetLength();
+
+            currUnit.Stiffness = current_k*Math.Pow(currUnit.WireDiameter, power)/ currUnit.MA.GetLength();
+            string specifier = "F1";
+
+            // Update the wire diameter track bar's max
+            double d_max_real = ((len-tg_min) < d_max) ? (len-tg_min) : d_max;
+            double tg_max_real = len - currUnit.WireDiameter;
+
+            double wd_value = currUnit.WireDiameter, tg_value = currUnit.Pitch;
+            get_updated_wd_tg(current_k, len, d_max_real, tg_max_real, ref wd_value, ref tg_value);
+
+            currUnit.WireDiameter = wd_value;
+            currUnit.Pitch = tg_value;
+            this.WireDiameterTrackBar.Value = Convert.ToInt32(currUnit.WireDiameter / 0.1);
+            this.WDValueLabel.Text = currUnit.WireDiameter.ToString(specifier);
+            this.TurnGapTrackBar.Value = Convert.ToInt32(currUnit.Pitch/0.1);
+            this.TGValueLabel.Text = currUnit.Pitch.ToString(specifier);
+
+            double turnN = len / (currUnit.WireDiameter + currUnit.Pitch);
+            currUnit.CoilNum = turnN;
+        }
+
+        private void OnduleConstraintCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.OnduleConstraintCheckbox.Checked)
+            {
+                this.LinearConstraintRadioButton.Enabled = true;
+                this.TwistConstraintRadioButton.Enabled = true;
+                this.LinearTwistConstraintRadioButton.Enabled = true;
+                this.BendConstraintRadioButton.Enabled = true;
+                this.AllDirectionsCheckBox.Enabled = true;
+            }
+            else
+            {
+                this.LinearConstraintRadioButton.Enabled = false;
+                this.TwistConstraintRadioButton.Enabled = false;
+                this.LinearTwistConstraintRadioButton.Enabled = false;
+                this.BendConstraintRadioButton.Enabled = false;
+                this.AllDirectionsCheckBox.Enabled = false;
+            }
+        }
+
+        private void LinearConstraintRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.LinearConstraintRadioButton.Checked)
+            {
+                // Show the linear control pannel
+                currConstraintCtrl = 0;
+                this.ConstraintCanvas.Controls.Clear();
+
+                double compRatio = compDis / (currUnit.MA.GetLength() / 2) * 100;
+                double tenRatio = tenDis / currUnit.MA.GetLength() * 100;
+
+                compressDisValueLabel = new Label();
+                compressDisValueLabel.Text = compDis.ToString(specifier) + " mm (" + compRatio.ToString(specifier) + "%)";
+                compressDisValueLabel.Height = 20;
+                compressDisValueLabel.Left = 80;
+                compressDisValueLabel.Top = 105;
+                this.ConstraintCanvas.Controls.Add(compressDisValueLabel);
+
+                tensionDisValueLabel = new Label();
+                tensionDisValueLabel.Text = tenDis.ToString(specifier) + " mm (" + tenRatio.ToString(specifier) + "%)";
+                tensionDisValueLabel.Height = 20;
+                tensionDisValueLabel.Left = 60;
+                tensionDisValueLabel.Top = 125;
+                this.ConstraintCanvas.Controls.Add(tensionDisValueLabel);
+
+                Label compressLabel = new Label();
+                compressLabel.Text = "Compression:";
+                compressLabel.Width = 80;
+                compressLabel.Height = 20;
+                compressLabel.Left = 15;
+                compressLabel.Top = 105;
+                this.ConstraintCanvas.Controls.Add(compressLabel);
+
+                Label tensionLabel = new Label();
+                tensionLabel.Text = "Tension:";
+                tensionLabel.Width = 50;
+                tensionLabel.Height = 20;
+                tensionLabel.Left = 15;
+                tensionLabel.Top = 125;
+                this.ConstraintCanvas.Controls.Add(tensionLabel);
+
+                this.ConstraintCanvas.Refresh();
+            }
+        }
+
+        private void TwistConstraintRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.TwistConstraintRadioButton.Checked)
+            {
+                // Show the twist control pannel
+                currConstraintCtrl = 1;
+                this.ConstraintCanvas.Controls.Clear();
+
+                Label torsionLabel = new Label();
+                torsionLabel.Text = "Max Twisting Angle: ";
+                torsionLabel.Width = 150;
+                torsionLabel.Height = 20;
+                torsionLabel.Left = 115;
+                torsionLabel.Top = 50;
+                this.ConstraintCanvas.Controls.Add(torsionLabel);
+
+                twistValueLabel = new Label();
+                twistValueLabel.Text = twist_angle.ToString(specifier1) + "°";
+                twistValueLabel.Width = 30;
+                twistValueLabel.Height = 20;
+                twistValueLabel.Left = 115;
+                twistValueLabel.Top = 70;
+                twistValueLabel.BackColor = Color.FromArgb(1, 255, 255, 255);
+                this.ConstraintCanvas.Controls.Add(twistValueLabel);
+
+                this.ConstraintCanvas.Refresh();
+            }
+        }
+
+        private void LinearTwistConstraintRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.LinearTwistConstraintRadioButton.Checked)
+            {
+                // Show the linear + twist control pannel
+                currConstraintCtrl = 2;
+                this.ConstraintCanvas.Controls.Clear();
+
+                double compRatio = lt_compDis / (currUnit.MA.GetLength() / 2) * 100;
+                double tenRatio = lt_tenDis / currUnit.MA.GetLength() * 100;
+
+                ltCompressDisValueLabel = new Label();
+                ltCompressDisValueLabel.Text = lt_compDis.ToString(specifier) + " mm (" + lt_compDis.ToString(specifier) + "%)";
+                ltCompressDisValueLabel.Height = 20;
+                ltCompressDisValueLabel.Left = 80;
+                ltCompressDisValueLabel.BringToFront();
+                ltCompressDisValueLabel.Top = 50;
+                this.ConstraintCanvas.Controls.Add(ltCompressDisValueLabel);
+
+                ltTensionDisValueLabel = new Label();
+                ltTensionDisValueLabel.Text = lt_tenDis.ToString(specifier) + " mm (" + lt_tenDis.ToString(specifier) + "%)";
+                ltTensionDisValueLabel.Height = 20;
+                ltTensionDisValueLabel.Left = 59;
+                ltTensionDisValueLabel.BringToFront();
+                ltTensionDisValueLabel.Top = 70;
+                this.ConstraintCanvas.Controls.Add(ltTensionDisValueLabel);
+
+                Label compressLabel = new Label();
+                compressLabel.Width = 70;
+                compressLabel.Height = 20;
+                compressLabel.Left = 15;
+                compressLabel.Top = 50;
+                compressLabel.SendToBack();
+                compressLabel.Text = "Compression:";
+                
+                this.ConstraintCanvas.Controls.Add(compressLabel);
+
+                Label tensionLabel = new Label();
+                tensionLabel.Width = 50;
+                tensionLabel.Height = 20;
+                tensionLabel.Left = 15;
+                tensionLabel.Top = 70;
+                tensionLabel.SendToBack();
+                tensionLabel.Text = "Tension:";
+                
+                this.ConstraintCanvas.Controls.Add(tensionLabel);
+
+                // Twisting angle selection part
+                Label torsionLabel = new Label();
+                torsionLabel.Text = "Max Twisting Angle: ";
+                torsionLabel.Width = 150;
+                torsionLabel.Height = 20;
+                torsionLabel.Left = 90;
+                torsionLabel.Top = 100;
+                this.ConstraintCanvas.Controls.Add(torsionLabel);
+
+                ltTwistValueLabel = new Label();
+                ltTwistValueLabel.Text = lt_twist_angle.ToString(specifier1) + "°";
+                ltTwistValueLabel.Width = 30;
+                ltTwistValueLabel.Height = 20;
+                ltTwistValueLabel.Left = 90;
+                ltTwistValueLabel.Top = 120;
+                ltTwistValueLabel.BackColor = Color.FromArgb(1, 255, 255, 255);
+                this.ConstraintCanvas.Controls.Add(ltTwistValueLabel);
+
+                this.ConstraintCanvas.Refresh();
+            }
+        }
+
+        private void BendConstraintRadioButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.BendConstraintRadioButton.Checked)
+            {
+                // Show the bend control pannel
+                currConstraintCtrl = 3;
+                this.ConstraintCanvas.Controls.Clear();
+
+                Label directionLabel = new Label();
+                directionLabel.Text = "Bending Direction";
+                directionLabel.Width = 100;
+                directionLabel.Height = 50;
+                directionLabel.Left = 20;
+                directionLabel.Top = 125;
+                this.ConstraintCanvas.Controls.Add(directionLabel);
+
+                Label angleLabel = new Label();
+                angleLabel.Text = "Max Bending Angle";
+                angleLabel.Width = 200;
+                angleLabel.Height = 50;
+                angleLabel.Left = 120;
+                angleLabel.Top = 125;
+                this.ConstraintCanvas.Controls.Add(angleLabel);
+
+                bendDirValueLabel = new Label();
+                bendDirValueLabel.Text = bend_dir_angle.ToString(specifier1) + "°";
+                bendDirValueLabel.Width = 30;
+                bendDirValueLabel.Height = 20;
+                bendDirValueLabel.Left = 52;
+                bendDirValueLabel.Top = 63;
+                bendDirValueLabel.BackColor = Color.FromArgb(1, 255, 255, 255);
+                this.ConstraintCanvas.Controls.Add(bendDirValueLabel);
+
+                bendAngleValueLabel = new Label();
+                bendAngleValueLabel.Text = bend_angle.ToString(specifier1) + "°";
+                bendAngleValueLabel.Width = 30;
+                bendAngleValueLabel.Height = 20;
+                bendAngleValueLabel.Left = 180;
+                bendAngleValueLabel.Top = 70;
+                bendAngleValueLabel.BackColor = Color.FromArgb(1, 255, 255, 255);
+                this.ConstraintCanvas.Controls.Add(bendAngleValueLabel);
+
+                if (!isAllDir)
+                {
+                    directionLabel.Enabled = true;
+                    directionLabel.ForeColor = Color.FromArgb(0, 0, 0);
+                    bendDirValueLabel.Enabled = true;
+                    bendDirValueLabel.ForeColor = Color.FromArgb(0, 0, 0);
+                    this.ConstraintCanvas.Refresh();
+                }
+                else
+                {
+                    directionLabel.Enabled = false;
+                    directionLabel.ForeColor = Color.FromArgb(175, 175, 175);
+                    bendDirValueLabel.Enabled = false;
+                    bendDirValueLabel.ForeColor = Color.FromArgb(175, 175, 175);
+                    this.ConstraintCanvas.Refresh();
+                }
+
+            }
+        }
+        private void circle_drawing_coordinates_conversion(float centerX, float centerY, float r, out float left, out float top, out float w, out float h)
+        {
+            left = centerX - r;
+            top = centerY - r;
+            w = 2 * r;
+            h = 2 * r;
+        }
+
+        private void AllDirectionsCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.AllDirectionsCheckBox.Checked)
+            {
+                isAllDir = true;
+                this.ConstraintCanvas.Refresh();
+            }
+            else
+            {
+                isAllDir = false;
+                this.ConstraintCanvas.Refresh();
+            }
+        }
+
     }
 }
