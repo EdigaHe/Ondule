@@ -51,7 +51,10 @@ namespace OndulePlugin
         void updateUnitFromGlobal(int index, OnduleUnit newUnit);
         void addUnitToGlobal(OnduleUnit newUnit);
         void removeUnitGlobal(int index);
-        int getCountGlobal(); 
+        int getCountGlobal();
+
+        void showInternalStructure(OnduleUnit obj, int index);
+        void hideInternalStructure(OnduleUnit obj, int index);
 
     }
 
@@ -109,6 +112,8 @@ namespace OndulePlugin
             globalUnits.ElementAt(index).InnerStructureIDs = newUnit.InnerStructureIDs;
             globalUnits.ElementAt(index).PreservedBrepIDs = newUnit.PreservedBrepIDs;
             globalUnits.ElementAt(index).MeanCoilDiameter = newUnit.MeanCoilDiameter;
+            globalUnits.ElementAt(index).BendDirAngle = newUnit.BendDirAngle;
+            globalUnits.ElementAt(index).ConstraintType = newUnit.ConstraintType;
         }
         public void addUnitToGlobal(OnduleUnit newUnit)
         {
@@ -134,6 +139,15 @@ namespace OndulePlugin
         public void addLinearConstraint(ref OnduleUnit obj)
         {
             rhinoModel.addLinearConstraint(ref obj);
+        }
+
+        public void showInternalStructure(OnduleUnit obj, int index)
+        {
+            rhinoModel.showInternalStructure(obj, index);
+        }
+        public void hideInternalStructure(OnduleUnit obj, int index)
+        {
+            rhinoModel.hideInternalStructure(obj, index);
         }
         public void addTwistConstraint(ref OnduleUnit obj)
         {

@@ -9,5 +9,5 @@ C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.OnduleTopBarCon
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.csproj.GenerateResource.Cache
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.dll
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.pdb
-C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.csprojResolveAssemblyReference.cache
 C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.ProcessingWarningWindow.resources
+C:\Users\ediga\Dropbox\Ondule\Code\Ondule\obj\Debug\OndulePlugin.csprojResolveAssemblyReference.cache

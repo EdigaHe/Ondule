@@ -9,6 +9,7 @@ namespace OndulePlugin
 {
     public class OnduleUnit
     {
+        private int _constraintType = -1;
         private int _ID;       // the ID of the Ondule unit
         private Guid _brepID;   // the GUID of the selected brep 
         private double _coilNum;
@@ -25,10 +26,11 @@ namespace OndulePlugin
         private Point3d _endPt;
         //private List<double> _stiffness;
         //private double _linearDeflection;
-        private int _bendAngle;
-        private int _twistAngle;
+        private double _bendAngle;
+        private double _twistAngle;
         private double _compressionDis;
         private double _extensionDis;
+        private double _bendDirAngle;
         private Guid _MAID;
         private Guid _ctrlPt1ID;
         private Guid _ctrlPt2ID;
@@ -62,6 +64,12 @@ namespace OndulePlugin
             get { return this._stiffness; }
             set { this._stiffness = value; }
         }
+
+        public int ConstraintType
+        {
+            get { return this._constraintType; }
+            set { this._constraintType = value; }
+        }
         public double MeanCoilDiameter
         {
             get { return this._meanCoilDiameter; }
@@ -77,7 +85,7 @@ namespace OndulePlugin
             get { return this._extensionDis; }
             set { this._extensionDis = value; }
         }
-        public int TwistAngle
+        public double TwistAngle
         {
             get { return this._twistAngle; }
             set { this._twistAngle = value; }
@@ -103,7 +111,7 @@ namespace OndulePlugin
             get { return this._segID; }
             set { this._segID = value; }
         }
-        public int BendAngle
+        public double BendAngle
         {
             get { return this._bendAngle; }
             set { this._bendAngle = value; }
@@ -247,6 +255,12 @@ namespace OndulePlugin
         {
             get { return this._endPt; }
             set { this._endPt = value; }
+        }
+
+        public double BendDirAngle
+        {
+            get { return this._bendDirAngle; }
+            set { this._bendDirAngle = value; }
         }
     }
 }

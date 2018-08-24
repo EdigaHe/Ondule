@@ -98,6 +98,8 @@ namespace OndulePlugin
                                      // 1: twist only
                                      // 2: linear + twist
                                      // 3: bend only
+
+        ProcessingWarningWindow processingwindow = new ProcessingWarningWindow();
         #endregion
 
         #endregion
@@ -154,6 +156,7 @@ namespace OndulePlugin
             SetStyle(ControlStyles.SupportsTransparentBackColor, true);
 
             this.BackColor = Color.FromArgb(255, 255, 255, 255);
+            processingwindow.Hide();
 
             //SetDouble(this.ConstraintCanvas);
 
@@ -424,9 +427,8 @@ namespace OndulePlugin
         {
             //throw new NotImplementedException();
             // Pass the current selected part's parameters
-
-            ProcessingWarningWindow processingwindow = new ProcessingWarningWindow();
             processingwindow.Show();
+            processingwindow.Refresh();
 
             Button temp = sender as Button;
             int start = temp.Name.IndexOf('U');
@@ -443,7 +445,7 @@ namespace OndulePlugin
 
             // Initial the parameter panel
             initialize_parameter_panel(ref currUnit, currIdx);
-            processingwindow.Dispose();
+            processingwindow.Hide();
         }
 
         private void debugBtn_Click(object sender, EventArgs e)
@@ -483,8 +485,8 @@ namespace OndulePlugin
             //loadingLayer.BringToFront();
             //loadingLayer.BackColor = Color.FromArgb(255, 255, 255);
 
-            ProcessingWarningWindow processingwindow = new ProcessingWarningWindow();
             processingwindow.Show();
+            processingwindow.Refresh();
 
             #endregion
 
@@ -682,7 +684,7 @@ namespace OndulePlugin
 
             //this.Controls.Remove(loadingLayer);
             //this.Controls.Remove(loadingLayerBk);
-            processingwindow.Dispose();
+            processingwindow.Hide();
         }
 
         private void ExportBtn_Click(object sender, EventArgs e)
@@ -716,7 +718,15 @@ namespace OndulePlugin
                 controller.selectMASegment(ref currUnit);
                 controller.updateUnitFromGlobal(currIdx, currUnit);
 
-                
+                processingwindow.Show();
+                processingwindow.Refresh();
+                controller.springGeneration(ref currUnit);
+                // Enable the spring control panel if it is not enabled
+                set_control_panel_statues(true);
+
+                // Initial the parameter panel
+                initialize_parameter_panel(ref currUnit, currIdx);
+                processingwindow.Hide();
             }
         }
 
@@ -833,6 +843,10 @@ namespace OndulePlugin
             {
                 case 0:
                     {
+                        double thickness = 3;
+                        double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance)/2;
+                        double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
+
                         // listening the mousemove event when the linear only mode is activated
                         if (isLinearChange)
                         {
@@ -849,7 +863,7 @@ namespace OndulePlugin
                                 //tenDis = 0;
                                 tenOffset = 0;
 
-                                double min_dis = printing_tolerance / (currUnit.MA.GetLength() / 2) * initialLen;
+                                double min_dis = printing_tolerance / max_comp_real * initialLen;
 
                                 if (defaultStateX - e.X <= min_dis)
                                 {
@@ -863,13 +877,13 @@ namespace OndulePlugin
                                     linearCenterX = 117 - (defaultStateX - e.X);
                                     compOffset = defaultStateX - e.X;
                                     double ratio = (defaultStateX - e.X) / initialLen;
-                                    compDis = ratio * currUnit.MA.GetLength() / 2;
+                                    compDis = ratio * max_comp_real;
                                 }
                                 else
                                 {
                                     linearCenterX = 117 - initialLen;
                                     compOffset = initialLen;
-                                    compDis = currUnit.MA.GetLength() / 2;
+                                    compDis = max_comp_real;
                                 }
                             }
                             else if(e.X > defaultStateX)
@@ -877,7 +891,7 @@ namespace OndulePlugin
                                 //compDis = 0;
                                 compOffset = 0;
 
-                                double min_dis = printing_tolerance / currUnit.MA.GetLength() * initialLen;
+                                double min_dis = printing_tolerance / max_ten_real * initialLen;
 
                                 if (e.X - defaultStateX <= min_dis)
                                 {
@@ -890,13 +904,13 @@ namespace OndulePlugin
                                     linearCenterX = 117 + e.X - defaultStateX;
                                     tenOffset = e.X - defaultStateX;
                                     double ratio = (e.X - defaultStateX) / initialLen;
-                                    tenDis = ratio * currUnit.MA.GetLength();
+                                    tenDis = ratio * max_ten_real;
                                 }
                                 else
                                 {
                                     linearCenterX = 117 + initialLen;
                                     tenOffset = initialLen;
-                                    tenDis = currUnit.MA.GetLength();
+                                    tenDis = max_ten_real;
                                 }
                             }
 
@@ -958,6 +972,10 @@ namespace OndulePlugin
                 case 2:
                     {
                         // listening the mousemove event when the linear + twist mode is activated
+                        double thickness = 3;
+                        double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
+                        double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
+
                         if (isLTDisChange)
                         {
                             if (e.X == defaultStateX)
@@ -973,7 +991,7 @@ namespace OndulePlugin
                                 //lt_tenDis = 0;
                                 lt_tenOffset = 0;
 
-                                double min_dis = printing_tolerance / (currUnit.MA.GetLength() / 2) * initialLen;
+                                double min_dis = printing_tolerance / max_comp_real * initialLen;
 
                                 if (defaultStateX - e.X <= min_dis)
                                 {
@@ -986,13 +1004,13 @@ namespace OndulePlugin
                                     ltLinearCenterX = 117 - (defaultStateX - e.X);
                                     lt_compOffset = defaultStateX - e.X;
                                     double ratio = (defaultStateX - e.X) / initialLen;
-                                    lt_compDis = ratio * currUnit.MA.GetLength() / 2;
+                                    lt_compDis = ratio * max_comp_real;
                                 }
                                 else
                                 {
                                     ltLinearCenterX = 117 - initialLen;
                                     lt_compOffset = initialLen;
-                                    lt_compDis = currUnit.MA.GetLength() / 2;
+                                    lt_compDis = max_comp_real;
                                 }
                             }
                             else if (e.X > defaultStateX)
@@ -1000,7 +1018,7 @@ namespace OndulePlugin
                                 //lt_compDis = 0;
                                 lt_compOffset = 0;
 
-                                double min_dis = printing_tolerance / currUnit.MA.GetLength() * initialLen;
+                                double min_dis = printing_tolerance / max_ten_real * initialLen;
 
                                 if (e.X - defaultStateX <= min_dis)
                                 {
@@ -1013,18 +1031,18 @@ namespace OndulePlugin
                                     ltLinearCenterX = 117 + e.X - defaultStateX;
                                     lt_tenOffset = e.X - defaultStateX;
                                     double ratio = (e.X - defaultStateX) / initialLen;
-                                    lt_tenDis = ratio * currUnit.MA.GetLength();
+                                    lt_tenDis = ratio * max_ten_real;
                                 }
                                 else
                                 {
                                     ltLinearCenterX = 117 + initialLen;
                                     lt_tenOffset = initialLen;
-                                    lt_tenDis = currUnit.MA.GetLength();
+                                    lt_tenDis = max_ten_real;
                                 }
                             }
 
-                            double lt_compRatio = lt_compDis / (currUnit.MA.GetLength() / 2) * 100;
-                            double lt_tenRatio = lt_tenDis / currUnit.MA.GetLength() * 100;
+                            double lt_compRatio = lt_compDis / max_comp_real * 100;
+                            double lt_tenRatio = lt_tenDis / max_ten_real * 100;
                             ltCompressDisValueLabel.Text = lt_compDis.ToString(specifier) + " mm (" + lt_compRatio.ToString(specifier) + "%)";
                             ltTensionDisValueLabel.Text = lt_tenDis.ToString(specifier) + " mm (" + lt_tenRatio.ToString(specifier) + "%)";
                             this.ConstraintCanvas.Refresh();
@@ -1197,13 +1215,16 @@ namespace OndulePlugin
                         if (isLinearChange)
                         {
                             isLinearChange = !isLinearChange;
+                            double thickness = 3;
+                            double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
+                            double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
 
                             compOffset = 0;
                             tenOffset = 0;
                             linearCenterX = 117;
                             defaultStateX = 117;
 
-                            double min_dis = printing_tolerance / (currUnit.MA.GetLength() / 2) * initialLen;
+                            double min_dis = printing_tolerance / max_comp_real * initialLen;
 
                             if (compDis <= min_dis)
                             {
@@ -1211,7 +1232,7 @@ namespace OndulePlugin
                                 compDis = printing_tolerance;
                             }
 
-                            min_dis = printing_tolerance / currUnit.MA.GetLength() * initialLen;
+                            min_dis = printing_tolerance / max_ten_real * initialLen;
 
                             if (tenDis <= min_dis)
                             {
@@ -1220,28 +1241,60 @@ namespace OndulePlugin
                             }
 
                             this.ConstraintCanvas.Refresh();
+
+
+                            // Update the prismatic joint on the model
+                            // Get the current compression displacement from LinearConsCompressTrackbar
+                            processingwindow.Show();
+                            processingwindow.Refresh();
+
+                            currUnit.CompressionDis = compDis;
+                            // Get the current extension displacement from LinearConsStretchTrackbar
+                            currUnit.ExtensionDis = tenDis;
+
+                            controller.updateUnitFromGlobal(currIdx, currUnit);
+                            controller.addLinearConstraint(ref currUnit);
+                            
+                            processingwindow.Hide();
                         }
                     }
                     break;
                 case 1:
                     {
                         // listening the mouseup event when the twist only mode is activated
-                        if (isTwistAngle) isTwistAngle = !isTwistAngle;
+                        if (isTwistAngle)
+                        {
+                            isTwistAngle = !isTwistAngle;
+
+                            // Update the bearing mechanism on the model
+                            processingwindow.Show();
+                            processingwindow.Refresh();
+
+                            currUnit.TwistAngle = twist_angle;
+
+                            controller.updateUnitFromGlobal(currIdx, currUnit);
+                            controller.addTwistConstraint(ref currUnit);
+                            processingwindow.Hide();
+                        }
                     }
                     break;
                 case 2:
                     {
+                        bool needUpdate = false;
                         // listening the mouseup event when the linear + twist mode is activated
                         if (isLTDisChange)
                         {
                             isLTDisChange = !isLTDisChange;
+                            double thickness = 3;
+                            double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
+                            double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
 
                             lt_compOffset = 0;
                             lt_tenOffset = 0;
                             ltLinearCenterX = 117;
                             defaultStateX = 117;
 
-                            double min_dis = printing_tolerance / (currUnit.MA.GetLength() / 2) * initialLen;
+                            double min_dis = printing_tolerance / max_comp_real * initialLen;
 
                             if (lt_compDis <= min_dis)
                             {
@@ -1249,7 +1302,7 @@ namespace OndulePlugin
                                 lt_compDis = printing_tolerance;
                             }
 
-                            min_dis = printing_tolerance / currUnit.MA.GetLength() * initialLen;
+                            min_dis = printing_tolerance / max_ten_real * initialLen;
 
                             if (lt_tenDis <= min_dis)
                             {
@@ -1257,18 +1310,66 @@ namespace OndulePlugin
                                 lt_tenDis = printing_tolerance;
                             }
 
+                            needUpdate = true;
                             this.ConstraintCanvas.Refresh();
-
                         }
 
-                        if (isLTAngle) isLTAngle = !isLTAngle;
+                        if (isLTAngle)
+                        {
+                            isLTAngle = !isLTAngle;
+                            needUpdate = true;
+                        }
+
+                        if (needUpdate)
+                        {
+                            // Update the prismatic joint + bearing mechanism on the model
+                             processingwindow.Show();
+                            processingwindow.Refresh();
+
+                            // Get the current compression displacement from LinearConsCompressTrackbar
+                            currUnit.CompressionDis = lt_compDis;
+                            // Get the current extension displacement from LinearConsStretchTrackbar
+                            currUnit.ExtensionDis = lt_tenDis;
+                            // Get the current twist angle from TwistTrackbar
+                            currUnit.TwistAngle = lt_twist_angle;
+
+                            controller.updateUnitFromGlobal(currIdx, currUnit);
+                            controller.addLinearTwistConstraint(ref currUnit);
+                           
+                            processingwindow.Hide();
+                        }
                     }
                     break;
                 case 3:
                     {
                         // listening the mouseup event when the bend only mode is activated
-                        if (isBendDir) isBendDir = !isBendDir;
-                        if (isBendAngle) isBendAngle = !isBendAngle;
+                        bool needUpdate = false;
+
+                        if (isBendDir)
+                        {
+                            isBendDir = !isBendDir;
+                            needUpdate = true;
+                        }
+                        if (isBendAngle)
+                        {
+                            isBendAngle = !isBendAngle;
+                            needUpdate = true;
+                        }
+
+                        if (needUpdate)
+                        {
+                            // Update the chain mechanism on the model
+
+                            processingwindow.Show();
+                            processingwindow.Refresh();
+
+                            currUnit.BendDirAngle = bend_dir_angle;
+                            currUnit.BendAngle = bend_angle;
+                            controller.updateUnitFromGlobal(currIdx, currUnit);
+                            controller.addBendConstraint(ref currUnit, isAllDir);
+
+                            processingwindow.Hide();
+                        }
                         // apply the selected angle
                     }
                     break;
@@ -1284,6 +1385,9 @@ namespace OndulePlugin
                 case 0:
                     {
                         // Linear only interface
+                        double thickness = 3;
+                        double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
+                        double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
 
                         Rectangle rectangle = e.ClipRectangle;
                         BufferedGraphicsContext GraphicsContext = BufferedGraphicsManager.Current;
@@ -1313,8 +1417,8 @@ namespace OndulePlugin
                         SolidBrush p_tension = new SolidBrush(Color.FromArgb(125, 223, 199, 41));
 
 
-                        float c_dis = (float)(compDis / (currUnit.MA.GetLength() / 2) * initialLen);
-                        float t_dis = (float)(tenDis / (currUnit.MA.GetLength()) * initialLen);
+                        float c_dis = (float)(compDis / max_comp_real * initialLen);
+                        float t_dis = (float)(tenDis / max_ten_real * initialLen);
 
                         if (c_dis != 0)
                         {
@@ -1365,14 +1469,9 @@ namespace OndulePlugin
                             g.DrawLine(p_spring, new PointF((float)(25 + i * gap), (float)(linearCenterY + offset1)), new PointF((float)(25 + (i + 1) * gap), (float)(linearCenterY+offset2)));
                         }
 
-                       
-
-
                         myBuffer.Render(e.Graphics);
                         g.Dispose();
                         myBuffer.Dispose();
-
-
                     }
                     break;
                 case 1:
@@ -1420,6 +1519,11 @@ namespace OndulePlugin
                 case 2:
                     {
                         // Linear + twist interface
+
+                        double thickness = 3;
+                        double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
+                        double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
+
                         Rectangle rectangle = e.ClipRectangle;
                         BufferedGraphicsContext GraphicsContext = BufferedGraphicsManager.Current;
                         BufferedGraphics myBuffer = GraphicsContext.Allocate(e.Graphics, e.ClipRectangle);
@@ -1448,8 +1552,8 @@ namespace OndulePlugin
                         SolidBrush p_tension = new SolidBrush(Color.FromArgb(125, 223, 199, 41));
 
 
-                        float c_dis = (float)(lt_compDis / (currUnit.MA.GetLength() / 2) * initialLen);
-                        float t_dis = (float)(lt_tenDis / (currUnit.MA.GetLength()) * initialLen);
+                        float c_dis = (float)(lt_compDis / max_comp_real * initialLen);
+                        float t_dis = (float)(lt_tenDis / max_ten_real * initialLen);
 
                         if (c_dis != 0)
                         {
@@ -1869,6 +1973,24 @@ namespace OndulePlugin
                 this.LinearTwistConstraintRadioButton.Enabled = true;
                 this.BendConstraintRadioButton.Enabled = true;
                 this.AllDirectionsCheckBox.Enabled = true;
+                this.ConstraintCanvas.Enabled = true;
+
+                this.StiffnessRadioButton.Enabled = false;
+                this.AdvancedRadioButton.Enabled = false;
+                this.MaxStiffnessLabel.Enabled = false;
+                this.MinStiffnessLabel.Enabled = false;
+                this.StiffnessTrackBar.Enabled = false;
+                this.WireDiameterTrackBar.Enabled = false;
+                this.MaxWDLabel.Enabled = false;
+                this.MinWDLabel.Enabled = false;
+                this.WDTitleLabel.Enabled = false;
+                this.WDValueLabel.Enabled = false;
+                this.MaxTGLabel.Enabled = false;
+                this.MinTGLabel.Enabled = false;
+                this.TGValueLabel.Enabled = false;
+                this.TurnGapTitleLabel.Enabled = false;
+
+                controller.showInternalStructure(currUnit, currIdx);
             }
             else
             {
@@ -1877,6 +1999,24 @@ namespace OndulePlugin
                 this.LinearTwistConstraintRadioButton.Enabled = false;
                 this.BendConstraintRadioButton.Enabled = false;
                 this.AllDirectionsCheckBox.Enabled = false;
+                this.ConstraintCanvas.Enabled = false;
+
+                this.StiffnessRadioButton.Enabled = true;
+                this.AdvancedRadioButton.Enabled = true;
+                this.MaxStiffnessLabel.Enabled = true;
+                this.MinStiffnessLabel.Enabled = true;
+                this.StiffnessTrackBar.Enabled = true;
+                this.WireDiameterTrackBar.Enabled = true;
+                this.MaxWDLabel.Enabled = true;
+                this.MinWDLabel.Enabled = true;
+                this.WDTitleLabel.Enabled = true;
+                this.WDValueLabel.Enabled = true;
+                this.MaxTGLabel.Enabled = true;
+                this.MinTGLabel.Enabled = true;
+                this.TGValueLabel.Enabled = true;
+                this.TurnGapTitleLabel.Enabled = true;
+
+                controller.hideInternalStructure(currUnit, currIdx);
             }
         }
 
@@ -1888,8 +2028,12 @@ namespace OndulePlugin
                 currConstraintCtrl = 0;
                 this.ConstraintCanvas.Controls.Clear();
 
-                double compRatio = compDis / (currUnit.MA.GetLength() / 2) * 100;
-                double tenRatio = tenDis / currUnit.MA.GetLength() * 100;
+                double thickness = 3;
+                double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
+                double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
+
+                double compRatio = compDis / max_comp_real * 100;
+                double tenRatio = tenDis / max_ten_real * 100;
 
                 compressDisValueLabel = new Label();
                 compressDisValueLabel.Text = compDis.ToString(specifier) + " mm (" + compRatio.ToString(specifier) + "%)";
@@ -1922,6 +2066,30 @@ namespace OndulePlugin
                 this.ConstraintCanvas.Controls.Add(tensionLabel);
 
                 this.ConstraintCanvas.Refresh();
+
+                if (currUnit.ConstraintType == currConstraintCtrl && currUnit.InnerStructureIDs.Count > 0)
+                {
+                    // show the existing internal structure
+                    controller.showInternalStructure(currUnit, currIdx);
+                }
+                else
+                {
+                    // Initialize the internal structure
+                    processingwindow.Show();
+                    processingwindow.Refresh();
+
+                    currUnit.ConstraintType = currConstraintCtrl;
+
+                    currUnit.CompressionDis = compDis;
+                    // Get the current extension displacement from LinearConsStretchTrackbar
+                    currUnit.ExtensionDis = tenDis;
+
+                    controller.updateUnitFromGlobal(currIdx, currUnit);
+                    controller.addLinearConstraint(ref currUnit);
+
+                    processingwindow.Hide();
+                }
+  
             }
         }
 
@@ -1951,6 +2119,26 @@ namespace OndulePlugin
                 this.ConstraintCanvas.Controls.Add(twistValueLabel);
 
                 this.ConstraintCanvas.Refresh();
+
+                if (currUnit.ConstraintType == currConstraintCtrl && currUnit.InnerStructureIDs.Count > 0)
+                {
+                    // show the existing internal structure
+                    controller.showInternalStructure(currUnit, currIdx);
+                }
+                else
+                {
+                    // Initialize the internal structure
+                    processingwindow.Show();
+                    processingwindow.Refresh();
+
+                    currUnit.ConstraintType = currConstraintCtrl;
+                    currUnit.TwistAngle = twist_angle;
+
+                    controller.updateUnitFromGlobal(currIdx, currUnit);
+                    controller.addTwistConstraint(ref currUnit);
+                    processingwindow.Hide();
+                }
+ 
             }
         }
 
@@ -1962,8 +2150,12 @@ namespace OndulePlugin
                 currConstraintCtrl = 2;
                 this.ConstraintCanvas.Controls.Clear();
 
-                double compRatio = lt_compDis / (currUnit.MA.GetLength() / 2) * 100;
-                double tenRatio = lt_tenDis / currUnit.MA.GetLength() * 100;
+                double thickness = 3;
+                double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
+                double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
+
+                double compRatio = lt_compDis / max_comp_real * 100;
+                double tenRatio = lt_tenDis / max_ten_real * 100;
 
                 ltCompressDisValueLabel = new Label();
                 ltCompressDisValueLabel.Text = lt_compDis.ToString(specifier) + " mm (" + lt_compDis.ToString(specifier) + "%)";
@@ -2020,6 +2212,33 @@ namespace OndulePlugin
                 this.ConstraintCanvas.Controls.Add(ltTwistValueLabel);
 
                 this.ConstraintCanvas.Refresh();
+
+                if (currUnit.ConstraintType == currConstraintCtrl && currUnit.InnerStructureIDs.Count > 0)
+                {
+                    // show the existing internal structure
+                    controller.showInternalStructure(currUnit, currIdx);
+                }
+                else
+                {
+                    processingwindow.Show();
+                    processingwindow.Refresh();
+
+                    // Initialize the internal structure
+                    currUnit.ConstraintType = currConstraintCtrl;
+                    // Get the current compression displacement from LinearConsCompressTrackbar
+                    currUnit.CompressionDis = lt_compDis;
+                    // Get the current extension displacement from LinearConsStretchTrackbar
+                    currUnit.ExtensionDis = lt_tenDis;
+                    // Get the current twist angle from TwistTrackbar
+                    currUnit.TwistAngle = lt_twist_angle;
+
+                    controller.updateUnitFromGlobal(currIdx, currUnit);
+                    controller.addLinearTwistConstraint(ref currUnit);
+
+                    processingwindow.Hide();
+                }
+
+                
             }
         }
 
@@ -2082,6 +2301,26 @@ namespace OndulePlugin
                     this.ConstraintCanvas.Refresh();
                 }
 
+                if (currUnit.ConstraintType == currConstraintCtrl && currUnit.InnerStructureIDs.Count > 0)
+                {
+                    // show the existing internal structure
+                    controller.showInternalStructure(currUnit, currIdx);
+                }
+                else
+                {
+
+                    // Initialize the internal structure
+                    processingwindow.Show();
+                    processingwindow.Refresh();
+
+                    currUnit.ConstraintType = currConstraintCtrl;
+                    currUnit.BendDirAngle = bend_dir_angle;
+                    currUnit.BendAngle = bend_angle;
+                    controller.updateUnitFromGlobal(currIdx, currUnit);
+                    controller.addBendConstraint(ref currUnit, isAllDir);
+
+                    processingwindow.Hide();
+                }
             }
         }
         private void circle_drawing_coordinates_conversion(float centerX, float centerY, float r, out float left, out float top, out float w, out float h)

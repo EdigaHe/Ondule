@@ -75,6 +75,9 @@ namespace OndulePlugin
         void addBendConstraint(ref OnduleUnit obj, Boolean dir);
         void showClothSpring(List<Guid> IDs, Boolean isshown);
         void clearInnerStructure(ref OnduleUnit obj);
+
+        void showInternalStructure(OnduleUnit obj, int index);
+        void hideInternalStructure(OnduleUnit obj, int index);
         #endregion
     }
 
@@ -1042,7 +1045,28 @@ namespace OndulePlugin
             return rel;
         }
 
-
+        public void showInternalStructure(OnduleUnit obj, int index)
+        {
+            if (obj.InnerStructureIDs.Count > 0)
+            {
+                foreach (Guid id in obj.InnerStructureIDs)
+                {
+                    myDoc.Objects.Show(id, true);
+                }
+            }
+            myDoc.Views.Redraw();
+        }
+        public void hideInternalStructure(OnduleUnit obj, int index)
+        {
+            if (obj.InnerStructureIDs.Count > 0)
+            {
+                foreach (Guid id in obj.InnerStructureIDs)
+                {
+                    myDoc.Objects.Hide(id, true);
+                }
+            }
+            myDoc.Views.Redraw();
+        }
         /// <summary>
         /// Add the bend constraint for only bending deformation
         /// </summary>
@@ -1071,7 +1095,7 @@ namespace OndulePlugin
             #endregion
 
             #region Generate the joint chain
-            generateBendSupport(startPln, endPln, centerCrv, dir, obj.BendAngle, ref obj);
+            generateBendSupport(startPln, endPln, centerCrv, dir, obj.BendDirAngle, ref obj);
             #endregion
         }
 
@@ -1180,11 +1204,11 @@ namespace OndulePlugin
         private void generateLinearSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis, ref OnduleUnit obj)
         {
             double thickness = 3;       // the thickness of the stopper and the cap
-            double gap = 0.5;
+            double gap = 0.6;
             double wall = 1;
             //double tensionDisNe5w = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
 
-            double tensionDisNew = (tensionDis <= (centerCrv.GetLength() - 2 * thickness - 2 * compreDis))? tensionDis: (centerCrv.GetLength() - 2 * thickness - 2 * compreDis);
+            double tensionDisNew = (tensionDis <= (centerCrv.GetLength() - 2 * thickness - 2 * compreDis - 2 * gap))? tensionDis: (centerCrv.GetLength() - 2 * thickness - 2 * compreDis - 2 * gap);
 
             // create sweep function
             var sweep = new Rhino.Geometry.SweepOneRail();
@@ -1976,7 +2000,7 @@ namespace OndulePlugin
 
             myDoc.Views.Redraw();
         }
-        private void generateBendSupport(Plane startPln, Plane endPln, Curve centerCrv, Boolean dir, int angle, ref OnduleUnit obj)
+        private void generateBendSupport(Plane startPln, Plane endPln, Curve centerCrv, Boolean dir, double angle, ref OnduleUnit obj)
         {
             double rodRadius = 1;       // the rod radius
             double jointRadius = 2;     // the joint radius

@@ -34,10 +34,11 @@
             // label1
             // 
             this.label1.AutoSize = true;
+            this.label1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 15F);
             this.label1.ForeColor = System.Drawing.Color.White;
             this.label1.Location = new System.Drawing.Point(139, 45);
-            this.label1.Name = "Warning";
+            this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(473, 46);
             this.label1.TabIndex = 0;
             this.label1.Text = "Processing, please wait...";
