@@ -1134,7 +1134,10 @@ namespace OndulePlugin
 
                                 this.ConstraintCanvas.Refresh();
                             }
-                            
+
+                            currUnit.BendDirAngle = bend_dir_angle/180*Math.PI;
+                            controller.updateUnitFromGlobal(currIdx, currUnit);
+                            controller.updateInPlaneBendDir(currUnit);
                         }
 
                         if (isBendAngle)
@@ -1270,7 +1273,7 @@ namespace OndulePlugin
                             processingwindow.Show();
                             processingwindow.Refresh();
 
-                            currUnit.TwistAngle = twist_angle;
+                            currUnit.TwistAngle = twist_angle / 180 * Math.PI;
 
                             controller.updateUnitFromGlobal(currIdx, currUnit);
                             controller.addTwistConstraint(ref currUnit);
@@ -1331,7 +1334,7 @@ namespace OndulePlugin
                             // Get the current extension displacement from LinearConsStretchTrackbar
                             currUnit.ExtensionDis = lt_tenDis;
                             // Get the current twist angle from TwistTrackbar
-                            currUnit.TwistAngle = lt_twist_angle;
+                            currUnit.TwistAngle = lt_twist_angle / 180 * Math.PI;
 
                             controller.updateUnitFromGlobal(currIdx, currUnit);
                             controller.addLinearTwistConstraint(ref currUnit);
@@ -1363,11 +1366,12 @@ namespace OndulePlugin
                             processingwindow.Show();
                             processingwindow.Refresh();
 
-                            currUnit.BendDirAngle = bend_dir_angle;
-                            currUnit.BendAngle = bend_angle;
+                            currUnit.BendDirAngle = bend_dir_angle/180*Math.PI;
+                            currUnit.BendAngle = bend_angle / 180 * Math.PI;
                             controller.updateUnitFromGlobal(currIdx, currUnit);
                             controller.addBendConstraint(ref currUnit, isAllDir);
 
+                            controller.hideBendDirOrbit(currUnit);
                             processingwindow.Hide();
                         }
                         // apply the selected angle
@@ -2318,6 +2322,12 @@ namespace OndulePlugin
                     currUnit.BendAngle = bend_angle;
                     controller.updateUnitFromGlobal(currIdx, currUnit);
                     controller.addBendConstraint(ref currUnit, isAllDir);
+
+                    if (!isAllDir)
+                    {
+                        // Initialize the direction on the model
+                        controller.updateInPlaneBendDir(currUnit);
+                    }
 
                     processingwindow.Hide();
                 }

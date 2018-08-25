@@ -25,6 +25,7 @@ namespace OndulePlugin
         void addLinearConstraint(ref OnduleUnit obj);   // new linear constraint
         void addTwistConstraint(ref OnduleUnit obj);    // new twisting constraint
         void addBendConstraint(ref OnduleUnit obj, Boolean dir);
+        void hideBendDirOrbit(OnduleUnit obj);
         void addLinearTwistConstraint(ref OnduleUnit obj);
         void showClothSpring(List<Guid> IDs, Boolean ishown);
         void clearInnerStructure(ref OnduleUnit obj);
@@ -49,6 +50,7 @@ namespace OndulePlugin
 
         OnduleUnit getUnitFromGlobal(int index);
         void updateUnitFromGlobal(int index, OnduleUnit newUnit);
+        void updateInPlaneBendDir(OnduleUnit obj);
         void addUnitToGlobal(OnduleUnit newUnit);
         void removeUnitGlobal(int index);
         int getCountGlobal();
@@ -119,6 +121,11 @@ namespace OndulePlugin
         {
             globalUnits.Add(newUnit);
         }
+
+        public void updateInPlaneBendDir(OnduleUnit obj)
+        {
+            rhinoModel.updateInPlaneBendDir(obj);
+        }
         public void removeUnitGlobal(int index)
         {
             globalUnits.RemoveAt(index);
@@ -156,6 +163,10 @@ namespace OndulePlugin
         public void addLinearTwistConstraint(ref OnduleUnit obj)
         {
             rhinoModel.addLinearTwistConstraint(ref obj);
+        }
+        public void hideBendDirOrbit(OnduleUnit obj)
+        {
+            rhinoModel.hideBendDirOrbit(obj);
         }
         public void addBendConstraint(ref OnduleUnit obj, Boolean dir)
         {

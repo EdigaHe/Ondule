@@ -71,7 +71,9 @@ namespace OndulePlugin
         void selectMASegment(ref OnduleUnit obj);
         void addTwistConstraint(ref OnduleUnit obj);
         void addLinearConstraint(ref OnduleUnit obj);
+        void updateInPlaneBendDir(OnduleUnit obj);
         void addLinearTwistConstraint(ref OnduleUnit obj);
+        void hideBendDirOrbit(OnduleUnit obj);
         void addBendConstraint(ref OnduleUnit obj, Boolean dir);
         void showClothSpring(List<Guid> IDs, Boolean isshown);
         void clearInnerStructure(ref OnduleUnit obj);
@@ -159,6 +161,10 @@ namespace OndulePlugin
 
         Boolean isDraggingFirstCtrlPoint = false;
         Boolean isDraggingSecondCtrlPoint = false;
+
+        Guid bendDirOrbitID = Guid.Empty;
+        Guid bendDirOrbitSphereID = Guid.Empty;
+        Guid bendDirOrbitRayID = Guid.Empty;
         #endregion
 
         public IncRhinoModel()
@@ -1099,6 +1105,25 @@ namespace OndulePlugin
             #endregion
         }
 
+        public void hideBendDirOrbit(OnduleUnit obj)
+        {
+            if(bendDirOrbitID != Guid.Empty)
+            {
+                myDoc.Objects.Hide(bendDirOrbitID, true);
+            }
+
+            if (bendDirOrbitSphereID != Guid.Empty)
+            {
+                myDoc.Objects.Hide(bendDirOrbitSphereID, true);
+            }
+
+            if (bendDirOrbitRayID != Guid.Empty)
+            {
+                myDoc.Objects.Hide(bendDirOrbitRayID, true);
+            }
+
+            myDoc.Views.Redraw();
+        }
         /// <summary>
         /// Add prismatic joint and bearing for both linear deformation and twisting
         /// </summary>
@@ -1133,6 +1158,92 @@ namespace OndulePlugin
             #endregion
         }
 
+        /// <summary>
+        /// Render the direction indicator on the model
+        /// </summary>
+        /// <param name="obj"></param>
+        public void updateInPlaneBendDir(OnduleUnit obj)
+        {
+            #region add the color for the direction orbit
+            int index_orchid = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_orchid = myDoc.Materials[index_orchid];
+            mat_orchid.DiffuseColor = System.Drawing.Color.MediumOrchid;
+            mat_orchid.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes orchid_attributes = new Rhino.DocObjects.ObjectAttributes();
+            orchid_attributes.MaterialIndex = index_orchid;
+            orchid_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+
+            orchid_attributes.ObjectColor = Color.MediumOrchid;
+            orchid_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+            #endregion
+
+            if (bendDirOrbitRayID == Guid.Empty && bendDirOrbitID == Guid.Empty && bendDirOrbitSphereID == Guid.Empty)
+            {
+                Curve centerCrv = obj.SelectedSeg;
+                double midPara = 0;
+                centerCrv.LengthParameter(centerCrv.GetLength() / 2, out midPara);
+                Point3d midPt = centerCrv.PointAt(midPara);
+
+                Plane midPln = new Plane(midPt, centerCrv.TangentAt(midPara));
+                double dir_r = obj.MeanCoilDiameter * 1.5;
+                Circle dirOrbit = new Circle(midPln, midPt, dir_r);
+
+                Vector3d x_orig = midPln.XAxis;
+                x_orig.Rotate(obj.BendDirAngle, midPln.Normal);
+
+                Point3d directionPt = midPt + x_orig / x_orig.Length * dir_r;
+                Sphere dirSphere = new Sphere(directionPt, 1);
+                Line ray = new Line(midPt, directionPt);
+
+                bendDirOrbitID = myDoc.Objects.AddCurve(dirOrbit.ToNurbsCurve(), orchid_attributes);
+                bendDirOrbitSphereID = myDoc.Objects.AddSphere(dirSphere, orchid_attributes);
+                bendDirOrbitRayID = myDoc.Objects.AddLine(ray, orchid_attributes);
+            }
+            else
+            {
+                Curve centerCrv = obj.SelectedSeg;
+                double midPara = 0;
+                centerCrv.LengthParameter(centerCrv.GetLength() / 2, out midPara);
+                Point3d midPt = centerCrv.PointAt(midPara);
+
+                Plane midPln = new Plane(midPt, centerCrv.TangentAt(midPara));
+                double dir_r = obj.MeanCoilDiameter * 1.5;
+                Circle dirOrbit = new Circle(midPln, midPt, dir_r);
+
+                Vector3d x_orig = midPln.XAxis;
+                x_orig.Rotate(obj.BendDirAngle, midPln.Normal);
+
+                Point3d directionPt = midPt + x_orig / x_orig.Length * dir_r;
+                Sphere dirSphere = new Sphere(directionPt, 1);
+                Line ray = new Line(midPt, directionPt);
+
+                myDoc.Objects.Show(bendDirOrbitID, true);
+
+                if (bendDirOrbitSphereID != Guid.Empty)
+                {
+                    myDoc.Objects.Delete(bendDirOrbitSphereID, true);
+                    bendDirOrbitSphereID = myDoc.Objects.AddSphere(dirSphere, orchid_attributes);
+                }
+                else
+                {
+                    bendDirOrbitSphereID = myDoc.Objects.AddSphere(dirSphere, orchid_attributes);
+                }
+
+                if(bendDirOrbitRayID != Guid.Empty)
+                {
+                    myDoc.Objects.Delete(bendDirOrbitRayID, true);
+                    bendDirOrbitRayID = myDoc.Objects.AddLine(ray, orchid_attributes);
+                }
+                else
+                {
+                    bendDirOrbitRayID = myDoc.Objects.AddLine(ray, orchid_attributes);
+                }
+
+            }
+            myDoc.Views.Redraw();
+
+        }
         /// <summary>
         /// Add the prismatic joint as the linear constraint, only the central structure, no outer spring
         /// </summary>
@@ -1208,7 +1319,7 @@ namespace OndulePlugin
             double wall = 1;
             //double tensionDisNe5w = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
 
-            double tensionDisNew = (tensionDis <= (centerCrv.GetLength() - 2 * thickness - 2 * compreDis - 2 * gap))? tensionDis: (centerCrv.GetLength() - 2 * thickness - 2 * compreDis - 2 * gap);
+            double tensionDisNew = (tensionDis <= (centerCrv.GetLength() - 2 * thickness - 2 * compreDis))? tensionDis: (centerCrv.GetLength() - 2 * thickness - 2 * compreDis - 2 * gap);
 
             // create sweep function
             var sweep = new Rhino.Geometry.SweepOneRail();
@@ -1788,10 +1899,11 @@ namespace OndulePlugin
         }
         private void generateLinearTwistSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis, ref OnduleUnit obj)
         {
-            double thickness = 2;       // the thickness of the stopper and the cap
-            double gap = 0.5;
+            double thickness = 3;       // the thickness of the stopper and the cap
+            double gap = 0.6;
             double wall = 1.0;
-            double tensionDisNew = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
+            double max_ten_dis = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
+            double tensionDisNew = (tensionDis <= max_ten_dis)? tensionDis:max_ten_dis;
 
             if (obj.InnerStructureIDs.Count > 0)
             {
@@ -2304,7 +2416,7 @@ namespace OndulePlugin
             {
                 #region Allows one-direction bending, using cylinder joints
 
-                double bendAngle = angle * Math.PI / 180;
+                double bendAngle = angle;
 
                 Vector3d x_orig = startPln.XAxis;
                 x_orig.Rotate(bendAngle, startPln.Normal);
