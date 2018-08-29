@@ -486,7 +486,7 @@ namespace OndulePlugin
 
                     #region generate the spiral that fits in the geometry
 
-                    double pitch = 2.5;   // The outer cloth always has the minimun pitch
+                    double pitch = 1.6;   // The outer cloth always has the minimun pitch
                     double clothWireDiameter = 1.6; // The outer cloth always has the minimum wire diameter
 
                     //DEBUG: Currently the bug is the center curve is only cut when there is a discontinuity, this is not good enough to have a nice spring approximation to the outer shell's shape.
@@ -565,7 +565,7 @@ namespace OndulePlugin
                             if (r1 <= minRadius) minRadius = r1;
                             if (r2 <= minRadius) minRadius = r2;
 
-                            //objRef.CoilDiameter.Add(2 * minRadius);
+                            objRef.CoilDiameter.Add(2 * minRadius);
 
                             // DEBUG: currently we create the spiral that approximates to the outer geometry but still inside the body
                             // Make sure the generated spiral is inside the model body so we can cut the geometry from inside
@@ -732,7 +732,7 @@ namespace OndulePlugin
             }
             else
             {
-                deformCoilD = (minCoilDia - sizeOfInnerStructure - 2 * objRef.WireDiameter) / 2 + sizeOfInnerStructure + objRef.WireDiameter;
+                deformCoilD = (minCoilDia - sizeOfInnerStructure)/ 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
             }
 
             double deformWireD = objRef.WireDiameter;
@@ -740,7 +740,7 @@ namespace OndulePlugin
 
             double spiralEndPara;
             objRef.SelectedSeg.LengthParameter(objRef.SelectedSeg.GetLength(), out spiralEndPara);
-            Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.SelectedSeg, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0, 0, 0)), deformPitch, 0, deformCoilD - deformWireD, deformCoilD - deformWireD, 30);
+            Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.SelectedSeg, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0, 0, 0)), deformPitch, 0, (deformCoilD - deformWireD)/2, (deformCoilD - deformWireD)/2, 30);
             Plane crossPln = new Plane(deformSpiralCrv.PointAtStart, deformSpiralCrv.TangentAtStart);
             Curve crossCir = new Circle(crossPln, deformSpiralCrv.PointAtStart, deformWireD / 2).ToNurbsCurve();
             //myDoc.Objects.AddCurve(crossCircle, whiteAttribute);
