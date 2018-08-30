@@ -2345,11 +2345,47 @@ namespace OndulePlugin
         {
             if (this.AllDirectionsCheckBox.Checked)
             {
+                if (!isAllDir)
+                {
+                    // Update the internal chain model to ball chain
+                    processingwindow.Show();
+                    processingwindow.Refresh();
+
+                    isAllDir = true;
+                    currUnit.ConstraintType = currConstraintCtrl;
+                    currUnit.BendDirAngle = bend_dir_angle;
+                    currUnit.BendAngle = bend_angle;
+                    controller.updateUnitFromGlobal(currIdx, currUnit);
+                    controller.addBendConstraint(ref currUnit, isAllDir);
+
+                    processingwindow.Hide();
+
+                }
                 isAllDir = true;
                 this.ConstraintCanvas.Refresh();
             }
             else
             {
+                if (isAllDir)
+                {
+                    // Update the internal chain model to cylinder chain
+                    // Initialize the internal structure
+                    processingwindow.Show();
+                    processingwindow.Refresh();
+
+                    isAllDir = false;
+                    currUnit.ConstraintType = currConstraintCtrl;
+                    currUnit.BendDirAngle = bend_dir_angle;
+                    currUnit.BendAngle = bend_angle;
+                    controller.updateUnitFromGlobal(currIdx, currUnit);
+                    controller.addBendConstraint(ref currUnit, isAllDir);
+
+                    // Initialize the direction on the model
+                    controller.updateInPlaneBendDir(currUnit);
+                    
+
+                    processingwindow.Hide();
+                }       
                 isAllDir = false;
                 this.ConstraintCanvas.Refresh();
             }

@@ -478,6 +478,9 @@ namespace OndulePlugin
 
             #region replace the selected part with helical spring (for arbitrary geometry)
 
+            double pitch = 2;   // The outer cloth always has the minimun pitch
+            double clothWireDiameter = 1.2; // The outer cloth always has the minimum wire diameter
+
             if (objRef.ClothIDs.Count == 0)
             {
                 double minRadius = 1000000000;
@@ -486,12 +489,10 @@ namespace OndulePlugin
 
                     #region generate the spiral that fits in the geometry
 
-                    double pitch = 1.6;   // The outer cloth always has the minimun pitch
-                    double clothWireDiameter = 1.6; // The outer cloth always has the minimum wire diameter
-
                     //DEBUG: Currently the bug is the center curve is only cut when there is a discontinuity, this is not good enough to have a nice spring approximation to the outer shell's shape.
                     // Record the diameters of all segments in the selected part
                     DiameterList.Clear();
+                    objRef.CoilDiameter.Clear();
 
                     #region 1. Find center curve's discontinuity
 
@@ -732,7 +733,14 @@ namespace OndulePlugin
             }
             else
             {
-                deformCoilD = (minCoilDia - sizeOfInnerStructure)/ 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
+                if (objRef.InnerStructureIDs.Count == 0)
+                {
+                    deformCoilD = (minCoilDia - clothWireDiameter) * 3 / 4;
+                }
+                else
+                {
+                    deformCoilD = (minCoilDia - sizeOfInnerStructure - 2*clothWireDiameter) / 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
+                }
             }
 
             double deformWireD = objRef.WireDiameter;
@@ -2116,7 +2124,7 @@ namespace OndulePlugin
         {
             double rodRadius = 1;       // the rod radius
             double jointRadius = 2;     // the joint radius
-            double chainUnitLen = 8;    // the length of the chain unit
+            double chainUnitLen = 10;    // the length of the chain unit
             double chainLen = centerCrv.GetLength();
             double paddingLen = (chainLen - Math.Floor(chainLen / chainUnitLen) * chainUnitLen) / 2;     // padding for the first chain and the last chain units 
             double gap = 0.5;
