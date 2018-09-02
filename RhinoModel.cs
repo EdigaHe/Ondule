@@ -478,8 +478,8 @@ namespace OndulePlugin
 
             #region replace the selected part with helical spring (for arbitrary geometry)
 
-            double pitch = 2;   // The outer cloth always has the minimun pitch
-            double clothWireDiameter = 1.2; // The outer cloth always has the minimum wire diameter
+            double pitch = 2.4;   // The outer cloth always has the minimun pitch
+            double clothWireDiameter = 1.6; // The outer cloth always has the minimum wire diameter
 
             if (objRef.ClothIDs.Count == 0)
             {
@@ -710,10 +710,11 @@ namespace OndulePlugin
             orange_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
 
-            double sizeOfInnerStructure = 8.6;
+            double sizeOfInnerStructure = 7.4;
             double minCoilDia = objRef.CoilDiameter.Min();
             double maxCoilDia = objRef.CoilDiameter.Max();
             double deformCoilD;
+            double gap = 0.4;
 
             Boolean isRegular = isAllCurveSegmentSameLength(minCoilDia, maxCoilDia);
 
@@ -733,14 +734,28 @@ namespace OndulePlugin
             }
             else
             {
-                if (objRef.InnerStructureIDs.Count == 0)
+
+                //deformCoilD = (minCoilDia - clothWireDiameter) * 3 / 4;
+                //double pre_deformCoilD = (minCoilDia - sizeOfInnerStructure - 2 * clothWireDiameter) / 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
+
+                if((minCoilDia - 2 * clothWireDiameter - gap - objRef.WireDiameter) > sizeOfInnerStructure + objRef.WireDiameter + gap)
                 {
-                    deformCoilD = (minCoilDia - clothWireDiameter) * 3 / 4;
+                    deformCoilD = minCoilDia - 2 * clothWireDiameter - gap - objRef.WireDiameter;
                 }
                 else
                 {
-                    deformCoilD = (minCoilDia - sizeOfInnerStructure - 2*clothWireDiameter) / 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
+                    deformCoilD = sizeOfInnerStructure + 2 * objRef.WireDiameter + 2 * gap;
                 }
+                
+
+                //if (objRef.InnerStructureIDs.Count == 0)
+                //{
+                //    deformCoilD = (minCoilDia - clothWireDiameter) * 3 / 4;
+                //}
+                //else
+                //{
+                //    deformCoilD = (minCoilDia - sizeOfInnerStructure - 2 * clothWireDiameter) / 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
+                //}
             }
 
             double deformWireD = objRef.WireDiameter;
@@ -814,7 +829,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min > 0.2)
+            if (max - min > 0.1)
                 result = false;
             else
                 result = true;
@@ -1323,7 +1338,7 @@ namespace OndulePlugin
         private void generateLinearSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis, ref OnduleUnit obj)
         {
             double thickness = 3;       // the thickness of the stopper and the cap
-            double gap = 0.6;
+            double gap = 0.4;
             double wall = 1;
             //double tensionDisNe5w = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
 
@@ -1729,7 +1744,7 @@ namespace OndulePlugin
 
             // compute the base height and generate the guide curves
             double t;
-            double gap_bearing_stopper = 0.5;
+            double gap_bearing_stopper = 0.6;
             double stopperheight = 2 + gap_bearing_stopper * 2;
             centerCrv.LengthParameter(centerCrv.GetLength() - stopperheight, out t); 
             Curve guiderCrv = centerCrv.Split(t)[1];            // indicates the length of the bearing wall
@@ -1908,7 +1923,7 @@ namespace OndulePlugin
         private void generateLinearTwistSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis, ref OnduleUnit obj)
         {
             double thickness = 3;       // the thickness of the stopper and the cap
-            double gap = 0.6;
+            double gap = 0.5;
             double wall = 1.0;
             double max_ten_dis = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
             double tensionDisNew = (tensionDis <= max_ten_dis)? tensionDis:max_ten_dis;
