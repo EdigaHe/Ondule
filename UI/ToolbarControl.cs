@@ -2082,6 +2082,8 @@ namespace OndulePlugin
                     processingwindow.Show();
                     processingwindow.Refresh();
 
+                    controller.hideBendDirOrbit(currUnit);
+
                     currUnit.ConstraintType = currConstraintCtrl;
 
                     currUnit.CompressionDis = compDis;
@@ -2135,6 +2137,8 @@ namespace OndulePlugin
                     processingwindow.Show();
                     processingwindow.Refresh();
 
+                    controller.hideBendDirOrbit(currUnit);
+
                     currUnit.ConstraintType = currConstraintCtrl;
                     currUnit.TwistAngle = twist_angle;
 
@@ -2150,6 +2154,7 @@ namespace OndulePlugin
         {
             if (this.LinearTwistConstraintRadioButton.Checked)
             {
+
                 // Show the linear + twist control pannel
                 currConstraintCtrl = 2;
                 this.ConstraintCanvas.Controls.Clear();
@@ -2226,6 +2231,8 @@ namespace OndulePlugin
                 {
                     processingwindow.Show();
                     processingwindow.Refresh();
+
+                    controller.hideBendDirOrbit(currUnit);
 
                     // Initialize the internal structure
                     currUnit.ConstraintType = currConstraintCtrl;
@@ -2321,13 +2328,13 @@ namespace OndulePlugin
                     currUnit.BendDirAngle = bend_dir_angle;
                     currUnit.BendAngle = bend_angle;
                     controller.updateUnitFromGlobal(currIdx, currUnit);
-                    controller.addBendConstraint(ref currUnit, isAllDir);
-
                     if (!isAllDir)
                     {
                         // Initialize the direction on the model
                         controller.updateInPlaneBendDir(currUnit);
                     }
+
+                    controller.addBendConstraint(ref currUnit, isAllDir);
 
                     processingwindow.Hide();
                 }
@@ -2378,12 +2385,11 @@ namespace OndulePlugin
                     currUnit.BendDirAngle = bend_dir_angle;
                     currUnit.BendAngle = bend_angle;
                     controller.updateUnitFromGlobal(currIdx, currUnit);
-                    controller.addBendConstraint(ref currUnit, isAllDir);
 
                     // Initialize the direction on the model
                     controller.updateInPlaneBendDir(currUnit);
+                    controller.addBendConstraint(ref currUnit, isAllDir);
                     
-
                     processingwindow.Hide();
                 }       
                 isAllDir = false;

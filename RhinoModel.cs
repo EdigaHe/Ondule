@@ -74,6 +74,7 @@ namespace OndulePlugin
         void updateInPlaneBendDir(OnduleUnit obj);
         void addLinearTwistConstraint(ref OnduleUnit obj);
         void hideBendDirOrbit(OnduleUnit obj);
+        void showBendDirOrbit(OnduleUnit obj);
         void addBendConstraint(ref OnduleUnit obj, Boolean dir);
         void showClothSpring(List<Guid> IDs, Boolean isshown);
         void clearInnerStructure(ref OnduleUnit obj);
@@ -829,7 +830,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min > 0.1)
+            if (max - min > 0.2)
                 result = false;
             else
                 result = true;
@@ -1126,6 +1127,25 @@ namespace OndulePlugin
             #region Generate the joint chain
             generateBendSupport(startPln, endPln, centerCrv, dir, obj.BendDirAngle, ref obj);
             #endregion
+        }
+        public void showBendDirOrbit(OnduleUnit obj)
+        {
+            if (bendDirOrbitID != Guid.Empty)
+            {
+                myDoc.Objects.Show(bendDirOrbitID, true);
+            }
+
+            if (bendDirOrbitSphereID != Guid.Empty)
+            {
+                myDoc.Objects.Show(bendDirOrbitSphereID, true);
+            }
+
+            if (bendDirOrbitRayID != Guid.Empty)
+            {
+                myDoc.Objects.Show(bendDirOrbitRayID, true);
+            }
+
+            myDoc.Views.Redraw();
         }
 
         public void hideBendDirOrbit(OnduleUnit obj)
@@ -2218,6 +2238,7 @@ namespace OndulePlugin
             if (dir)
             {
                 #region Allows all direction bending, using ball joints
+                this.hideBendDirOrbit(obj);
 
                 for(int idx=0; idx<segments.Count(); idx++)
                 {
@@ -2438,6 +2459,7 @@ namespace OndulePlugin
             else
             {
                 #region Allows one-direction bending, using cylinder joints
+                this.showBendDirOrbit(obj);
 
                 double bendAngle = angle;
 

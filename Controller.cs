@@ -26,6 +26,7 @@ namespace OndulePlugin
         void addTwistConstraint(ref OnduleUnit obj);    // new twisting constraint
         void addBendConstraint(ref OnduleUnit obj, Boolean dir);
         void hideBendDirOrbit(OnduleUnit obj);
+        void showBendDirOrbit(OnduleUnit obj);
         void addLinearTwistConstraint(ref OnduleUnit obj);
         void showClothSpring(List<Guid> IDs, Boolean ishown);
         void clearInnerStructure(ref OnduleUnit obj);
@@ -167,6 +168,10 @@ namespace OndulePlugin
         public void hideBendDirOrbit(OnduleUnit obj)
         {
             rhinoModel.hideBendDirOrbit(obj);
+        }
+        public void showBendDirOrbit(OnduleUnit obj)
+        {
+            rhinoModel.showBendDirOrbit(obj);
         }
         public void addBendConstraint(ref OnduleUnit obj, Boolean dir)
         {
