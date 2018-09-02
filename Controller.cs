@@ -46,6 +46,8 @@ namespace OndulePlugin
         void springGeneration(ref OnduleUnit obj);
 
         OnduleUnit medialAxisGeneration();
+        void highlightCurrent(OnduleUnit obj, bool isOutClothShown);
+        void deHighlight(OnduleUnit obj, bool isOutClothShown);
 
         void selectMASegment(ref OnduleUnit obj);
 
@@ -251,6 +253,14 @@ namespace OndulePlugin
             return rhinoModel.maGen();
         }
 
+        public void highlightCurrent(OnduleUnit obj, bool isOutClothShown)
+        {
+            rhinoModel.highlightCurrent(obj, isOutClothShown);
+        }
+        public void deHighlight(OnduleUnit obj, bool isOutClothShown)
+        {
+            rhinoModel.deHighlight(obj, isOutClothShown);
+        }
         public void selectMASegment(ref OnduleUnit obj)
         {
             rhinoModel.selectMASegment(ref obj);

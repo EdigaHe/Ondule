@@ -68,6 +68,8 @@ namespace OndulePlugin
         #region Functions for new Ondule interface
         void springGen(ref OnduleUnit objRef);
         OnduleUnit maGen();
+        void highlightCurrent(OnduleUnit obj, bool isOutClothShown);
+        void deHighlight(OnduleUnit obj, bool isOutClothShown);
         void selectMASegment(ref OnduleUnit obj);
         void addTwistConstraint(ref OnduleUnit obj);
         void addLinearConstraint(ref OnduleUnit obj);
@@ -830,7 +832,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min > 0.2)
+            if (max - min > 0.25)
                 result = false;
             else
                 result = true;
@@ -867,6 +869,102 @@ namespace OndulePlugin
             }
             myDoc.Views.Redraw();
             
+        }
+        public void deHighlight(OnduleUnit obj, bool isOutClothShown)
+        {
+            #region red for the internal structures
+            int index_red = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_red = myDoc.Materials[index_red];
+            mat_red.DiffuseColor = System.Drawing.Color.Red;
+            mat_red.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes red_attributes = new Rhino.DocObjects.ObjectAttributes();
+            red_attributes.MaterialIndex = index_red;
+            red_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+
+            red_attributes.ObjectColor = Color.Red;
+            red_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+            #endregion
+
+            #region orange for the middle spring
+            int index = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat = myDoc.Materials[index];
+            mat.DiffuseColor = System.Drawing.Color.Orange;
+            mat.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes orange_attributes = new Rhino.DocObjects.ObjectAttributes();
+            orange_attributes.MaterialIndex = index;
+            orange_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+            orange_attributes.ObjectColor = Color.Orange;
+            orange_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+            #endregion
+
+            #region white for the outer cloth spring
+            int index_white = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_white = myDoc.Materials[index_white];
+            mat_white.DiffuseColor = System.Drawing.Color.White;
+            mat_white.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes white_attributes = new Rhino.DocObjects.ObjectAttributes();
+            white_attributes.MaterialIndex = index_white;
+            white_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+            white_attributes.ObjectColor = Color.White;
+            white_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+            #endregion
+
+            foreach (Guid id in obj.CappedSpringIDs)
+            {
+                myDoc.Objects.ModifyAttributes(id, orange_attributes, true);
+            }
+
+            if (isOutClothShown)
+            {
+                foreach (Guid id in obj.ClothIDs)
+                {
+                    myDoc.Objects.ModifyAttributes(id, white_attributes, true);
+                }
+            }
+
+            foreach (Guid id in obj.InnerStructureIDs)
+            {
+                myDoc.Objects.ModifyAttributes(id, red_attributes, true);
+            }
+
+            myDoc.Views.Redraw();
+        }
+
+        public void highlightCurrent(OnduleUnit obj, bool isOutClothShown)
+        {
+            int index_blue = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_blue = myDoc.Materials[index_blue];
+            mat_blue.DiffuseColor = System.Drawing.Color.FromArgb(93, 188, 210);
+            mat_blue.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes blue_attributes = new Rhino.DocObjects.ObjectAttributes();
+            blue_attributes.MaterialIndex = index_blue;
+            blue_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+            blue_attributes.ObjectColor = Color.FromArgb(93, 188, 210);
+            blue_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+
+            foreach (Guid id in obj.CappedSpringIDs)
+            {
+                myDoc.Objects.ModifyAttributes(id, blue_attributes, true);
+            }
+
+            if (isOutClothShown)
+            {
+                foreach (Guid id in obj.ClothIDs)
+                {
+                    myDoc.Objects.ModifyAttributes(id, blue_attributes, true);
+                }
+            }
+
+            foreach(Guid id in obj.InnerStructureIDs)
+            {
+                myDoc.Objects.ModifyAttributes(id, blue_attributes, true);
+            }
+
+            myDoc.Views.Redraw();
         }
 
         /// <summary>

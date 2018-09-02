@@ -431,20 +431,108 @@ namespace OndulePlugin
             processingwindow.Refresh();
 
             Button temp = sender as Button;
+            temp.BackColor = Color.FromArgb(93, 188, 210);
             int start = temp.Name.IndexOf('U');
             int end = temp.Name.IndexOf('_');
             int idx = Int32.Parse(temp.Name.Substring(start + 1, end - start - 1));
+
+            // Change the currently selected button back to gray
+            if(currIdx >= 0)
+            {
+                Button oldBtn = this.OnduleUnitFlowPanel.Controls[currIdx] as Button;
+                oldBtn.BackColor = Color.FromArgb(150, 150, 150);
+
+                controller.deHighlight(currUnit, this.isOuterClothShown);
+            }
+
             currUnit = controller.getUnitFromGlobal(idx);
             currIdx = idx;
 
-            controller.springGeneration(ref currUnit);
-            // Enable the spring control panel if it is not enabled
-            set_control_panel_statues(true);
+            if (currUnit.ConstraintType != -1)
+            {
+                this.currConstraintCtrl = currUnit.ConstraintType;
+                this.ConstraintCanvas.Enabled = true;
+                this.LinearConstraintRadioButton.Enabled = true;
+                this.TwistConstraintRadioButton.Enabled = true;
+                this.LinearTwistConstraintRadioButton.Enabled = true;
+                this.BendConstraintRadioButton.Enabled = true;
+                this.AllDirectionsCheckBox.Enabled = true;
 
+                this.ConstraintCanvas.Controls.Clear();
+                this.ConstraintCanvas.Refresh();
+                this.OnduleConstraintCheckbox.Checked = true;
 
+                switch (this.currConstraintCtrl)
+                {
+                    case 0:
+                        {
+                            this.LinearConstraintRadioButton.Checked = true;
+                            this.TwistConstraintRadioButton.Checked = false;
+                            this.LinearTwistConstraintRadioButton.Checked = false;
+                            this.BendConstraintRadioButton.Checked = false;
+                            this.AllDirectionsCheckBox.Checked = false;
 
-            // Initial the parameter panel
-            initialize_parameter_panel(ref currUnit, currIdx);
+                        }
+                        break;
+                    case 1:
+                        {
+                            this.LinearConstraintRadioButton.Checked = false;
+                            this.TwistConstraintRadioButton.Checked = true;
+                            this.LinearTwistConstraintRadioButton.Checked = false;
+                            this.BendConstraintRadioButton.Checked = false;
+                            this.AllDirectionsCheckBox.Checked = false;
+                        }
+                        break;
+                    case 2:
+                        {
+                            this.LinearConstraintRadioButton.Checked = false;
+                            this.TwistConstraintRadioButton.Checked = false;
+                            this.LinearTwistConstraintRadioButton.Checked = true;
+                            this.BendConstraintRadioButton.Checked = false;
+                            this.AllDirectionsCheckBox.Checked = false;
+                        }
+                        break;
+                    case 3:
+                        {
+                            this.LinearConstraintRadioButton.Checked = false;
+                            this.TwistConstraintRadioButton.Checked = false;
+                            this.LinearTwistConstraintRadioButton.Checked = false;
+                            this.BendConstraintRadioButton.Checked = true;
+                            this.AllDirectionsCheckBox.Checked = false;
+                        }
+                        break;
+                    default: break;
+                }
+            }
+            else
+            {
+                this.currConstraintCtrl = currUnit.ConstraintType;
+                this.ConstraintCanvas.Enabled = false;
+                this.ConstraintCanvas.Controls.Clear();
+                this.ConstraintCanvas.Refresh();
+                this.LinearConstraintRadioButton.Enabled = false;
+                this.TwistConstraintRadioButton.Enabled = false;
+                this.LinearTwistConstraintRadioButton.Enabled = false;
+                this.BendConstraintRadioButton.Enabled = false;
+                this.AllDirectionsCheckBox.Enabled = false;
+                this.OnduleConstraintCheckbox.Checked = false;
+                this.LinearConstraintRadioButton.Checked = false;
+                this.TwistConstraintRadioButton.Checked = false;
+                this.LinearTwistConstraintRadioButton.Checked = false;
+                this.BendConstraintRadioButton.Checked = false;
+                this.AllDirectionsCheckBox.Checked = false;
+            }
+
+            //controller.springGeneration(ref currUnit);
+            //// Enable the spring control panel if it is not enabled
+            //set_control_panel_statues(true);
+
+            //// Initial the parameter panel
+            //initialize_parameter_panel(ref currUnit, currIdx);
+
+            // Update the model's color in the Rhino scene
+            controller.highlightCurrent(currUnit, this.isOuterClothShown);
+
             processingwindow.Hide();
         }
 
@@ -468,25 +556,20 @@ namespace OndulePlugin
         {
 
             #region Start the loading 
-            //Panel loadingLayerBk = new Panel();
-            //loadingLayerBk.Size = new System.Drawing.Size(this.Size.Width, this.Size.Height);
-
-            //loadingLayerBk.Location = new System.Drawing.Point(0, 0);
-            //this.Controls.Add(loadingLayerBk);
-            //loadingLayerBk.BringToFront();
-            //loadingLayerBk.BackColor = Color.FromArgb(125, 255, 255, 255);
-
-            //PictureBox loadingLayer = new PictureBox();
-            //loadingLayer.Size = new System.Drawing.Size(200, 200);
-            //loadingLayer.Location = new System.Drawing.Point(90, 190);
-            //Image img = Image.FromFile(@"Resources\loading2.gif");
-            //loadingLayer.Image = img;
-            //loadingLayerBk.Controls.Add(loadingLayer);
-            //loadingLayer.BringToFront();
-            //loadingLayer.BackColor = Color.FromArgb(255, 255, 255);
 
             processingwindow.Show();
             processingwindow.Refresh();
+
+            this.currConstraintCtrl = -1;
+            this.ConstraintCanvas.Enabled = false;
+            this.ConstraintCanvas.Controls.Clear();
+            this.ConstraintCanvas.Refresh();
+            this.OnduleConstraintCheckbox.Checked = false;
+            this.LinearConstraintRadioButton.Checked = false;
+            this.TwistConstraintRadioButton.Checked = false;
+            this.LinearTwistConstraintRadioButton.Checked = false;
+            this.BendConstraintRadioButton.Checked = false;
+            this.AllDirectionsCheckBox.Checked = false;
 
             #endregion
 
@@ -657,7 +740,17 @@ namespace OndulePlugin
                 int crntIdx = controller.getCountGlobal() - 1;
                 unitBtn.Name = "OU" + crntIdx.ToString() + "_" + tempNewUnit.BREPID.ToString();
                 unitBtn.Text = "";
-                unitBtn.BackColor = Color.FromArgb(150, 150, 150);
+                unitBtn.BackColor = Color.FromArgb(93, 188, 210);
+
+                // Change the currently selected button back to gray
+                if(OnduleUnitFlowPanel.Controls.Count > 0)
+                {
+                    Button oldBtn = this.OnduleUnitFlowPanel.Controls[currIdx] as Button;
+                    oldBtn.BackColor = Color.FromArgb(150, 150, 150);
+
+                    controller.deHighlight(currUnit, this.isOuterClothShown);
+                }
+
                 unitBtn.Width = 15;
                 unitBtn.Height = 34;
                 unitBtn.FlatStyle = FlatStyle.Flat;
@@ -677,6 +770,8 @@ namespace OndulePlugin
 
                 // Initial the parameter panel
                 initialize_parameter_panel(ref currUnit, currIdx);
+
+                controller.highlightCurrent(currUnit, this.isOuterClothShown);
 
                 #endregion
 
@@ -1979,20 +2074,20 @@ namespace OndulePlugin
                 this.AllDirectionsCheckBox.Enabled = true;
                 this.ConstraintCanvas.Enabled = true;
 
-                this.StiffnessRadioButton.Enabled = false;
-                this.AdvancedRadioButton.Enabled = false;
-                this.MaxStiffnessLabel.Enabled = false;
-                this.MinStiffnessLabel.Enabled = false;
-                this.StiffnessTrackBar.Enabled = false;
-                this.WireDiameterTrackBar.Enabled = false;
-                this.MaxWDLabel.Enabled = false;
-                this.MinWDLabel.Enabled = false;
-                this.WDTitleLabel.Enabled = false;
-                this.WDValueLabel.Enabled = false;
-                this.MaxTGLabel.Enabled = false;
-                this.MinTGLabel.Enabled = false;
-                this.TGValueLabel.Enabled = false;
-                this.TurnGapTitleLabel.Enabled = false;
+                //this.StiffnessRadioButton.Enabled = false;
+                //this.AdvancedRadioButton.Enabled = false;
+                //this.MaxStiffnessLabel.Enabled = false;
+                //this.MinStiffnessLabel.Enabled = false;
+                //this.StiffnessTrackBar.Enabled = false;
+                //this.WireDiameterTrackBar.Enabled = false;
+                //this.MaxWDLabel.Enabled = false;
+                //this.MinWDLabel.Enabled = false;
+                //this.WDTitleLabel.Enabled = false;
+                //this.WDValueLabel.Enabled = false;
+                //this.MaxTGLabel.Enabled = false;
+                //this.MinTGLabel.Enabled = false;
+                //this.TGValueLabel.Enabled = false;
+                //this.TurnGapTitleLabel.Enabled = false;
 
                 controller.showInternalStructure(currUnit, currIdx);
             }
@@ -2005,20 +2100,20 @@ namespace OndulePlugin
                 this.AllDirectionsCheckBox.Enabled = false;
                 this.ConstraintCanvas.Enabled = false;
 
-                this.StiffnessRadioButton.Enabled = true;
-                this.AdvancedRadioButton.Enabled = true;
-                this.MaxStiffnessLabel.Enabled = true;
-                this.MinStiffnessLabel.Enabled = true;
-                this.StiffnessTrackBar.Enabled = true;
-                this.WireDiameterTrackBar.Enabled = true;
-                this.MaxWDLabel.Enabled = true;
-                this.MinWDLabel.Enabled = true;
-                this.WDTitleLabel.Enabled = true;
-                this.WDValueLabel.Enabled = true;
-                this.MaxTGLabel.Enabled = true;
-                this.MinTGLabel.Enabled = true;
-                this.TGValueLabel.Enabled = true;
-                this.TurnGapTitleLabel.Enabled = true;
+                //this.StiffnessRadioButton.Enabled = true;
+                //this.AdvancedRadioButton.Enabled = true;
+                //this.MaxStiffnessLabel.Enabled = true;
+                //this.MinStiffnessLabel.Enabled = true;
+                //this.StiffnessTrackBar.Enabled = true;
+                //this.WireDiameterTrackBar.Enabled = true;
+                //this.MaxWDLabel.Enabled = true;
+                //this.MinWDLabel.Enabled = true;
+                //this.WDTitleLabel.Enabled = true;
+                //this.WDValueLabel.Enabled = true;
+                //this.MaxTGLabel.Enabled = true;
+                //this.MinTGLabel.Enabled = true;
+                //this.TGValueLabel.Enabled = true;
+                //this.TurnGapTitleLabel.Enabled = true;
 
                 controller.hideInternalStructure(currUnit, currIdx);
             }
@@ -2031,6 +2126,8 @@ namespace OndulePlugin
                 // Show the linear control pannel
                 currConstraintCtrl = 0;
                 this.ConstraintCanvas.Controls.Clear();
+
+                this.AllDirectionsCheckBox.Enabled = false;
 
                 double thickness = 3;
                 double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
@@ -2107,6 +2204,8 @@ namespace OndulePlugin
                 currConstraintCtrl = 1;
                 this.ConstraintCanvas.Controls.Clear();
 
+                this.AllDirectionsCheckBox.Enabled = false;
+
                 Label torsionLabel = new Label();
                 torsionLabel.Text = "Max Twisting Angle: ";
                 torsionLabel.Width = 150;
@@ -2158,6 +2257,8 @@ namespace OndulePlugin
                 // Show the linear + twist control pannel
                 currConstraintCtrl = 2;
                 this.ConstraintCanvas.Controls.Clear();
+
+                this.AllDirectionsCheckBox.Enabled = false;
 
                 double thickness = 3;
                 double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
@@ -2260,6 +2361,8 @@ namespace OndulePlugin
                 // Show the bend control pannel
                 currConstraintCtrl = 3;
                 this.ConstraintCanvas.Controls.Clear();
+
+                this.AllDirectionsCheckBox.Enabled = true;
 
                 Label directionLabel = new Label();
                 directionLabel.Text = "Bending Direction";
