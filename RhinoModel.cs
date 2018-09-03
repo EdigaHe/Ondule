@@ -481,12 +481,13 @@ namespace OndulePlugin
 
             #region replace the selected part with helical spring (for arbitrary geometry)
 
-            double pitch = 2.4;   // The outer cloth always has the minimun pitch
             double clothWireDiameter = 1.6; // The outer cloth always has the minimum wire diameter
+            double pitch = clothWireDiameter + 1.6;   // The outer cloth always has the minimun pitch
+            
 
             if (objRef.ClothIDs.Count == 0)
             {
-                double minRadius = 1000000000;
+                
                 foreach (Brep b in toBeReplacedBrep)
                 {
 
@@ -566,8 +567,13 @@ namespace OndulePlugin
 
                             DiameterList.Add(r1);
                             DiameterList.Add(r2);
-                            if (r1 <= minRadius) minRadius = r1;
-                            if (r2 <= minRadius) minRadius = r2;
+                            double minRadius = 1000000000;
+
+                            if (r1 <= r2) minRadius = r1;
+                            else minRadius = r2;
+
+                            //if (r1 <= minRadius) minRadius = r1;
+                            //if (r2 <= minRadius) minRadius = r2;
 
                             objRef.CoilDiameter.Add(2 * minRadius);
 
@@ -713,7 +719,7 @@ namespace OndulePlugin
             orange_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
 
-            double sizeOfInnerStructure = 7.4;
+            double sizeOfInnerStructure = 8.4;
             double minCoilDia = objRef.CoilDiameter.Min();
             double maxCoilDia = objRef.CoilDiameter.Max();
             double deformCoilD;
@@ -1005,9 +1011,10 @@ namespace OndulePlugin
             var rc = RhinoGet.GetOneObject("Select surface or polysurface to mesh", false, ObjectType.AnyObject, out objSel_ref);
             if (rc == Rhino.Commands.Result.Success){
                 String str1 = "_ExportFileAs=_Binary ";
-                String str2 = "_ExportUnfinishedObjects=_Yes ";
-                String str3 = "_UseSimpleDialog=_No ";
-                String str4 = "_UseSimpleParameters=_Yes ";
+                //String str2 = "_ExportUnfinishedObjects=_Yes ";
+                //String str3 = "_UseSimpleDialog=_No ";
+                //String str4 = "_UseSimpleParameters=_Yes ";
+
                 //String str5 = "_Enter _DetailedOptions ";
                 //String str6 = "_JaggedSeams=_No ";
                 //String str7 = "_PackTextures=_No ";
@@ -1022,10 +1029,11 @@ namespace OndulePlugin
                 //String str16 = "_MaxEdgeLength=0 ";
                 //String str17 = "_MinEdgeLength=0.0001 ";
                 String str18 = "_Enter _Enter";
-                String str = str1 + str2 + str3 + str4 + str18;
+                //String str = str1 + str2 + str3 + str4 + str18;
+                //String str = str1 + str18;
                 //String str = str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8  + str9 + str10 + str11 + str12 +
                    // str13 + str14 + str15 + str16 + str17 + str18;
-                //String str = str18;
+                String str = str18;
 
                 var stlScript = string.Format("_-Export \"{0}\" {1}", oldSTLFile, str);
                 Rhino.RhinoApp.RunScript(stlScript,false);
