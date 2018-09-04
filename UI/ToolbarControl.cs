@@ -300,7 +300,16 @@ namespace OndulePlugin
             this.WireDiameterTrackBar.Enabled = false;
             this.TurnGapTrackBar.Enabled = false;
             this.StiffnessTrackBar.Enabled = isactivated;
-            this.OnduleConstraintCheckbox.Enabled = isactivated;
+
+            if (currUnit.IsFreeformOnly)
+            {
+                this.OnduleConstraintCheckbox.Enabled = false;
+            }
+            else
+            {
+                this.OnduleConstraintCheckbox.Enabled = isactivated;
+            }
+            
             this.LinearConstraintRadioButton.Enabled = false;
             this.TwistConstraintRadioButton.Enabled = false;
             this.LinearTwistConstraintRadioButton.Enabled = false;
@@ -323,7 +332,42 @@ namespace OndulePlugin
         private void initialize_parameter_panel(ref OnduleUnit currUnit, int curridx)
         {
             this.StiffnessRadioButton.Checked = true;
-            string specifier = "F1";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+            string specifier = "F1";
+
+            double sizeOfInnerStructure = 8.4;
+            double clothWireDiameter = 1.6;
+            double pitch = -1;   // The outer cloth always has the minimun pitch
+            if (currUnit.MA.GetLength() <= 20)
+            {
+                pitch = clothWireDiameter + 0.4;   // The outer cloth always has the minimun pitch
+            }
+            else if (currUnit.MA.GetLength() <= 50 && currUnit.MA.GetLength() > 20)
+            {
+                pitch = clothWireDiameter + 0.8;   // The outer cloth always has the minimun pitch
+            }
+            else if (currUnit.MA.GetLength() <= 80 && currUnit.MA.GetLength() > 40)
+            {
+                pitch = clothWireDiameter + 1.2;   // The outer cloth always has the minimun pitch
+            }
+            else
+            {
+                pitch = clothWireDiameter + 1.6;   // The outer cloth always has the minimun pitch
+            }
+
+            if (currUnit.IsFreeformOnly)
+            {
+                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
+                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                d_max = d_max < 1.6 ? 1.6 : d_max;
+            }
+            else
+            {
+                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
+                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+            }
+
+            tg_min = pitch;
+
 
             // Initial the wire diameter trackbar and the turn gap trackbar
 
@@ -366,11 +410,13 @@ namespace OndulePlugin
             }
 
             double tg_max_initial, tg_max_real;
-            tg_max_initial = currUnit.MA.GetLength() - d_min;
+            //tg_max_initial = currUnit.MA.GetLength() - d_min;
 
             this.TurnGapTrackBar.Minimum = Convert.ToInt32(tg_min / 0.1);
             this.MinTGLabel.Text = tg_min.ToString(specifier);
-            tg_max_real = currUnit.MA.GetLength() - this.WireDiameterTrackBar.Value * 0.1;
+            //tg_max_real = currUnit.MA.GetLength() - this.WireDiameterTrackBar.Value * 0.1;
+            tg_max_initial = (4 * d_max_real) < (currUnit.MA.GetLength() - d_min) ? (4 * d_max_real) : (currUnit.MA.GetLength() - d_min);
+            tg_max_real = tg_max_initial;
             this.MaxTGLabel.Text = tg_max_initial.ToString(specifier);
             this.TurnGapTrackBar.Maximum = Convert.ToInt32(tg_max_initial / 0.1);
 
@@ -1853,6 +1899,41 @@ namespace OndulePlugin
 
         private void WireDiameterTrackBar_Scroll(object sender, EventArgs e)
         {
+
+            double sizeOfInnerStructure = 8.4;
+            double clothWireDiameter = 1.6;
+            double pitch = -1;   // The outer cloth always has the minimun pitch
+            if (currUnit.MA.GetLength() <= 20)
+            {
+                pitch = clothWireDiameter + 0.4;   // The outer cloth always has the minimun pitch
+            }
+            else if (currUnit.MA.GetLength() <= 50 && currUnit.MA.GetLength() > 20)
+            {
+                pitch = clothWireDiameter + 0.8;   // The outer cloth always has the minimun pitch
+            }
+            else if (currUnit.MA.GetLength() <= 80 && currUnit.MA.GetLength() > 40)
+            {
+                pitch = clothWireDiameter + 1.2;   // The outer cloth always has the minimun pitch
+            }
+            else
+            {
+                pitch = clothWireDiameter + 1.6;   // The outer cloth always has the minimun pitch
+            }
+
+            if (currUnit.IsFreeformOnly)
+            {
+                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
+                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                d_max = d_max < 1.6 ? 1.6 : d_max;
+            }
+            else
+            {
+                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
+                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+            }
+
+            tg_min = pitch;
+
             double wd = this.WireDiameterTrackBar.Value * 0.1;
             double len = currUnit.MA.GetLength();
 
@@ -1869,7 +1950,8 @@ namespace OndulePlugin
             this.WDValueLabel.Text = wd.ToString(specifier) + " mm";
 
             // Update the turn gap trackbar, using the updated wire diameter value
-            double tg_max_real = len - wd;
+            //double tg_max_real = len - wd;
+            double tg_max_real = ((4 * wd) < (len-wd))? (4*wd): (len-wd);
             if (currUnit.Pitch > tg_max_real)
             {
                 currUnit.Pitch = tg_max_real;
@@ -1899,8 +1981,8 @@ namespace OndulePlugin
             double k_max = (d_max_real + tg_max_real)/2;
             double k_min = d_min + tg_min;
             double k = (currUnit.WireDiameter + currUnit.Pitch)>=((d_max_real + tg_max_real) / 2)?((d_max_real + tg_max_real) / 2):(currUnit.WireDiameter + currUnit.Pitch);
-            this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 100);
-            this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 100);
+           // this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 100);
+            //this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 100);
             this.StiffnessTrackBar.Value = Convert.ToInt32(k * 100);
 
             currUnit.Stiffness = (currUnit.WireDiameter + currUnit.Pitch) *Math.Pow(currUnit.WireDiameter, power) / currUnit.MA.GetLength();
@@ -1919,12 +2001,51 @@ namespace OndulePlugin
 
         private void TurnGapTrackBar_Scroll(object sender, EventArgs e)
         {
+
+            double sizeOfInnerStructure = 8.4;
+            double clothWireDiameter = 1.6;
+            double pitch = -1;   // The outer cloth always has the minimun pitch
+            if (currUnit.MA.GetLength() <= 20)
+            {
+                pitch = clothWireDiameter + 0.4;   // The outer cloth always has the minimun pitch
+            }
+            else if (currUnit.MA.GetLength() <= 50 && currUnit.MA.GetLength() > 20)
+            {
+                pitch = clothWireDiameter + 0.8;   // The outer cloth always has the minimun pitch
+            }
+            else if (currUnit.MA.GetLength() <= 80 && currUnit.MA.GetLength() > 40)
+            {
+                pitch = clothWireDiameter + 1.2;   // The outer cloth always has the minimun pitch
+            }
+            else
+            {
+                pitch = clothWireDiameter + 1.6;   // The outer cloth always has the minimun pitch
+            }
+
+            if (currUnit.IsFreeformOnly)
+            {
+                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
+                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                d_max = d_max < 1.6 ? 1.6 : d_max;
+            }
+            else
+            {
+                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
+                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+            }
+
+            tg_min = pitch;
+
+
+
             double p = this.TurnGapTrackBar.Value * 0.1;
             double len = currUnit.MA.GetLength();
 
             // Update the turn gap track bar with selected wire diameter (in the case the user 
             // comes back from the stiffness track bar)
-            double tg_max_real = len - currUnit.WireDiameter;
+            //double tg_max_real = len - currUnit.WireDiameter;
+
+            double tg_max_real = (4 * currUnit.WireDiameter) < (len - currUnit.WireDiameter)? (4 * currUnit.WireDiameter): (len - currUnit.WireDiameter);
             if(p > tg_max_real)
             {
                 p = tg_max_real;
@@ -1967,8 +2088,8 @@ namespace OndulePlugin
             double k_max = (d_max_real + tg_max_real)/2;
             double k_min = d_min + tg_min;
             double k = (currUnit.WireDiameter + currUnit.Pitch) >= ((d_max_real + tg_max_real) / 2) ? ((d_max_real + tg_max_real) / 2) : (currUnit.WireDiameter + currUnit.Pitch);
-            this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 100);
-            this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 100);
+           // this.StiffnessTrackBar.Minimum = Convert.ToInt32(k_min * 100);
+           // this.StiffnessTrackBar.Maximum = Convert.ToInt32(k_max * 100);
             this.StiffnessTrackBar.Value = Convert.ToInt32(k * 100);
 
             currUnit.Stiffness = (currUnit.WireDiameter + currUnit.Pitch) * Math.Pow(currUnit.WireDiameter, power) / currUnit.MA.GetLength();
@@ -2039,6 +2160,42 @@ namespace OndulePlugin
 
         private void StiffnessTrackBar_Scroll(object sender, EventArgs e)
         {
+            double sizeOfInnerStructure = 8.4;
+            double clothWireDiameter = 1.6;
+            double pitch = -1;   // The outer cloth always has the minimun pitch
+            if (currUnit.MA.GetLength() <= 20)
+            {
+                pitch = clothWireDiameter + 0.4;   // The outer cloth always has the minimun pitch
+            }
+            else if (currUnit.MA.GetLength() <= 50 && currUnit.MA.GetLength() > 20)
+            {
+                pitch = clothWireDiameter + 0.8;   // The outer cloth always has the minimun pitch
+            }
+            else if (currUnit.MA.GetLength() <= 80 && currUnit.MA.GetLength() > 40)
+            {
+                pitch = clothWireDiameter + 1.2;   // The outer cloth always has the minimun pitch
+            }
+            else
+            {
+                pitch = clothWireDiameter + 1.6;   // The outer cloth always has the minimun pitch
+            }
+
+            if (currUnit.IsFreeformOnly)
+            {
+                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
+                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                d_max = d_max < 1.6 ? 1.6 : d_max;
+            }
+            else
+            {
+                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
+                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+            }
+
+            tg_min = pitch;
+
+
+
             double current_k = Convert.ToDouble(this.StiffnessTrackBar.Value) /100.0;
             double len = currUnit.MA.GetLength();
 
@@ -2047,7 +2204,8 @@ namespace OndulePlugin
 
             // Update the wire diameter track bar's max
             double d_max_real = ((len-tg_min) < d_max) ? (len-tg_min) : d_max;
-            double tg_max_real = len - currUnit.WireDiameter;
+            //double tg_max_real = len - currUnit.WireDiameter;
+            double tg_max_real = (4 * currUnit.WireDiameter) < (len - currUnit.WireDiameter) ? (4 * currUnit.WireDiameter) : (len - currUnit.WireDiameter);
 
             double wd_value = currUnit.WireDiameter, tg_value = currUnit.Pitch;
             get_updated_wd_tg(current_k, len, d_max_real, tg_max_real, ref wd_value, ref tg_value);

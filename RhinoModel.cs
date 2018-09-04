@@ -482,8 +482,25 @@ namespace OndulePlugin
             #region replace the selected part with helical spring (for arbitrary geometry)
 
             double clothWireDiameter = 1.6; // The outer cloth always has the minimum wire diameter
-            double pitch = clothWireDiameter + 1.6;   // The outer cloth always has the minimun pitch
-            
+            double pitch = -1;   // The outer cloth always has the minimun pitch
+            if (objRef.MA.GetLength() <= 20)
+            {
+                pitch = clothWireDiameter + 0.4;   // The outer cloth always has the minimun pitch
+            }
+            else if (objRef.MA.GetLength() <= 50 && objRef.MA.GetLength() > 20)
+            {
+                pitch = clothWireDiameter + 0.8;   // The outer cloth always has the minimun pitch
+            }
+            else if (objRef.MA.GetLength() <= 80 && objRef.MA.GetLength() > 40)
+            {
+                pitch = clothWireDiameter + 1.2;   // The outer cloth always has the minimun pitch
+            }
+            else
+            {
+                pitch = clothWireDiameter + 1.6;   // The outer cloth always has the minimun pitch
+            }
+
+
 
             if (objRef.ClothIDs.Count == 0)
             {
@@ -497,6 +514,7 @@ namespace OndulePlugin
                     // Record the diameters of all segments in the selected part
                     DiameterList.Clear();
                     objRef.CoilDiameter.Clear();
+                    objRef.IsFreeformOnly = false;
 
                     #region 1. Find center curve's discontinuity
 
@@ -700,10 +718,6 @@ namespace OndulePlugin
             }
             #endregion
 
-            #region generate the outer spring (cloth). The outer spring is hidden by default.
-
-            #endregion
-
             #region generate the main spring that leads the deformation behavior
 
             #region Use orange to color the deformation spring
@@ -744,35 +758,53 @@ namespace OndulePlugin
             else
             {
 
-                //deformCoilD = (minCoilDia - clothWireDiameter) * 3 / 4;
-                //double pre_deformCoilD = (minCoilDia - sizeOfInnerStructure - 2 * clothWireDiameter) / 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
+                ////deformCoilD = (minCoilDia - clothWireDiameter) * 3 / 4;
+                ////double pre_deformCoilD = (minCoilDia - sizeOfInnerStructure - 2 * clothWireDiameter) / 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
 
-                if((minCoilDia - 2 * clothWireDiameter - gap - objRef.WireDiameter) > sizeOfInnerStructure + objRef.WireDiameter + gap)
-                {
-                    deformCoilD = minCoilDia - 2 * clothWireDiameter - gap - objRef.WireDiameter;
-                }
-                else
-                {
-                    deformCoilD = sizeOfInnerStructure + 2 * objRef.WireDiameter + 2 * gap;
-                }
-                
-
-                //if (objRef.InnerStructureIDs.Count == 0)
+                //if((minCoilDia - 2 * clothWireDiameter - gap - objRef.WireDiameter) > sizeOfInnerStructure + objRef.WireDiameter + gap)
                 //{
-                //    deformCoilD = (minCoilDia - clothWireDiameter) * 3 / 4;
+                //    deformCoilD = minCoilDia - 2 * clothWireDiameter - gap - objRef.WireDiameter;
                 //}
                 //else
                 //{
-                //    deformCoilD = (minCoilDia - sizeOfInnerStructure - 2 * clothWireDiameter) / 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
+                //    deformCoilD = sizeOfInnerStructure + 2 * objRef.WireDiameter + 2 * gap;
                 //}
+                
+
+                ////if (objRef.InnerStructureIDs.Count == 0)
+                ////{
+                ////    deformCoilD = (minCoilDia - clothWireDiameter) * 3 / 4;
+                ////}
+                ////else
+                ////{
+                ////    deformCoilD = (minCoilDia - sizeOfInnerStructure - 2 * clothWireDiameter) / 2 + sizeOfInnerStructure + 2 * objRef.WireDiameter;
+                ////}
+
+
+                if(minCoilDia-2*clothWireDiameter - sizeOfInnerStructure - 1.6 < 3.2)
+                {
+                    objRef.IsFreeformOnly = true;
+                    deformCoilD = minCoilDia - 2 * clothWireDiameter - 1.6 - objRef.WireDiameter;
+                }
+                else
+                {
+                    objRef.IsFreeformOnly = false;
+                    deformCoilD = (minCoilDia - 2 * clothWireDiameter - 0.8 - (sizeOfInnerStructure + 0.8)) / 2 + (sizeOfInnerStructure + 0.8);
+                }
+
             }
 
             double deformWireD = objRef.WireDiameter;
+            if(objRef.Pitch < pitch)
+            {
+                objRef.Pitch = pitch;
+            }
+
             double deformPitch = objRef.Pitch + objRef.WireDiameter;
 
             double spiralEndPara;
             objRef.SelectedSeg.LengthParameter(objRef.SelectedSeg.GetLength(), out spiralEndPara);
-            Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.SelectedSeg, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0, 0, 0)), deformPitch, 0, (deformCoilD - deformWireD)/2, (deformCoilD - deformWireD)/2, 30);
+            Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.SelectedSeg, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0, 0, 0)), deformPitch, 0, deformCoilD/2, deformCoilD/2, 30);
             Plane crossPln = new Plane(deformSpiralCrv.PointAtStart, deformSpiralCrv.TangentAtStart);
             Curve crossCir = new Circle(crossPln, deformSpiralCrv.PointAtStart, deformWireD / 2).ToNurbsCurve();
             //myDoc.Objects.AddCurve(crossCircle, whiteAttribute);
@@ -1011,29 +1043,30 @@ namespace OndulePlugin
             var rc = RhinoGet.GetOneObject("Select surface or polysurface to mesh", false, ObjectType.AnyObject, out objSel_ref);
             if (rc == Rhino.Commands.Result.Success){
                 String str1 = "_ExportFileAs=_Binary ";
-                //String str2 = "_ExportUnfinishedObjects=_Yes ";
-                //String str3 = "_UseSimpleDialog=_No ";
-                //String str4 = "_UseSimpleParameters=_Yes ";
+                String str2 = "_ExportUnfinishedObjects=_Yes ";
+                String str3 = "_UseSimpleDialog=_No ";
+                String str4 = "_UseSimpleParameters=_Yes ";
 
-                //String str5 = "_Enter _DetailedOptions ";
-                //String str6 = "_JaggedSeams=_No ";
-                //String str7 = "_PackTextures=_No ";
-                //String str8 = "_Refine=_Yes ";
-                //String str9 = "_SimplePlane=_Yes ";
-                //String str10 = "_Weld=_No ";
-                //String str11 = "_AdvancedOptions ";
-                //String str12 = "_Angle=15 ";
-                //String str13 = "_AspectRatio=0 ";
-                //String str14 = "_Distance=0.01 ";
-                //String str15 = "_Grid=16 ";
-                //String str16 = "_MaxEdgeLength=0 ";
-                //String str17 = "_MinEdgeLength=0.0001 ";
+                String str5 = "_Enter _DetailedOptions ";
+                String str6 = "_JaggedSeams=_No ";
+                String str7 = "_PackTextures=_No ";
+                String str8 = "_Refine=_Yes ";
+                String str9 = "_SimplePlane=_Yes ";
+                String str10 = "_Weld=_No ";
+                String str11 = "_AdvancedOptions ";
+                String str12 = "_Angle=15 ";
+                String str13 = "_AspectRatio=0 ";
+                String str14 = "_Distance=0.01 ";
+                String str15 = "_Grid=16 ";
+                String str16 = "_MaxEdgeLength=0 ";
+                String str17 = "_MinEdgeLength=0.0001 ";
                 String str18 = "_Enter _Enter";
-                //String str = str1 + str2 + str3 + str4 + str18;
+
+                String str = str1 + str2 + str3 + str4 + str18;
                 //String str = str1 + str18;
                 //String str = str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8  + str9 + str10 + str11 + str12 +
                    // str13 + str14 + str15 + str16 + str17 + str18;
-                String str = str18;
+                //String str = str18;
 
                 var stlScript = string.Format("_-Export \"{0}\" {1}", oldSTLFile, str);
                 Rhino.RhinoApp.RunScript(stlScript,false);

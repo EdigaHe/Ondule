@@ -36,12 +36,13 @@ namespace OndulePlugin
         private Guid _ctrlPt2ID;
         private Guid _segID;
         private double _stiffness;
-        List<Brep> _preservedBrepList = new List<Brep>();   // Record the preserved breps
-        List<Brep> _replacedBrepList = new List<Brep>();    // Record the replaced breps
-        List<Guid> _capperSpringIDList = new List<Guid>();  // Record the IDs of generated spring breps 
-        List<Guid> _clothIDList = new List<Guid>();         // Record the IDs of the generated spring cloth
-        List<Guid> _innerStructureIDList = new List<Guid>();// Record the IDs of the inner constraint structure
-        List<Guid> _preservedBrepsIDList = new List<Guid>();// Record the IDs of the preserved breps
+        private List<Brep> _preservedBrepList = new List<Brep>();   // Record the preserved breps
+        private List<Brep> _replacedBrepList = new List<Brep>();    // Record the replaced breps
+        private List<Guid> _capperSpringIDList = new List<Guid>();  // Record the IDs of generated spring breps 
+        private List<Guid> _clothIDList = new List<Guid>();         // Record the IDs of the generated spring cloth
+        private List<Guid> _innerStructureIDList = new List<Guid>();// Record the IDs of the inner constraint structure
+        private List<Guid> _preservedBrepsIDList = new List<Guid>();// Record the IDs of the preserved breps
+        private bool _isFreeformOnly;
         public OnduleUnit()
         {
             this._ID = -1;
@@ -58,11 +59,17 @@ namespace OndulePlugin
             this._ctrlPt2ID = new Guid();
             this._segID = new Guid();
             this._coilNum = -1;
+            this._isFreeformOnly = false;
         }
         public double Stiffness
         {
             get { return this._stiffness; }
             set { this._stiffness = value; }
+        }
+        public bool IsFreeformOnly
+        {
+            get { return this._isFreeformOnly; }
+            set { this._isFreeformOnly = value; }
         }
 
         public int ConstraintType
