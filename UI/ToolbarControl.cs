@@ -387,14 +387,36 @@ namespace OndulePlugin
 
             if (currUnit.IsFreeformOnly)
             {
-                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
-                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
-                d_max = d_max < 1.6 ? 1.6 : d_max;
+                if (currUnit.ClothIDs.Count  ==  currUnit.CappedSpringIDs.Count && currUnit.ClothIDs.ElementAt(0) == currUnit.CappedSpringIDs.ElementAt(0))
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+
+                }
+                else
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+                
             }
             else
             {
-                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
-                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                if (currUnit.ClothIDs.Count == currUnit.CappedSpringIDs.Count && currUnit.ClothIDs.ElementAt(0) == currUnit.CappedSpringIDs.ElementAt(0))
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - sizeOfInnerStructure - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+                else
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+                
             }
 
             tg_min = pitch;
@@ -1953,14 +1975,36 @@ namespace OndulePlugin
 
             if (currUnit.IsFreeformOnly)
             {
-                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
-                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
-                d_max = d_max < 1.6 ? 1.6 : d_max;
+                if (currUnit.ClothIDs.Count == currUnit.CappedSpringIDs.Count && currUnit.ClothIDs.ElementAt(0) == currUnit.CappedSpringIDs.ElementAt(0))
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+
+                }
+                else
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+
             }
             else
             {
-                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
-                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                if (currUnit.ClothIDs.Count == currUnit.CappedSpringIDs.Count && currUnit.ClothIDs.ElementAt(0) == currUnit.CappedSpringIDs.ElementAt(0))
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - sizeOfInnerStructure - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+                else
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+
             }
 
             tg_min = pitch;
@@ -2055,14 +2099,36 @@ namespace OndulePlugin
 
             if (currUnit.IsFreeformOnly)
             {
-                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
-                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
-                d_max = d_max < 1.6 ? 1.6 : d_max;
+                if (currUnit.ClothIDs.Count == currUnit.CappedSpringIDs.Count && currUnit.ClothIDs.ElementAt(0) == currUnit.CappedSpringIDs.ElementAt(0))
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+
+                }
+                else
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+
             }
             else
             {
-                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
-                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                if (currUnit.ClothIDs.Count == currUnit.CappedSpringIDs.Count && currUnit.ClothIDs.ElementAt(0) == currUnit.CappedSpringIDs.ElementAt(0))
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - sizeOfInnerStructure - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+                else
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+
             }
 
             tg_min = pitch;
@@ -2213,14 +2279,36 @@ namespace OndulePlugin
 
             if (currUnit.IsFreeformOnly)
             {
-                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
-                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
-                d_max = d_max < 1.6 ? 1.6 : d_max;
+                if (currUnit.ClothIDs.Count == currUnit.CappedSpringIDs.Count && currUnit.ClothIDs.ElementAt(0) == currUnit.CappedSpringIDs.ElementAt(0))
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+
+                }
+                else
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+
             }
             else
             {
-                double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
-                d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                if (currUnit.ClothIDs.Count == currUnit.CappedSpringIDs.Count && currUnit.ClothIDs.ElementAt(0) == currUnit.CappedSpringIDs.ElementAt(0))
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - sizeOfInnerStructure - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+                else
+                {
+                    double d_max_temp = (currUnit.CoilDiameter.Min() - 2 * clothWireDiameter - sizeOfInnerStructure - 1.6) / 2;
+                    d_max = d_max_temp > 7.6 ? 7.6 : d_max_temp;
+                    d_max = d_max < 1.6 ? 1.6 : d_max;
+                }
+
             }
 
             tg_min = pitch;

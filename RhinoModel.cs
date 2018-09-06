@@ -744,7 +744,17 @@ namespace OndulePlugin
 
             if (isRegular)
             {
-                deformCoilD = minCoilDia- objRef.WireDiameter;
+
+                if (minCoilDia - sizeOfInnerStructure - 1.6 < 3.2)
+                {
+                    objRef.IsFreeformOnly = true;
+                    deformCoilD = minCoilDia - objRef.WireDiameter;
+                }
+                else
+                {
+                    objRef.IsFreeformOnly = false;
+                    deformCoilD = minCoilDia - objRef.WireDiameter;
+                }
 
                 if (objRef.ClothIDs.Count > 0)
                 {
@@ -871,7 +881,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min > 0.25)
+            if (max - min > 3)
                 result = false;
             else
                 result = true;
