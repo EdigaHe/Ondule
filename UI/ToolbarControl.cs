@@ -329,12 +329,43 @@ namespace OndulePlugin
             this.WDTitleLabel.Enabled = false;
             this.TurnGapTitleLabel.Enabled = false;
         }
+        private double calculate_rod_diameter(double len)
+        {
+            double d = 1.5;
+            if (len >= 0 && len <= 30)
+            {
+                d = 1.5;
+            }
+            else if (len > 30 && len <= 50)
+            {
+                d = 1.6;
+            }
+            else if (len > 50 && len <= 70)
+            {
+                d = 1.7;
+            }
+            else if (len > 70 && len <= 90)
+            {
+                d = 1.8;
+            }
+            else if (len > 90 && len <= 110)
+            {
+                d = 1.9;
+            }
+            else if (len > 110)
+            {
+                d = 2;
+            }
+
+            return d;
+        }
+
         private void initialize_parameter_panel(ref OnduleUnit currUnit, int curridx)
         {
             this.StiffnessRadioButton.Checked = true;
             string specifier = "F1";
 
-            double sizeOfInnerStructure = 8.4;
+            double sizeOfInnerStructure = 2 * (calculate_rod_diameter(currUnit.MA.GetLength()) + 0.5 * 3 + 1); 
             double clothWireDiameter = 1.6;
             double pitch = -1;   // The outer cloth always has the minimun pitch
             if (currUnit.MA.GetLength() <= 20)
@@ -1900,7 +1931,7 @@ namespace OndulePlugin
         private void WireDiameterTrackBar_Scroll(object sender, EventArgs e)
         {
 
-            double sizeOfInnerStructure = 8.4;
+            double sizeOfInnerStructure = 2 * (calculate_rod_diameter(currUnit.MA.GetLength()) + 0.5 * 3 + 1);
             double clothWireDiameter = 1.6;
             double pitch = -1;   // The outer cloth always has the minimun pitch
             if (currUnit.MA.GetLength() <= 20)
@@ -2002,7 +2033,7 @@ namespace OndulePlugin
         private void TurnGapTrackBar_Scroll(object sender, EventArgs e)
         {
 
-            double sizeOfInnerStructure = 8.4;
+            double sizeOfInnerStructure = 2 * (calculate_rod_diameter(currUnit.MA.GetLength()) + 0.5 * 3 + 1);
             double clothWireDiameter = 1.6;
             double pitch = -1;   // The outer cloth always has the minimun pitch
             if (currUnit.MA.GetLength() <= 20)
@@ -2160,7 +2191,7 @@ namespace OndulePlugin
 
         private void StiffnessTrackBar_Scroll(object sender, EventArgs e)
         {
-            double sizeOfInnerStructure = 8.4;
+            double sizeOfInnerStructure = 2 * (calculate_rod_diameter(currUnit.MA.GetLength()) + 0.5 * 3 + 1);
             double clothWireDiameter = 1.6;
             double pitch = -1;   // The outer cloth always has the minimun pitch
             if (currUnit.MA.GetLength() <= 20)

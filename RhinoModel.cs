@@ -733,17 +733,18 @@ namespace OndulePlugin
             orange_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
 
-            double sizeOfInnerStructure = 8.4;
+            double gap = 0.5;
+            double sizeOfInnerStructure = 2 * (calculate_rod_diameter(objRef.MA.GetLength()) + gap * 3 + 1);
             double minCoilDia = objRef.CoilDiameter.Min();
             double maxCoilDia = objRef.CoilDiameter.Max();
             double deformCoilD;
-            double gap = 0.4;
+           
 
             Boolean isRegular = isAllCurveSegmentSameLength(minCoilDia, maxCoilDia);
 
             if (isRegular)
             {
-                deformCoilD = minCoilDia;
+                deformCoilD = minCoilDia- objRef.WireDiameter;
 
                 if (objRef.ClothIDs.Count > 0)
                 {
@@ -1493,11 +1494,40 @@ namespace OndulePlugin
             #endregion
 
         }
+        private double calculate_rod_diameter(double len)
+        {
+            double d = 1.5;
+            if (len >= 0 && len <= 30)
+            {
+                d = 1.5;
+            }
+            else if (len > 30 && len <= 50)
+            {
+                d = 1.6;
+            }
+            else if (len > 50 && len <= 70)
+            {
+                d = 1.7;
+            }
+            else if (len > 70 && len <= 90)
+            {
+                d = 1.8;
+            }
+            else if (len > 90 && len <= 110)
+            {
+                d = 1.9;
+            }
+            else if (len > 110)
+            {
+                d = 2;
+            }
 
+            return d;
+        }
         private void generateLinearSupport(Plane startPln, Plane endPln, Curve centerCrv, double compreDis, double tensionDis, ref OnduleUnit obj)
         {
             double thickness = 3;       // the thickness of the stopper and the cap
-            double gap = 0.4;
+            double gap = 0.5;
             double wall = 1;
             //double tensionDisNe5w = centerCrv.GetLength() - 2 * thickness - 2 * compreDis;
 
@@ -1593,7 +1623,9 @@ namespace OndulePlugin
             Curve pjRodCrv = Curve.JoinCurves(cylinCrvList)[0];
 
             Point3d centerCylin = compCrvFront.PointAtStart;
-            double cylinBaseSideRadius = 1.5;   // the radius of the central bone
+
+            calculate_rod_diameter(obj.MA.GetLength());
+            double cylinBaseSideRadius = calculate_rod_diameter(obj.MA.GetLength());   // the radius of the central bone
             Curve cylinCircle = new Circle(startPln, centerCylin, cylinBaseSideRadius).ToNurbsCurve();
             var cylinBreps = sweep.PerformSweep(pjRodCrv, cylinCircle);
             Brep cylinBrep = cylinBreps[0];
@@ -1947,7 +1979,7 @@ namespace OndulePlugin
             Curve cylinCrvAll = Curve.JoinCurves(cylinCrvList)[0];   // the central bone part
 
             Point3d centerCylin = centerCrv.PointAtStart;
-            double cylinBaseSideRadius = 1.5;   // the radius of the central bone
+            double cylinBaseSideRadius = calculate_rod_diameter(obj.MA.GetLength());   // the radius of the central bone
             Curve cylinCircle = new Circle(startSuf, centerCylin, cylinBaseSideRadius).ToNurbsCurve();
             var cylinBreps = sweep.PerformSweep(cylinCrvAll, cylinCircle);
             Brep cylinBrep = cylinBreps[0];
@@ -2177,7 +2209,7 @@ namespace OndulePlugin
             Curve pjRodCrv = Curve.JoinCurves(cylinCrvList)[0];
 
             Point3d centerCylin = compCrvFront.PointAtStart;
-            double cylinBaseSideRadius = 1.5;   // the radius of the central bone
+            double cylinBaseSideRadius = calculate_rod_diameter(obj.MA.GetLength()); // the radius of the central bone
             Curve cylinCircle = new Circle(startPln, centerCylin, cylinBaseSideRadius).ToNurbsCurve();
             var cylinBreps = sweep.PerformSweep(pjRodCrv, cylinCircle);
             Brep cylinBrep = cylinBreps[0];
