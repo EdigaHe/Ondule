@@ -881,7 +881,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min > 3)
+            if (max - min > 0.25)
                 result = false;
             else
                 result = true;
@@ -2338,8 +2338,8 @@ namespace OndulePlugin
         }
         private void generateBendSupport(Plane startPln, Plane endPln, Curve centerCrv, Boolean dir, double angle, ref OnduleUnit obj)
         {
-            double rodRadius = 1;       // the rod radius
-            double jointRadius = 2;     // the joint radius
+            double rodRadius = 1.5;       // the rod radius
+            double jointRadius = 2.5;     // the joint radius
             double chainUnitLen = 10;    // the length of the chain unit
             double chainLen = centerCrv.GetLength();
             double paddingLen = (chainLen - Math.Floor(chainLen / chainUnitLen) * chainUnitLen) / 2;     // padding for the first chain and the last chain units 
@@ -2772,10 +2772,10 @@ namespace OndulePlugin
                             longerDir.Rotate(Math.PI, jointNormal);
                         }
 
-                        Transform txp_rect = Transform.Translation(cavX / direction.Length * (rodRadius + gap + holderThickness));
-                        Transform typ_rect = Transform.Translation(-longerDir / longerDir.Length * (rodRadius + gap));
-                        Transform txn_rect = Transform.Translation(-cavX / direction.Length * (rodRadius + gap + holderThickness));
-                        Transform tyn_rect = Transform.Translation(longerDir / longerDir.Length * (rodRadius + gap + holderThickness));
+                        Transform txp_rect = Transform.Translation(cavX / direction.Length * (rodRadius + gap + 1.5 * holderThickness));
+                        Transform typ_rect = Transform.Translation(-longerDir / longerDir.Length * (rodRadius + 0.5 * gap));
+                        Transform txn_rect = Transform.Translation(-cavX / direction.Length * (rodRadius + gap + 1.5 * holderThickness));
+                        Transform tyn_rect = Transform.Translation(longerDir / longerDir.Length * (rodRadius + gap + 1.5 * holderThickness));
 
                         cavityPts[0].Transform(txp_rect); cavityPts[0].Transform(typ_rect);
                         cavityPts[1].Transform(txn_rect); cavityPts[1].Transform(typ_rect);
@@ -2998,10 +2998,10 @@ namespace OndulePlugin
                             longerDir.Rotate(Math.PI, jointNormal);
                         }
 
-                        Transform txp_rect = Transform.Translation(cavX / direction.Length * (rodRadius + gap + holderThickness));
-                        Transform typ_rect = Transform.Translation(-longerDir / longerDir.Length * (rodRadius + gap));
-                        Transform txn_rect = Transform.Translation(-cavX / direction.Length * (rodRadius + gap + holderThickness));
-                        Transform tyn_rect = Transform.Translation(longerDir / longerDir.Length * (rodRadius + gap + holderThickness));
+                        Transform txp_rect = Transform.Translation(cavX / direction.Length * (rodRadius + gap + 1.5 * holderThickness));
+                        Transform typ_rect = Transform.Translation(-longerDir / longerDir.Length * (rodRadius + 0.5 * gap));
+                        Transform txn_rect = Transform.Translation(-cavX / direction.Length * (rodRadius + gap + 1.5 * holderThickness));
+                        Transform tyn_rect = Transform.Translation(longerDir / longerDir.Length * (rodRadius + gap + 1.5 * holderThickness));
 
                         cavityPts[0].Transform(txp_rect); cavityPts[0].Transform(typ_rect);
                         cavityPts[1].Transform(txn_rect); cavityPts[1].Transform(typ_rect);
