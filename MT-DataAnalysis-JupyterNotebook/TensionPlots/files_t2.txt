@@ -1,4 +1,0 @@
-Specimen_RawData_4.csv
-Specimen_RawData_5.csv
-Specimen_RawData_6.csv
-Specimen_RawData_7.csv
