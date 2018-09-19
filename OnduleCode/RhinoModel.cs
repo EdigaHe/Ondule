@@ -881,7 +881,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min > 4)
+            if (max - min >2.5)
                 result = false;
             else
                 result = true;
@@ -1073,10 +1073,10 @@ namespace OndulePlugin
                 String str17 = "_MinEdgeLength=0.0001 ";
                 String str18 = "_Enter _Enter";
 
-                String str = str1 + str2 + str3 + str4 + str18;
+                //String str = str1 + str2 + str3 + str4 + str18;
                 //String str = str1 + str18;
-                //String str = str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8  + str9 + str10 + str11 + str12 +
-                   // str13 + str14 + str15 + str16 + str17 + str18;
+                String str = str1 + str2 + str3 + str4 + str5 + str6 + str7 + str8 + str9 + str10 + str11 + str12 +
+                str13 + str14 + str15 + str16 + str17 + str18;
                 //String str = str18;
 
                 var stlScript = string.Format("_-Export \"{0}\" {1}", oldSTLFile, str);

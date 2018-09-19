@@ -2407,8 +2407,8 @@ namespace OndulePlugin
                 this.AllDirectionsCheckBox.Enabled = false;
 
                 double thickness = 3;
-                double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
-                double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
+                double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance - tenDis) / 2;
+                double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance - compDis;
 
                 double compRatio = compDis / max_comp_real * 100;
                 double tenRatio = tenDis / max_ten_real * 100;
