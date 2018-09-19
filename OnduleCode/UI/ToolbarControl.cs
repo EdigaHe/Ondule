@@ -1169,8 +1169,8 @@ namespace OndulePlugin
                     {
                         // listening the mousemove event when the linear + twist mode is activated
                         double thickness = 3;
-                        double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
-                        double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
+                        double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance - lt_tenDis) / 2;
+                        double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance - lt_compDis;
 
                         if (isLTDisChange)
                         {
@@ -1237,8 +1237,12 @@ namespace OndulePlugin
                                 }
                             }
 
-                            double lt_compRatio = lt_compDis / max_comp_real * 100;
-                            double lt_tenRatio = lt_tenDis / max_ten_real * 100;
+                            double new_max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance - lt_tenDis) / 2;
+                            double new_max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance - lt_compDis;
+
+
+                            double lt_compRatio = lt_compDis / new_max_comp_real * 100;
+                            double lt_tenRatio = lt_tenDis / new_max_ten_real * 100;
                             ltCompressDisValueLabel.Text = lt_compDis.ToString(specifier) + " mm (" + lt_compRatio.ToString(specifier) + "%)";
                             ltTensionDisValueLabel.Text = lt_tenDis.ToString(specifier) + " mm (" + lt_tenRatio.ToString(specifier) + "%)";
                             this.ConstraintCanvas.Refresh();
@@ -1486,8 +1490,8 @@ namespace OndulePlugin
                         {
                             isLTDisChange = !isLTDisChange;
                             double thickness = 3;
-                            double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance - tenDis) / 2;
-                            double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance - compDis;
+                            double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance - lt_tenDis) / 2;
+                            double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance - lt_compDis;
 
                             lt_compOffset = 0;
                             lt_tenOffset = 0;
@@ -2541,8 +2545,8 @@ namespace OndulePlugin
                 this.AllDirectionsCheckBox.Enabled = false;
 
                 double thickness = 3;
-                double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance) / 2;
-                double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance;
+                double max_comp_real = (currUnit.MA.GetLength() - 2 * thickness - printing_tolerance - lt_tenDis) / 2;
+                double max_ten_real = currUnit.MA.GetLength() - 2 * thickness - 2 * printing_tolerance - lt_compDis;
 
                 double compRatio = lt_compDis / max_comp_real * 100;
                 double tenRatio = lt_tenDis / max_ten_real * 100;
