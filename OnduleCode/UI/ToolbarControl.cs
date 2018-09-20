@@ -1137,7 +1137,7 @@ namespace OndulePlugin
                                 twistCenterX = new_X;
                                 twistCenterY = new_Y;
 
-                                // update the bend direction angle
+                                // update the twist angle
                                 Vector2d v1 = new Vector2d(0, -twist_angle_traj_r);
                                 Vector2d v2 = new Vector2d(twistCenterX - twist_angle_traj_centerX, twistCenterY - twist_angle_traj_centerY);
                                 twist_angle = Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length)) * 180 / Math.PI;
@@ -1154,7 +1154,7 @@ namespace OndulePlugin
                                 twistCenterX = new_X;
                                 twistCenterY = new_Y;
 
-                                // update the bend direction angle
+                                // update the twist angle
                                 Vector2d v1 = new Vector2d(0, -twist_angle_traj_r);
                                 Vector2d v2 = new Vector2d(twistCenterX - twist_angle_traj_centerX, twistCenterY - twist_angle_traj_centerY);
                                 twist_angle = 360 - Math.Acos((v1.X * v2.X + v1.Y * v2.Y) / (v1.Length * v2.Length)) * 180 / Math.PI;
@@ -1474,7 +1474,7 @@ namespace OndulePlugin
                             processingwindow.Show();
                             processingwindow.Refresh();
 
-                            currUnit.TwistAngle = twist_angle / 180 * Math.PI;
+                            currUnit.TwistAngle = twist_angle;
 
                             controller.updateUnitFromGlobal(currIdx, currUnit);
                             controller.addTwistConstraint(ref currUnit);
