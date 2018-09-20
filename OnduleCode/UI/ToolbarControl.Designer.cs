@@ -30,7 +30,6 @@
     {
             this.OnduleUnitFlowPanel = new System.Windows.Forms.FlowLayoutPanel();
             this.OnduleUnitsLabel = new System.Windows.Forms.Label();
-            this.debugBtn = new System.Windows.Forms.Button();
             this.ConversionBtn = new System.Windows.Forms.Button();
             this.SegmentationBtn = new System.Windows.Forms.Button();
             this.SplitterBottomMenu = new System.Windows.Forms.Splitter();
@@ -65,8 +64,6 @@
             this.MaxStiffnessLabel = new System.Windows.Forms.Label();
             this.MinStiffnessLabel = new System.Windows.Forms.Label();
             this.StiffnessTrackBar = new System.Windows.Forms.TrackBar();
-            this.ExportBtn = new System.Windows.Forms.Button();
-            this.SimulationBtn = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.WireDiameterTrackBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TurnGapTrackBar)).BeginInit();
@@ -94,18 +91,6 @@
             this.OnduleUnitsLabel.Size = new System.Drawing.Size(249, 25);
             this.OnduleUnitsLabel.TabIndex = 86;
             this.OnduleUnitsLabel.Text = "Generated Ondule Units:";
-            // 
-            // debugBtn
-            // 
-            this.debugBtn.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.debugBtn.ForeColor = System.Drawing.Color.White;
-            this.debugBtn.Location = new System.Drawing.Point(233, 556);
-            this.debugBtn.Name = "debugBtn";
-            this.debugBtn.Size = new System.Drawing.Size(120, 47);
-            this.debugBtn.TabIndex = 87;
-            this.debugBtn.Text = "Debug";
-            this.debugBtn.UseVisualStyleBackColor = false;
-            this.debugBtn.Click += new System.EventHandler(this.debugBtn_Click);
             // 
             // ConversionBtn
             // 
@@ -499,30 +484,6 @@
             this.StiffnessTrackBar.Scroll += new System.EventHandler(this.StiffnessTrackBar_Scroll);
             this.StiffnessTrackBar.MouseUp += new System.Windows.Forms.MouseEventHandler(this.StiffnessTrackBar_MouseUp);
             // 
-            // ExportBtn
-            // 
-            this.ExportBtn.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.ExportBtn.ForeColor = System.Drawing.Color.White;
-            this.ExportBtn.Location = new System.Drawing.Point(120, 557);
-            this.ExportBtn.Name = "ExportBtn";
-            this.ExportBtn.Size = new System.Drawing.Size(80, 47);
-            this.ExportBtn.TabIndex = 89;
-            this.ExportBtn.Text = "Print";
-            this.ExportBtn.UseVisualStyleBackColor = false;
-            this.ExportBtn.Click += new System.EventHandler(this.ExportBtn_Click);
-            // 
-            // SimulationBtn
-            // 
-            this.SimulationBtn.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.SimulationBtn.ForeColor = System.Drawing.Color.White;
-            this.SimulationBtn.Location = new System.Drawing.Point(11, 557);
-            this.SimulationBtn.Name = "SimulationBtn";
-            this.SimulationBtn.Size = new System.Drawing.Size(104, 47);
-            this.SimulationBtn.TabIndex = 90;
-            this.SimulationBtn.Text = "Simulation";
-            this.SimulationBtn.UseVisualStyleBackColor = false;
-            this.SimulationBtn.Click += new System.EventHandler(this.SimulationBtn_Click);
-            // 
             // OnduleTopBarControl
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
@@ -540,10 +501,7 @@
             this.Controls.Add(this.SplitterConstraints);
             this.Controls.Add(this.OnduleSpringGenerationTitleLabel);
             this.Controls.Add(this.SegmentationBtn);
-            this.Controls.Add(this.SimulationBtn);
-            this.Controls.Add(this.ExportBtn);
             this.Controls.Add(this.ConversionBtn);
-            this.Controls.Add(this.debugBtn);
             this.Controls.Add(this.OnduleUnitsLabel);
             this.Controls.Add(this.OnduleUnitFlowPanel);
             this.Controls.Add(this.splitter4);
@@ -570,7 +528,6 @@
     #endregion
         private System.Windows.Forms.FlowLayoutPanel OnduleUnitFlowPanel;
         private System.Windows.Forms.Label OnduleUnitsLabel;
-        private System.Windows.Forms.Button debugBtn;
         private System.Windows.Forms.Button ConversionBtn;
         private System.Windows.Forms.Button SegmentationBtn;
         private System.Windows.Forms.Splitter SplitterBottomMenu;
@@ -605,7 +562,5 @@
         private System.Windows.Forms.Label MaxStiffnessLabel;
         private System.Windows.Forms.Label MinStiffnessLabel;
         private System.Windows.Forms.TrackBar StiffnessTrackBar;
-        private System.Windows.Forms.Button ExportBtn;
-        private System.Windows.Forms.Button SimulationBtn;
     }
 }

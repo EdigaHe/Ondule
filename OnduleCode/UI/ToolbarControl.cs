@@ -68,6 +68,12 @@ namespace OndulePlugin
         float tenOffset = 0;
         Label compressDisValueLabel;
         Label tensionDisValueLabel;
+        Label applyLoadValueLabel;
+        Label lt_applyLoadValueLabel;
+        Label applyTorqueValueLabel;
+        double applyTorqueValue;
+        double lt_applyLoadValue;
+        double applyLoadValue;
         float initialLen = 80;
 
         float twistCenterX = 60, twistCenterY = 30, twistRadius = 7;
@@ -1444,6 +1450,8 @@ namespace OndulePlugin
                                 tenDis = printing_tolerance;
                             }
 
+                            applyLoadValue = (compDis > tenDis ? compDis : tenDis) * Math.Pow(currUnit.WireDiameter, 4) * 892 / (8 * Math.Pow(currUnit.MeanCoilDiameter, 3) * currUnit.CoilNum);
+                            applyLoadValueLabel.Text = applyLoadValue.ToString(specifier) + "N";
                             this.ConstraintCanvas.Refresh();
 
 
@@ -1469,6 +1477,9 @@ namespace OndulePlugin
                         if (isTwistAngle)
                         {
                             isTwistAngle = !isTwistAngle;
+                            applyTorqueValue = currUnit.TwistAngle * Math.PI / 180 * 2800 * Math.Pow(currUnit.WireDiameter, 4) / (64 * currUnit.MeanCoilDiameter * currUnit.CoilNum);
+                            applyTorqueValueLabel.Text = applyLoadValue.ToString(specifier) + "N*M";
+                            this.ConstraintCanvas.Refresh();
 
                             // Update the bearing mechanism on the model
                             processingwindow.Show();
@@ -1515,6 +1526,9 @@ namespace OndulePlugin
                             }
 
                             needUpdate = true;
+
+                            lt_applyLoadValue = (lt_compDis > lt_tenDis ? lt_compDis : lt_tenDis) * Math.Pow(currUnit.WireDiameter, 4) * 892 / (8 * Math.Pow(currUnit.MeanCoilDiameter, 3) * currUnit.CoilNum);
+                            lt_applyLoadValueLabel.Text = applyLoadValue.ToString(specifier) + "N";
                             this.ConstraintCanvas.Refresh();
                         }
 
@@ -1808,22 +1822,22 @@ namespace OndulePlugin
                             g.DrawLine(p_spring, new PointF((float)(25 + i * gap), (float)(ltLinearCenterY + offset1)), new PointF((float)(25 + (i + 1) * gap), (float)(ltLinearCenterY + offset2)));
                         }
 
-                        // Draw the twisting angle selection part
-                        float lt_angle_centerX = ltAngleCenterX;
-                        float lt_angle_centerY = ltAngleCenterY;
-                        float lt_angle_r = ltAngleRadius;
+                        //// Draw the twisting angle selection part
+                        //float lt_angle_centerX = ltAngleCenterX;
+                        //float lt_angle_centerY = ltAngleCenterY;
+                        //float lt_angle_r = ltAngleRadius;
 
-                        float lt_traj_l, lt_traj_t, lt_traj_w, lt_traj_h;
-                        float lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h;
-                        circle_drawing_coordinates_conversion(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY, lt_twist_angle_traj_r, out lt_traj_l, out lt_traj_t, out lt_traj_w, out lt_traj_h);
-                        circle_drawing_coordinates_conversion(lt_angle_centerX, lt_angle_centerY, lt_angle_r, out lt_angle_l, out lt_angle_t, out lt_angle_w, out lt_angle_h);
+                        //float lt_traj_l, lt_traj_t, lt_traj_w, lt_traj_h;
+                        //float lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h;
+                        //circle_drawing_coordinates_conversion(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY, lt_twist_angle_traj_r, out lt_traj_l, out lt_traj_t, out lt_traj_w, out lt_traj_h);
+                        //circle_drawing_coordinates_conversion(lt_angle_centerX, lt_angle_centerY, lt_angle_r, out lt_angle_l, out lt_angle_t, out lt_angle_w, out lt_angle_h);
 
-                        g.DrawEllipse(p, lt_traj_l, lt_traj_t, lt_traj_w, lt_traj_h);
-                        g.DrawLine(p_angle, new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY), new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY - lt_twist_angle_traj_r));
-                        g.DrawArc(p_angle1, lt_twist_angle_traj_centerX - lt_twist_angle_traj_r, lt_twist_angle_traj_centerY - lt_twist_angle_traj_r, 2 * lt_twist_angle_traj_r, 2 * lt_twist_angle_traj_r, -90, (float)lt_twist_angle);
-                        g.DrawLine(p_angle, new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY), new PointF(ltAngleCenterX, ltAngleCenterY));
-                        g.DrawEllipse(b_outline, lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h);
-                        g.FillEllipse(blockBrush, lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h);
+                        //g.DrawEllipse(p, lt_traj_l, lt_traj_t, lt_traj_w, lt_traj_h);
+                        //g.DrawLine(p_angle, new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY), new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY - lt_twist_angle_traj_r));
+                        //g.DrawArc(p_angle1, lt_twist_angle_traj_centerX - lt_twist_angle_traj_r, lt_twist_angle_traj_centerY - lt_twist_angle_traj_r, 2 * lt_twist_angle_traj_r, 2 * lt_twist_angle_traj_r, -90, (float)lt_twist_angle);
+                        //g.DrawLine(p_angle, new PointF(lt_twist_angle_traj_centerX, lt_twist_angle_traj_centerY), new PointF(ltAngleCenterX, ltAngleCenterY));
+                        //g.DrawEllipse(b_outline, lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h);
+                        //g.FillEllipse(blockBrush, lt_angle_l, lt_angle_t, lt_angle_w, lt_angle_h);
 
 
                         myBuffer.Render(e.Graphics);
@@ -2420,22 +2434,41 @@ namespace OndulePlugin
                 double compRatio = compDis / max_comp_real * 100;
                 double tenRatio = tenDis / max_ten_real * 100;
 
+                applyLoadValueLabel = new Label();
+                applyLoadValue = (compDis > tenDis ? compDis : tenDis) * Math.Pow(currUnit.WireDiameter, 4) * 892 / (8 * Math.Pow(currUnit.MeanCoilDiameter, 3) * currUnit.CoilNum);
+                applyLoadValueLabel.Text = applyLoadValue.ToString(specifier) + "N";
+                applyLoadValueLabel.Width = 80;
+                applyLoadValueLabel.Height = 20;
+                applyLoadValueLabel.Left = 150;
+                applyLoadValueLabel.Top = 125;
+
+                this.ConstraintCanvas.Controls.Add(applyLoadValueLabel);
+
+                Label applyLoad = new Label();
+                applyLoad.Text = "Applied Load:";
+                applyLoad.Width = 80;
+                applyLoad.Height = 20;
+                applyLoad.Left = 150;
+                applyLoad.Top = 105;
+                this.ConstraintCanvas.Controls.Add(applyLoad);
+
+
                 compressDisValueLabel = new Label();
                 compressDisValueLabel.Text = compDis.ToString(specifier) + " mm (" + compRatio.ToString(specifier) + "%)";
                 compressDisValueLabel.Height = 20;
-                compressDisValueLabel.Left = 80;
+                compressDisValueLabel.Left = 65;
                 compressDisValueLabel.Top = 105;
                 this.ConstraintCanvas.Controls.Add(compressDisValueLabel);
 
                 tensionDisValueLabel = new Label();
                 tensionDisValueLabel.Text = tenDis.ToString(specifier) + " mm (" + tenRatio.ToString(specifier) + "%)";
                 tensionDisValueLabel.Height = 20;
-                tensionDisValueLabel.Left = 60;
+                tensionDisValueLabel.Left = 55;
                 tensionDisValueLabel.Top = 125;
                 this.ConstraintCanvas.Controls.Add(tensionDisValueLabel);
 
                 Label compressLabel = new Label();
-                compressLabel.Text = "Compression:";
+                compressLabel.Text = "Compress:";
                 compressLabel.Width = 80;
                 compressLabel.Height = 20;
                 compressLabel.Left = 15;
@@ -2443,7 +2476,7 @@ namespace OndulePlugin
                 this.ConstraintCanvas.Controls.Add(compressLabel);
 
                 Label tensionLabel = new Label();
-                tensionLabel.Text = "Tension:";
+                tensionLabel.Text = "Extend:";
                 tensionLabel.Width = 50;
                 tensionLabel.Height = 20;
                 tensionLabel.Left = 15;
@@ -2489,6 +2522,24 @@ namespace OndulePlugin
                 this.ConstraintCanvas.Controls.Clear();
 
                 this.AllDirectionsCheckBox.Enabled = false;
+
+                applyTorqueValueLabel = new Label();
+                applyTorqueValue = currUnit.TwistAngle*Math.PI/180 * 2800 * Math.Pow(currUnit.WireDiameter,4)/(64*currUnit.MeanCoilDiameter*currUnit.CoilNum);
+                applyTorqueValueLabel.Text = applyTorqueValue.ToString(specifier) + "N*M";
+                applyTorqueValueLabel.Width = 80;
+                applyTorqueValueLabel.Height = 20;
+                applyTorqueValueLabel.Left = 115;
+                applyTorqueValueLabel.Top = 110;
+
+                this.ConstraintCanvas.Controls.Add(applyLoadValueLabel);
+
+                Label applyTorque = new Label();
+                applyTorque.Text = "Required torque:";
+                applyTorque.Width = 80;
+                applyTorque.Height = 20;
+                applyTorque.Left = 115;
+                applyTorque.Top = 90;
+                this.ConstraintCanvas.Controls.Add(applyTorque);
 
                 Label torsionLabel = new Label();
                 torsionLabel.Text = "Max Twisting Angle: ";
@@ -2551,6 +2602,24 @@ namespace OndulePlugin
                 double compRatio = lt_compDis / max_comp_real * 100;
                 double tenRatio = lt_tenDis / max_ten_real * 100;
 
+                lt_applyLoadValueLabel = new Label();
+                lt_applyLoadValue = (lt_compDis > lt_tenDis ? lt_compDis : lt_tenDis) * Math.Pow(currUnit.WireDiameter, 4) * 892 / (8 * Math.Pow(currUnit.MeanCoilDiameter, 3) * currUnit.CoilNum);
+                lt_applyLoadValueLabel.Text = applyLoadValue.ToString(specifier) + "N";
+                lt_applyLoadValueLabel.Width = 80;
+                lt_applyLoadValueLabel.Height = 20;
+                lt_applyLoadValueLabel.Left = 95;
+                lt_applyLoadValueLabel.Top = 115;
+
+                this.ConstraintCanvas.Controls.Add(applyLoadValueLabel);
+
+                Label applyLoad = new Label();
+                applyLoad.Text = "Applied Load:";
+                applyLoad.Width = 80;
+                applyLoad.Height = 15;
+                applyLoad.Left = 15;
+                applyLoad.Top = 115;
+                this.ConstraintCanvas.Controls.Add(applyLoad);
+
                 ltCompressDisValueLabel = new Label();
                 ltCompressDisValueLabel.Text = lt_compDis.ToString(specifier) + " mm (" + lt_compDis.ToString(specifier) + "%)";
                 ltCompressDisValueLabel.Height = 20;
@@ -2573,7 +2642,7 @@ namespace OndulePlugin
                 compressLabel.Left = 15;
                 compressLabel.Top = 50;
                 compressLabel.SendToBack();
-                compressLabel.Text = "Compression:";
+                compressLabel.Text = "Compress:";
                 
                 this.ConstraintCanvas.Controls.Add(compressLabel);
 
@@ -2583,27 +2652,27 @@ namespace OndulePlugin
                 tensionLabel.Left = 15;
                 tensionLabel.Top = 70;
                 tensionLabel.SendToBack();
-                tensionLabel.Text = "Tension:";
+                tensionLabel.Text = "Extend:";
                 
                 this.ConstraintCanvas.Controls.Add(tensionLabel);
 
                 // Twisting angle selection part
-                Label torsionLabel = new Label();
-                torsionLabel.Text = "Max Twisting Angle: ";
-                torsionLabel.Width = 150;
-                torsionLabel.Height = 20;
-                torsionLabel.Left = 90;
-                torsionLabel.Top = 100;
-                this.ConstraintCanvas.Controls.Add(torsionLabel);
+                //Label torsionLabel = new Label();
+                //torsionLabel.Text = "Max Twisting Angle: ";
+                //torsionLabel.Width = 150;
+                //torsionLabel.Height = 20;
+                //torsionLabel.Left = 90;
+                //torsionLabel.Top = 100;
+                //this.ConstraintCanvas.Controls.Add(torsionLabel);
 
-                ltTwistValueLabel = new Label();
-                ltTwistValueLabel.Text = lt_twist_angle.ToString(specifier1) + "°";
-                ltTwistValueLabel.Width = 30;
-                ltTwistValueLabel.Height = 20;
-                ltTwistValueLabel.Left = 90;
-                ltTwistValueLabel.Top = 120;
-                ltTwistValueLabel.BackColor = Color.FromArgb(1, 255, 255, 255);
-                this.ConstraintCanvas.Controls.Add(ltTwistValueLabel);
+                //ltTwistValueLabel = new Label();
+                //ltTwistValueLabel.Text = lt_twist_angle.ToString(specifier1) + "°";
+                //ltTwistValueLabel.Width = 30;
+                //ltTwistValueLabel.Height = 20;
+                //ltTwistValueLabel.Left = 90;
+                //ltTwistValueLabel.Top = 120;
+                //ltTwistValueLabel.BackColor = Color.FromArgb(1, 255, 255, 255);
+                //this.ConstraintCanvas.Controls.Add(ltTwistValueLabel);
 
                 this.ConstraintCanvas.Refresh();
 
