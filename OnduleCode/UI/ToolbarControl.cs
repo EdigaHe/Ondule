@@ -708,15 +708,106 @@ namespace OndulePlugin
             List<double> disLen = new List<double>();
 
             #region Compute the discontinued curves, coil diameters, wire diameter, coild numbers, and pitches
+
+            // Find the continous curve with a consistent curvature
+          
+            double rangeCurvatureThreshold = 4;
+
+            // Curve discontinuity exists in the medial curves
+            double totalLen = tempNewUnit.MA.GetLength();
+            double unitLen = 1;
+            List<double> curvatureList = new List<double>();
+
+            for (int i = 0; i < totalLen/unitLen; i++)
+            {
+                double len_param;
+                tempNewUnit.MA.LengthParameter(i * unitLen, out len_param);
+                double curr_curvature = tempNewUnit.MA.CurvatureAt(len_param).Length;
+
+                curvatureList.Add(curr_curvature);
+            }
+
+            // Based on the recorded curvatures at the *num_seg* points along the medial axis,
+            // we find the longest curve to replace the medial axis.
+            List<int> flags = new List<int>();
+            double pre_curvature = curvatureList.ElementAt(0);
+            for(int idx = 0; idx < curvatureList.Count; idx++)
+            {
+                double curr_curvature = curvatureList.ElementAt(idx);
+                if(curr_curvature / pre_curvature >= 1/ rangeCurvatureThreshold 
+                    && curr_curvature / pre_curvature <= rangeCurvatureThreshold)
+                {
+                    continue;
+                }
+                else
+                {
+                    pre_curvature = curr_curvature;
+                    flags.Add(idx);
+                }
+            }
+            flags.Add(curvatureList.Count - 1);
+
+            int max_span_len = 0;
+            int pre_pos = 0;
+            int start_pos = -1; // the start position of the longest span in flags, including the start position
+            int end_pos = -1;   // the end position of the longest span in flags, excluding the end position
+      
+            foreach(int flag_pos in flags)
+            {
+                int span_len = flag_pos - pre_pos;
+                if(span_len >= max_span_len)
+                {
+                    max_span_len = span_len;
+                    start_pos = pre_pos;
+                    end_pos = flag_pos;
+                    
+                }
+                pre_pos = flag_pos;
+            }
+
+            // Cut the medial axis into the new curve with a more consistent curvature
+            double new_MA_start_param, new_MA_end_param;
+            tempNewUnit.MA.LengthParameter(start_pos * unitLen, out new_MA_start_param);
+            if(end_pos == curvatureList.Count-1)
+                tempNewUnit.MA.LengthParameter(end_pos * unitLen, out new_MA_end_param);
+            else
+                tempNewUnit.MA.LengthParameter((end_pos - 1) * unitLen, out new_MA_end_param);
+
+            Curve c1;
+            Curve effectiveMA;
+            if(new_MA_start_param == 0)
+            {
+                Curve c_candidate1 = tempNewUnit.MA.Split(new_MA_end_param)[0];
+                Curve c_candidate2 = tempNewUnit.MA.Split(new_MA_end_param)[1];
+                if(c_candidate1.GetLength() >= c_candidate2.GetLength())
+                {
+                    effectiveMA = c_candidate1;
+                }
+                else
+                {
+                    effectiveMA = c_candidate2;
+                } 
+            }
+            else
+            {
+                c1 = tempNewUnit.MA.Split(new_MA_start_param)[1];
+                effectiveMA = c1.Split(new_MA_end_param)[0];
+            }
+
+            tempNewUnit.SelectedSeg = effectiveMA;
+
+            ///////// edited by Liang He on 1/17/2019
+
+
             double lengthPara;
-            tempNewUnit.MA.LengthParameter(tempNewUnit.MA.GetLength(), out lengthPara);
+            effectiveMA.LengthParameter(effectiveMA.GetLength(), out lengthPara);
             bool discontinuity = true;
             List<double> discontinuitylist = new List<double>();
             double startingPt = 0;
             while (discontinuity)
             {
                 double t;
-                discontinuity = tempNewUnit.MA.GetNextDiscontinuity(Continuity.Cinfinity_continuous, startingPt, lengthPara, out t);
+                discontinuity = effectiveMA.GetNextDiscontinuity(Continuity.Cinfinity_continuous, startingPt, lengthPara, out t);
                 if (double.IsNaN(t) == false)
                 {
                     discontinuitylist.Add(t);
@@ -727,9 +818,10 @@ namespace OndulePlugin
             Curve[] discontinueCrv = null;
             if (discontinuitylist != null && discontinuitylist.Count > 0)
             {
-                discontinueCrv = tempNewUnit.MA.Split(discontinuitylist);
+                discontinueCrv = effectiveMA.Split(discontinuitylist);
             }
             double endPara1;
+
             if (discontinueCrv != null)
             {
                 foreach (Curve crv in discontinueCrv)
@@ -786,10 +878,10 @@ namespace OndulePlugin
                 // If there are no discontinued curves, we add only one curve 
                 double srvStartPara = 0;
                 double srvEndPara = 0;
-                tempNewUnit.MA.LengthParameter(0, out srvStartPara);
-                tempNewUnit.MA.LengthParameter(tempNewUnit.MA.GetLength(), out srvEndPara);
-                Plane crvSegStartPln = new Plane(tempNewUnit.MA.PointAtStart, tempNewUnit.MA.TangentAt(srvStartPara));
-                Plane crvSegEndPln = new Plane(tempNewUnit.MA.PointAtEnd, tempNewUnit.MA.TangentAt(srvEndPara));
+                effectiveMA.LengthParameter(0, out srvStartPara);
+                effectiveMA.LengthParameter(effectiveMA.GetLength(), out srvEndPara);
+                Plane crvSegStartPln = new Plane(effectiveMA.PointAtStart, effectiveMA.TangentAt(srvStartPara));
+                Plane crvSegEndPln = new Plane(effectiveMA.PointAtEnd, effectiveMA.TangentAt(srvEndPara));
 
                 Curve[] interStartCrvs;
                 Curve[] interEndCrvs;
@@ -799,29 +891,29 @@ namespace OndulePlugin
                 Rhino.Geometry.Intersect.Intersection.BrepPlane(surfaceBrep, crvSegStartPln, 0.001, out interStartCrvs, out interStartPts);
                 Rhino.Geometry.Intersect.Intersection.BrepPlane(surfaceBrep, crvSegEndPln, 0.001, out interEndCrvs, out interEndPts);
 
-                disLen.Add(tempNewUnit.MA.GetLength());
+                disLen.Add(effectiveMA.GetLength());
 
                 double r1 = 0;
                 double r2 = 0;
                 foreach (Curve c in interStartCrvs)
                 {
                     double p;
-                    c.ClosestPoint(tempNewUnit.MA.PointAtStart, out p);
-                    r1 = c.PointAt(p).DistanceTo(tempNewUnit.MA.PointAtStart);
+                    c.ClosestPoint(effectiveMA.PointAtStart, out p);
+                    r1 = c.PointAt(p).DistanceTo(effectiveMA.PointAtStart);
                 }
 
                 foreach (Curve c in interEndCrvs)
                 {
                     double p;
-                    c.ClosestPoint(tempNewUnit.MA.PointAtEnd, out p);
-                    r2 = c.PointAt(p).DistanceTo(tempNewUnit.MA.PointAtEnd);
+                    c.ClosestPoint(effectiveMA.PointAtEnd, out p);
+                    r2 = c.PointAt(p).DistanceTo(effectiveMA.PointAtEnd);
                 }
                 // Use the entire central axis and get the average diameter of the spring coil
                 coilDs.Add((r1 + r2) / 2);
                 wireD = d_min;
                 springPitch = d_min + gap_min;
 
-                int cn = Convert.ToInt32(Math.Ceiling(tempNewUnit.MA.GetLength() / (d_min + gap_min)));
+                int cn = Convert.ToInt32(Math.Ceiling(effectiveMA.GetLength() / (d_min + gap_min)));
                 coilNs.Add(cn);
             }
 
@@ -829,12 +921,14 @@ namespace OndulePlugin
 
             // initial the parameters for the generated unit
             tempNewUnit.CoilDiameter = coilDs;
-            tempNewUnit.WireDiameter = wireD;
+            double min_CoilD = coilDs.Min();
+
+            tempNewUnit.WireDiameter = (wireD<=(min_CoilD / 12)? (min_CoilD / 12):wireD);
             //tempNewUnit.CoilNum = coilNs;
             tempNewUnit.DiscontinuedLengths = disLen;
             tempNewUnit.ID = controller.getCountGlobal();
             tempNewUnit.Pitch = springPitch-wireD;
-            tempNewUnit.Length = tempNewUnit.MA.GetLength();
+            tempNewUnit.Length = effectiveMA.GetLength();
 
             controller.addUnitToGlobal(tempNewUnit);
 

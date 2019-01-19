@@ -881,7 +881,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min >2.5)
+            if (max - min >0.5)
                 result = false;
             else
                 result = true;
