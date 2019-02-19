@@ -43,7 +43,7 @@
             this.TwistConstraintRadioButton = new System.Windows.Forms.RadioButton();
             this.BendConstraintRadioButton = new System.Windows.Forms.RadioButton();
             this.LinearTwistConstraintRadioButton = new System.Windows.Forms.RadioButton();
-            this.AllDirectionsCheckBox = new System.Windows.Forms.CheckBox();
+            this.AllDirectionsRadioButton = new System.Windows.Forms.RadioButton();
             this.ClothBox = new System.Windows.Forms.CheckBox();
             this.splitter1 = new System.Windows.Forms.Splitter();
             this.StiffnessRadioButton = new System.Windows.Forms.RadioButton();
@@ -64,6 +64,8 @@
             this.MaxStiffnessLabel = new System.Windows.Forms.Label();
             this.MinStiffnessLabel = new System.Windows.Forms.Label();
             this.StiffnessTrackBar = new System.Windows.Forms.TrackBar();
+            this.IndividualBehaviorLabel = new System.Windows.Forms.Label();
+            this.CompoundBehaviorsLabel = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.WireDiameterTrackBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TurnGapTrackBar)).BeginInit();
@@ -121,9 +123,9 @@
             this.SplitterBottomMenu.BackColor = System.Drawing.Color.Gray;
             this.SplitterBottomMenu.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.SplitterBottomMenu.Enabled = false;
-            this.SplitterBottomMenu.Location = new System.Drawing.Point(0, 547);
+            this.SplitterBottomMenu.Location = new System.Drawing.Point(0, 596);
             this.SplitterBottomMenu.Name = "SplitterBottomMenu";
-            this.SplitterBottomMenu.Size = new System.Drawing.Size(368, 71);
+            this.SplitterBottomMenu.Size = new System.Drawing.Size(368, 22);
             this.SplitterBottomMenu.TabIndex = 90;
             this.SplitterBottomMenu.TabStop = false;
             // 
@@ -135,9 +137,9 @@
             this.OnduleSpringGenerationTitleLabel.ForeColor = System.Drawing.Color.White;
             this.OnduleSpringGenerationTitleLabel.Location = new System.Drawing.Point(8, 140);
             this.OnduleSpringGenerationTitleLabel.Name = "OnduleSpringGenerationTitleLabel";
-            this.OnduleSpringGenerationTitleLabel.Size = new System.Drawing.Size(318, 29);
+            this.OnduleSpringGenerationTitleLabel.Size = new System.Drawing.Size(353, 29);
             this.OnduleSpringGenerationTitleLabel.TabIndex = 97;
-            this.OnduleSpringGenerationTitleLabel.Text = "Ondule Spring Generation";
+            this.OnduleSpringGenerationTitleLabel.Text = "Ondule Spring Customization";
             // 
             // SplitterSpringGeneration
             // 
@@ -180,9 +182,9 @@
             this.OnduleConstraintCheckbox.ForeColor = System.Drawing.Color.White;
             this.OnduleConstraintCheckbox.Location = new System.Drawing.Point(11, 324);
             this.OnduleConstraintCheckbox.Name = "OnduleConstraintCheckbox";
-            this.OnduleConstraintCheckbox.Size = new System.Drawing.Size(268, 33);
+            this.OnduleConstraintCheckbox.Size = new System.Drawing.Size(331, 33);
             this.OnduleConstraintCheckbox.TabIndex = 102;
-            this.OnduleConstraintCheckbox.Text = "Ondule Constraints";
+            this.OnduleConstraintCheckbox.Text = "Ondule Joint Constraints";
             this.OnduleConstraintCheckbox.UseVisualStyleBackColor = false;
             this.OnduleConstraintCheckbox.CheckedChanged += new System.EventHandler(this.OnduleConstraintCheckbox_CheckedChanged);
             // 
@@ -191,7 +193,7 @@
             this.ConstraintCanvas.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
             this.ConstraintCanvas.Location = new System.Drawing.Point(131, 357);
             this.ConstraintCanvas.Name = "ConstraintCanvas";
-            this.ConstraintCanvas.Size = new System.Drawing.Size(222, 152);
+            this.ConstraintCanvas.Size = new System.Drawing.Size(222, 201);
             this.ConstraintCanvas.TabIndex = 114;
             this.ConstraintCanvas.Paint += new System.Windows.Forms.PaintEventHandler(this.ConstraintCanvas_Paint);
             this.ConstraintCanvas.MouseDown += new System.Windows.Forms.MouseEventHandler(this.ConstraintCanvas_MouseDown);
@@ -203,7 +205,7 @@
             this.LinearConstraintRadioButton.AutoSize = true;
             this.LinearConstraintRadioButton.BackColor = System.Drawing.Color.White;
             this.LinearConstraintRadioButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.LinearConstraintRadioButton.Location = new System.Drawing.Point(11, 357);
+            this.LinearConstraintRadioButton.Location = new System.Drawing.Point(13, 386);
             this.LinearConstraintRadioButton.Name = "LinearConstraintRadioButton";
             this.LinearConstraintRadioButton.Size = new System.Drawing.Size(143, 29);
             this.LinearConstraintRadioButton.TabIndex = 117;
@@ -216,7 +218,7 @@
             this.TwistConstraintRadioButton.AutoSize = true;
             this.TwistConstraintRadioButton.BackColor = System.Drawing.Color.White;
             this.TwistConstraintRadioButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.TwistConstraintRadioButton.Location = new System.Drawing.Point(11, 387);
+            this.TwistConstraintRadioButton.Location = new System.Drawing.Point(13, 418);
             this.TwistConstraintRadioButton.Name = "TwistConstraintRadioButton";
             this.TwistConstraintRadioButton.Size = new System.Drawing.Size(135, 29);
             this.TwistConstraintRadioButton.TabIndex = 118;
@@ -227,9 +229,9 @@
             // BendConstraintRadioButton
             // 
             this.BendConstraintRadioButton.AutoSize = true;
-            this.BendConstraintRadioButton.BackColor = System.Drawing.Color.White;
+            this.BendConstraintRadioButton.BackColor = System.Drawing.Color.Transparent;
             this.BendConstraintRadioButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.BendConstraintRadioButton.Location = new System.Drawing.Point(11, 448);
+            this.BendConstraintRadioButton.Location = new System.Drawing.Point(13, 451);
             this.BendConstraintRadioButton.Name = "BendConstraintRadioButton";
             this.BendConstraintRadioButton.Size = new System.Drawing.Size(135, 29);
             this.BendConstraintRadioButton.TabIndex = 119;
@@ -242,7 +244,7 @@
             this.LinearTwistConstraintRadioButton.AutoSize = true;
             this.LinearTwistConstraintRadioButton.BackColor = System.Drawing.Color.White;
             this.LinearTwistConstraintRadioButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.LinearTwistConstraintRadioButton.Location = new System.Drawing.Point(11, 417);
+            this.LinearTwistConstraintRadioButton.Location = new System.Drawing.Point(13, 508);
             this.LinearTwistConstraintRadioButton.Name = "LinearTwistConstraintRadioButton";
             this.LinearTwistConstraintRadioButton.Size = new System.Drawing.Size(165, 29);
             this.LinearTwistConstraintRadioButton.TabIndex = 120;
@@ -250,18 +252,18 @@
             this.LinearTwistConstraintRadioButton.UseVisualStyleBackColor = false;
             this.LinearTwistConstraintRadioButton.CheckedChanged += new System.EventHandler(this.LinearTwistConstraintRadioButton_CheckedChanged);
             // 
-            // AllDirectionsCheckBox
+            // AllDirectionsRadioButton
             // 
-            this.AllDirectionsCheckBox.AutoSize = true;
-            this.AllDirectionsCheckBox.BackColor = System.Drawing.Color.White;
-            this.AllDirectionsCheckBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.AllDirectionsCheckBox.Location = new System.Drawing.Point(33, 480);
-            this.AllDirectionsCheckBox.Name = "AllDirectionsCheckBox";
-            this.AllDirectionsCheckBox.Size = new System.Drawing.Size(157, 29);
-            this.AllDirectionsCheckBox.TabIndex = 121;
-            this.AllDirectionsCheckBox.Text = "All Directions";
-            this.AllDirectionsCheckBox.UseVisualStyleBackColor = false;
-            this.AllDirectionsCheckBox.CheckedChanged += new System.EventHandler(this.AllDirectionsCheckBox_CheckedChanged);
+            this.AllDirectionsRadioButton.AutoSize = true;
+            this.AllDirectionsRadioButton.BackColor = System.Drawing.Color.White;
+            this.AllDirectionsRadioButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.AllDirectionsRadioButton.Location = new System.Drawing.Point(13, 537);
+            this.AllDirectionsRadioButton.Name = "AllDirectionsRadioButton";
+            this.AllDirectionsRadioButton.Size = new System.Drawing.Size(157, 29);
+            this.AllDirectionsRadioButton.TabIndex = 121;
+            this.AllDirectionsRadioButton.Text = "Bend + Twist";
+            this.AllDirectionsRadioButton.UseVisualStyleBackColor = false;
+            this.AllDirectionsRadioButton.CheckedChanged += new System.EventHandler(this.AllDirectionsCheckBox_CheckedChanged);
             // 
             // ClothBox
             // 
@@ -269,11 +271,11 @@
             this.ClothBox.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClothBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.5F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ClothBox.ForeColor = System.Drawing.Color.White;
-            this.ClothBox.Location = new System.Drawing.Point(11, 521);
+            this.ClothBox.Location = new System.Drawing.Point(11, 570);
             this.ClothBox.Name = "ClothBox";
-            this.ClothBox.Size = new System.Drawing.Size(382, 33);
+            this.ClothBox.Size = new System.Drawing.Size(403, 33);
             this.ClothBox.TabIndex = 123;
-            this.ClothBox.Text = "Show decorative spring cloth";
+            this.ClothBox.Text = "Include decorative spring layer";
             this.ClothBox.UseVisualStyleBackColor = false;
             this.ClothBox.CheckedChanged += new System.EventHandler(this.ClothBox_CheckedChanged);
             // 
@@ -282,7 +284,7 @@
             this.splitter1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.splitter1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.splitter1.Enabled = false;
-            this.splitter1.Location = new System.Drawing.Point(0, 522);
+            this.splitter1.Location = new System.Drawing.Point(0, 571);
             this.splitter1.Name = "splitter1";
             this.splitter1.Size = new System.Drawing.Size(368, 25);
             this.splitter1.TabIndex = 124;
@@ -472,6 +474,7 @@
             this.MinStiffnessLabel.Size = new System.Drawing.Size(98, 25);
             this.MinStiffnessLabel.TabIndex = 1;
             this.MinStiffnessLabel.Text = "Less stiff";
+            this.MinStiffnessLabel.Click += new System.EventHandler(this.MinStiffnessLabel_Click);
             // 
             // StiffnessTrackBar
             // 
@@ -484,16 +487,38 @@
             this.StiffnessTrackBar.Scroll += new System.EventHandler(this.StiffnessTrackBar_Scroll);
             this.StiffnessTrackBar.MouseUp += new System.Windows.Forms.MouseEventHandler(this.StiffnessTrackBar_MouseUp);
             // 
+            // IndividualBehaviorLabel
+            // 
+            this.IndividualBehaviorLabel.AutoSize = true;
+            this.IndividualBehaviorLabel.BackColor = System.Drawing.Color.White;
+            this.IndividualBehaviorLabel.Location = new System.Drawing.Point(10, 360);
+            this.IndividualBehaviorLabel.Name = "IndividualBehaviorLabel";
+            this.IndividualBehaviorLabel.Size = new System.Drawing.Size(194, 25);
+            this.IndividualBehaviorLabel.TabIndex = 21;
+            this.IndividualBehaviorLabel.Text = "Individual Behavior";
+            // 
+            // CompoundBehaviorsLabel
+            // 
+            this.CompoundBehaviorsLabel.AutoSize = true;
+            this.CompoundBehaviorsLabel.BackColor = System.Drawing.Color.White;
+            this.CompoundBehaviorsLabel.Location = new System.Drawing.Point(7, 485);
+            this.CompoundBehaviorsLabel.Name = "CompoundBehaviorsLabel";
+            this.CompoundBehaviorsLabel.Size = new System.Drawing.Size(218, 25);
+            this.CompoundBehaviorsLabel.TabIndex = 21;
+            this.CompoundBehaviorsLabel.Text = "Compound Behaviors";
+            // 
             // OnduleTopBarControl
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
             this.BackColor = System.Drawing.SystemColors.MenuHighlight;
+            this.Controls.Add(this.CompoundBehaviorsLabel);
+            this.Controls.Add(this.IndividualBehaviorLabel);
+            this.Controls.Add(this.BendConstraintRadioButton);
             this.Controls.Add(this.controlPanel);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.ClothBox);
-            this.Controls.Add(this.AllDirectionsCheckBox);
+            this.Controls.Add(this.AllDirectionsRadioButton);
             this.Controls.Add(this.LinearTwistConstraintRadioButton);
-            this.Controls.Add(this.BendConstraintRadioButton);
             this.Controls.Add(this.TwistConstraintRadioButton);
             this.Controls.Add(this.LinearConstraintRadioButton);
             this.Controls.Add(this.ConstraintCanvas);
@@ -541,7 +566,7 @@
         private System.Windows.Forms.RadioButton TwistConstraintRadioButton;
         private System.Windows.Forms.RadioButton BendConstraintRadioButton;
         private System.Windows.Forms.RadioButton LinearTwistConstraintRadioButton;
-        private System.Windows.Forms.CheckBox AllDirectionsCheckBox;
+        private System.Windows.Forms.RadioButton AllDirectionsRadioButton;
         private System.Windows.Forms.CheckBox ClothBox;
         private System.Windows.Forms.Splitter splitter1;
         private System.Windows.Forms.RadioButton StiffnessRadioButton;
@@ -562,5 +587,7 @@
         private System.Windows.Forms.Label MaxStiffnessLabel;
         private System.Windows.Forms.Label MinStiffnessLabel;
         private System.Windows.Forms.TrackBar StiffnessTrackBar;
+        private System.Windows.Forms.Label IndividualBehaviorLabel;
+        private System.Windows.Forms.Label CompoundBehaviorsLabel;
     }
 }

@@ -61,6 +61,9 @@ namespace OndulePlugin
         void showInternalStructure(OnduleUnit obj, int index);
         void hideInternalStructure(OnduleUnit obj, int index);
 
+        void addLockToLinearConstraint(ref OnduleUnit obj, bool islocked);
+        void addLockToTwistConstraint(ref OnduleUnit obj, bool islocked);
+
     }
 
     public class IncController : Controller
@@ -158,6 +161,14 @@ namespace OndulePlugin
         public void hideInternalStructure(OnduleUnit obj, int index)
         {
             rhinoModel.hideInternalStructure(obj, index);
+        }
+        public void addLockToLinearConstraint(ref OnduleUnit obj, bool isLocked)
+        {
+            rhinoModel.addLockToLinearConstraint(ref obj, isLocked);
+        }
+        public void addLockToTwistConstraint(ref OnduleUnit obj, bool isLocked)
+        {
+            rhinoModel.addLockToTwistConstraint(ref obj, isLocked);
         }
         public void addTwistConstraint(ref OnduleUnit obj)
         {

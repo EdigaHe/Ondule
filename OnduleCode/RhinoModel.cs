@@ -72,6 +72,8 @@ namespace OndulePlugin
         void deHighlight(OnduleUnit obj, bool isOutClothShown);
         void selectMASegment(ref OnduleUnit obj);
         void addTwistConstraint(ref OnduleUnit obj);
+        void addLockToLinearConstraint(ref OnduleUnit obj, bool isLocked);
+        void addLockToTwistConstraint(ref OnduleUnit obj, bool isLocked);
         void addLinearConstraint(ref OnduleUnit obj);
         void updateInPlaneBendDir(OnduleUnit obj);
         void addLinearTwistConstraint(ref OnduleUnit obj);
@@ -389,6 +391,19 @@ namespace OndulePlugin
             white_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
 
+            #region Use orange to color the deformation spring
+            int index = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat = myDoc.Materials[index];
+            mat.DiffuseColor = System.Drawing.Color.Orange;
+            mat.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes orange_attributes = new Rhino.DocObjects.ObjectAttributes();
+            orange_attributes.MaterialIndex = index;
+            orange_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+            orange_attributes.ObjectColor = Color.Orange;
+            orange_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+            #endregion
+
             #region Get the outer polysurface and generate start and end planes based on the central axis
             // Get the outer polysurface
             Guid sufObjID = objRef.BREPID;
@@ -478,20 +493,19 @@ namespace OndulePlugin
                 toBeReplacedBrep = replacedBrepList;
                 
             }
-
-            #region replace the selected part with helical spring (for arbitrary geometry)
-
+          
             double clothWireDiameter = 1.6; // The outer cloth always has the minimum wire diameter
             double pitch = -1;   // The outer cloth always has the minimun pitch
-            if (objRef.MA.GetLength() <= 20)
+
+            if (objRef.SelectedSeg.GetLength() <= 20)
             {
                 pitch = clothWireDiameter + 0.4;   // The outer cloth always has the minimun pitch
             }
-            else if (objRef.MA.GetLength() <= 50 && objRef.MA.GetLength() > 20)
+            else if (objRef.SelectedSeg.GetLength() <= 40 && objRef.SelectedSeg.GetLength() > 20)
             {
                 pitch = clothWireDiameter + 0.8;   // The outer cloth always has the minimun pitch
             }
-            else if (objRef.MA.GetLength() <= 80 && objRef.MA.GetLength() > 40)
+            else if (objRef.SelectedSeg.GetLength() <= 60 && objRef.SelectedSeg.GetLength() > 40)
             {
                 pitch = clothWireDiameter + 1.2;   // The outer cloth always has the minimun pitch
             }
@@ -500,11 +514,24 @@ namespace OndulePlugin
                 pitch = clothWireDiameter + 1.6;   // The outer cloth always has the minimun pitch
             }
 
+            double deformWireD = objRef.WireDiameter;
+            if (objRef.Pitch < pitch)
+            {
+                objRef.Pitch = pitch;
+            }
 
+            double deformPitch = objRef.Pitch + objRef.WireDiameter;
+
+            double curr_pitch_test = objRef.Pitch;
+            objRef.CoilNum = objRef.SelectedSeg.GetLength() / deformPitch;
+            double curr_number_test = objRef.CoilNum;
+            double new_pitch = clothWireDiameter + (clothWireDiameter * curr_pitch_test * curr_number_test) / (objRef.SelectedSeg.GetLength() - curr_number_test * curr_pitch_test);
+
+            #region replace the selected part with helical spring (for arbitrary geometry)
 
             if (objRef.ClothIDs.Count == 0)
             {
-                
+
                 foreach (Brep b in toBeReplacedBrep)
                 {
 
@@ -602,7 +629,7 @@ namespace OndulePlugin
                                 spiralStartPt = startPln.ClosestPoint(spiralStartPt);
                             }
 
-                            NurbsCurve spiralCrv = NurbsCurve.CreateSpiral(crv, 0, endPara1, spiralStartPt, pitch, 0, r1 - clothWireDiameter, r2 - clothWireDiameter, 30);
+                            NurbsCurve spiralCrv = NurbsCurve.CreateSpiral(crv, 0, endPara1, spiralStartPt, new_pitch, 0, r1 - clothWireDiameter, r2 - clothWireDiameter, 30);
                             spiralStartPt = spiralCrv.PointAtEnd;
                             spiralCrvList.Add(spiralCrv);
                         }
@@ -703,7 +730,7 @@ namespace OndulePlugin
                     cappedSpring.Add(rearSphere);
 
                     // Update the Ondule unit's capped spring IDs list
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+
                     foreach (Brep spring in cappedSpring)
                     {
                         Guid cloth_ID = myDoc.Objects.AddBrep(spring, white_attributes);
@@ -720,26 +747,12 @@ namespace OndulePlugin
 
             #region generate the main spring that leads the deformation behavior
 
-            #region Use orange to color the deformation spring
-            int index = myDoc.Materials.Add();
-            Rhino.DocObjects.Material mat = myDoc.Materials[index];
-            mat.DiffuseColor = System.Drawing.Color.Orange;
-            mat.CommitChanges();
-
-            Rhino.DocObjects.ObjectAttributes orange_attributes = new Rhino.DocObjects.ObjectAttributes();
-            orange_attributes.MaterialIndex = index;
-            orange_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
-            orange_attributes.ObjectColor = Color.Orange;
-            orange_attributes.ColorSource = ObjectColorSource.ColorFromObject;
-            #endregion
-
             double gap = 0.5;
-            double sizeOfInnerStructure = 2 * (calculate_rod_diameter(objRef.MA.GetLength()) + gap * 3 + 1);
+            double sizeOfInnerStructure = 2 * (calculate_rod_diameter(objRef.SelectedSeg.GetLength()) + gap * 3 + 1);
             double minCoilDia = objRef.CoilDiameter.Min();
             double maxCoilDia = objRef.CoilDiameter.Max();
             double deformCoilD;
            
-
             Boolean isRegular = isAllCurveSegmentSameLength(minCoilDia, maxCoilDia);
 
             if (isRegular)
@@ -805,14 +818,6 @@ namespace OndulePlugin
 
             }
 
-            double deformWireD = objRef.WireDiameter;
-            if(objRef.Pitch < pitch)
-            {
-                objRef.Pitch = pitch;
-            }
-
-            double deformPitch = objRef.Pitch + objRef.WireDiameter;
-
             double spiralEndPara;
             objRef.SelectedSeg.LengthParameter(objRef.SelectedSeg.GetLength(), out spiralEndPara);
             Curve deformSpiralCrv = NurbsCurve.CreateSpiral(objRef.SelectedSeg, 0, spiralEndPara, startPln.ClosestPoint(new Point3d(0, 0, 0)), deformPitch, 0, deformCoilD/2, deformCoilD/2, 30);
@@ -869,7 +874,6 @@ namespace OndulePlugin
                 objRef.ClothIDs.Add(s_ID3);
             }
 
-
             // Update the object's average coil diameter
             objRef.MeanCoilDiameter = deformCoilD;
             #endregion
@@ -881,7 +885,7 @@ namespace OndulePlugin
         {
             Boolean result = true;
 
-            if (max - min >0.5)
+            if (max - min >1)
                 result = false;
             else
                 result = true;
@@ -1360,14 +1364,14 @@ namespace OndulePlugin
             #region add the color for the direction orbit
             int index_orchid = myDoc.Materials.Add();
             Rhino.DocObjects.Material mat_orchid = myDoc.Materials[index_orchid];
-            mat_orchid.DiffuseColor = System.Drawing.Color.MediumOrchid;
+            mat_orchid.DiffuseColor = System.Drawing.Color.FromArgb(108,180,241);
             mat_orchid.CommitChanges();
 
             Rhino.DocObjects.ObjectAttributes orchid_attributes = new Rhino.DocObjects.ObjectAttributes();
             orchid_attributes.MaterialIndex = index_orchid;
             orchid_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
 
-            orchid_attributes.ObjectColor = Color.MediumOrchid;
+            orchid_attributes.ObjectColor = Color.FromArgb(108,180,241);
             orchid_attributes.ColorSource = ObjectColorSource.ColorFromObject;
             #endregion
 
@@ -1471,7 +1475,215 @@ namespace OndulePlugin
             #endregion
 
         }
+       
+        /// <summary>
+        /// Add the lock to the linear constraint structure
+        /// </summary>
+        /// <param name="obj"></param>
+        public void addLockToLinearConstraint(ref OnduleUnit obj, bool isLocked)
+        {
+            // Hide the control points
+            myDoc.Objects.Hide(obj.CtrlPt1ID, true);// hide the control points
+            myDoc.Objects.Hide(obj.CtrlPt2ID, true);// hide the control points
 
+            double cmpressDis = obj.CompressionDis;
+            double tensionDis = obj.ExtensionDis;
+
+            # region Get the start and end planes
+            Curve centerCrv = obj.SelectedSeg;
+            Point3d startPt = centerCrv.PointAtStart;
+            Point3d endPt = centerCrv.PointAtEnd;
+            double startPara = 0, endPara = 0;
+            centerCrv.LengthParameter(0, out startPara);
+            centerCrv.LengthParameter(centerCrv.GetLength(), out endPara);
+            Plane startPln = new Plane(startPt, centerCrv.TangentAt(startPara));    // the plane at the start of the curve
+            Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));          // the plane at the end of the curve
+            #endregion
+
+            int index_red = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_red = myDoc.Materials[index_red];
+            mat_red.DiffuseColor = System.Drawing.Color.Red;
+            mat_red.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes red_attributes = new Rhino.DocObjects.ObjectAttributes();
+            red_attributes.MaterialIndex = index_red;
+            red_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+
+            red_attributes.ObjectColor = Color.Red;
+            red_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+
+            if (isLocked)
+            {
+                if (obj.LockList.Count != 0)
+                {
+                    if (obj.InnerStructureIDs.Count > 0)
+                    {
+                        List<Brep> oldBreps = new List<Brep>();
+
+                        foreach (Guid id in obj.InnerStructureIDs)
+                        {
+                            Brep currBrep = new ObjRef(id).Brep().DuplicateBrep();
+                            oldBreps.Add(currBrep);
+                        }
+
+                        foreach (Guid id in obj.InnerStructureIDs)
+                        {
+                            myDoc.Objects.Delete(id, true);
+                        }
+                        obj.InnerStructureIDs.Clear();
+
+                        obj.innerStrctureWithLockBreps.Clear();
+                        foreach (Brep b in oldBreps)
+                        {
+                            obj.innerStrctureWithLockBreps.Add(b);
+                        }
+
+                        Brep rodBrep = oldBreps.ElementAt(0);
+                        oldBreps.RemoveAt(0);
+
+                        var linearWallsInter = Brep.CreateBooleanDifference(oldBreps, obj.LockList, myDoc.ModelAbsoluteTolerance);
+
+                        if (linearWallsInter != null)
+                        {
+                            Guid rodi = myDoc.Objects.AddBrep(rodBrep, red_attributes);
+                            obj.InnerStructureIDs.Add(rodi);
+
+                            foreach (Brep b in linearWallsInter)
+                            {
+                                Guid i = myDoc.Objects.AddBrep(b, red_attributes);
+                                obj.InnerStructureIDs.Add(i);
+                            }
+                        }
+
+                        //obj.InnerStructureIDs.Clear();
+                    }
+                    myDoc.Views.Redraw();
+                }
+            }
+            else
+            {
+                if(obj.InnerStructureIDs.Count > 0)
+                {
+                    foreach (Guid id in obj.InnerStructureIDs)
+                    {
+                        myDoc.Objects.Delete(id, true);
+                    }
+                    obj.InnerStructureIDs.Clear();
+
+                    foreach (Brep b in obj.innerStrctureWithLockBreps)
+                    {
+                        Guid i = myDoc.Objects.AddBrep(b, red_attributes);
+                        obj.InnerStructureIDs.Add(i);
+                    }
+                }
+                myDoc.Views.Redraw();
+            }
+        }
+
+        /// <summary>
+        /// Add the lock to the twist constraint structure
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="islocked"></param>
+        public void addLockToTwistConstraint(ref OnduleUnit obj, bool isLocked)
+        {
+            myDoc.Objects.Hide(obj.CtrlPt1ID, true);
+            myDoc.Objects.Hide(obj.CtrlPt2ID, true);
+
+            # region Get the start and end planes
+            Curve centerCrv = obj.SelectedSeg;
+            Point3d startPt = centerCrv.PointAtStart;
+            Point3d endPt = centerCrv.PointAtEnd;
+            double startPara = 0, endPara = 0;
+            centerCrv.LengthParameter(0, out startPara);
+            centerCrv.LengthParameter(centerCrv.GetLength(), out endPara);
+            Plane startPln = new Plane(startPt, centerCrv.TangentAt(startPara));    // the plane at the start of the curve
+            Plane endPln = new Plane(endPt, centerCrv.TangentAt(endPara));          // the plane at the end of the curve
+            #endregion
+
+            int index_red = myDoc.Materials.Add();
+            Rhino.DocObjects.Material mat_red = myDoc.Materials[index_red];
+            mat_red.DiffuseColor = System.Drawing.Color.Red;
+            mat_red.CommitChanges();
+
+            Rhino.DocObjects.ObjectAttributes red_attributes = new Rhino.DocObjects.ObjectAttributes();
+            red_attributes.MaterialIndex = index_red;
+            red_attributes.MaterialSource = Rhino.DocObjects.ObjectMaterialSource.MaterialFromObject;
+
+            red_attributes.ObjectColor = Color.Red;
+            red_attributes.ColorSource = ObjectColorSource.ColorFromObject;
+
+            if (isLocked)
+            {
+                if (obj.LockList.Count != 0)
+                {
+                    if (obj.InnerStructureIDs.Count > 0)
+                    {
+                        List<Brep> oldBreps = new List<Brep>();
+
+                        foreach (Guid id in obj.InnerStructureIDs)
+                        {
+                            Brep currBrep = new ObjRef(id).Brep().DuplicateBrep();
+                            oldBreps.Add(currBrep);
+                        }
+
+                        foreach (Guid id in obj.InnerStructureIDs)
+                        {
+                            myDoc.Objects.Delete(id, true);
+                        }
+                        obj.InnerStructureIDs.Clear();
+
+                        obj.innerStrctureWithLockBreps.Clear();
+                        foreach (Brep b in oldBreps)
+                        {
+                            obj.innerStrctureWithLockBreps.Add(b);
+                        }
+
+                        Brep rodBrep = oldBreps.ElementAt(0);
+                        Brep discBrep = oldBreps.ElementAt(1);
+                        oldBreps.RemoveAt(0);
+                        oldBreps.RemoveAt(0);
+
+                        var linearWallsInter = Brep.CreateBooleanDifference(oldBreps, obj.LockList, myDoc.ModelAbsoluteTolerance);
+
+                        if (linearWallsInter != null)
+                        {
+                            Guid rodi = myDoc.Objects.AddBrep(rodBrep, red_attributes);
+                            Guid disci = myDoc.Objects.AddBrep(discBrep, red_attributes);
+                            obj.InnerStructureIDs.Add(rodi);
+                            obj.InnerStructureIDs.Add(disci);
+
+                            foreach (Brep b in linearWallsInter)
+                            {
+                                Guid i = myDoc.Objects.AddBrep(b, red_attributes);
+                                obj.InnerStructureIDs.Add(i);
+                            }
+                        }
+
+                        //obj.InnerStructureIDs.Clear();
+                    }
+                    myDoc.Views.Redraw();
+                }
+            }
+            else
+            {
+                if (obj.InnerStructureIDs.Count > 0)
+                {
+                    foreach (Guid id in obj.InnerStructureIDs)
+                    {
+                        myDoc.Objects.Delete(id, true);
+                    }
+                    obj.InnerStructureIDs.Clear();
+
+                    foreach (Brep b in obj.innerStrctureWithLockBreps)
+                    {
+                        Guid i = myDoc.Objects.AddBrep(b, red_attributes);
+                        obj.InnerStructureIDs.Add(i);
+                    }
+                }
+                myDoc.Views.Redraw();
+            }
+        }
         /// <summary>
         /// Add the bearing structure as the twist constraint, only the central structure, no outer spring
         /// </summary>
@@ -1924,6 +2136,92 @@ namespace OndulePlugin
             obj.InnerStructureIDs.Add(capBrepID);
             #endregion
 
+            #region Add the lock blocks for the prismatic joint
+            obj.LockList.Clear();
+
+            double lockLen = 4;
+            double lockW = sliderW + gap * 2;
+            double lockH = sliderH;
+
+            if (tensionCrv.GetLength() > lockLen)
+            {
+                // Creat the first lock block
+                Plane lockFrontPln = new Plane(tensionCrv.PointAtEnd, tensionCrv.TangentAtEnd);
+
+                Point3d[] lockPts = new Point3d[5];
+                Transform txp_l1 = Transform.Translation(lockFrontPln.XAxis * (lockW / 2));
+                Transform typ_l1 = Transform.Translation(lockFrontPln.YAxis * lockH);
+                Transform txn_l1 = Transform.Translation(lockFrontPln.XAxis * -(lockW / 2));
+                Transform tyn_l1 = Transform.Translation(lockFrontPln.YAxis * 0);
+
+                lockPts[0] = tensionCrv.PointAtEnd;
+                lockPts[1] = tensionCrv.PointAtEnd;
+                lockPts[2] = tensionCrv.PointAtEnd;
+                lockPts[3] = tensionCrv.PointAtEnd;
+                lockPts[4] = tensionCrv.PointAtEnd;
+
+                lockPts[0].Transform(txp_l1); lockPts[0].Transform(typ_l1);
+                lockPts[1].Transform(txn_l1); lockPts[1].Transform(typ_l1);
+                lockPts[2].Transform(txn_l1); lockPts[2].Transform(tyn_l1);
+                lockPts[3].Transform(txp_l1); lockPts[3].Transform(tyn_l1);
+                lockPts[4] = lockPts[0];
+
+                double l_t1;
+
+                tensionCrv.LengthParameter(tensionCrv.GetLength() - lockLen, out l_t1);
+                Curve crvLockFront = tensionCrv.Split(l_t1)[1];
+                Curve lockRect1 = new Polyline(lockPts).ToNurbsCurve();
+                lockRect1.Rotate(1.5 * Math.Asin(sliderW / innerRadius), tensionCrv.TangentAtEnd, tensionCrv.PointAtEnd);
+                var lockBrep1 = sweep.PerformSweep(crvLockFront, lockRect1)[0];
+                lockBrep1 = lockBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                //myDoc.Objects.AddBrep(lockBrep1);
+                //myDoc.Views.Redraw();
+                lockBrep1.Flip();
+                obj.LockList.Add(lockBrep1);
+                //Guid lockID1 = myDoc.Objects.AddBrep(lockBrep1, red_attributes);
+            }
+
+            if(compCrvRear.GetLength() > lockLen)
+            {
+                // Create the second lock block
+                Plane lockRearPln = new Plane(compCrvRear.PointAtEnd, compCrvRear.TangentAtEnd);
+
+                Point3d[] lockPts1 = new Point3d[5];
+                Transform txp_l2 = Transform.Translation(lockRearPln.XAxis * (lockW / 2));
+                Transform typ_l2 = Transform.Translation(lockRearPln.YAxis * lockH);
+                Transform txn_l2 = Transform.Translation(lockRearPln.XAxis * -(lockW / 2));
+                Transform tyn_l2 = Transform.Translation(lockRearPln.YAxis * 0);
+
+                lockPts1[0] = compCrvRear.PointAtEnd;
+                lockPts1[1] = compCrvRear.PointAtEnd;
+                lockPts1[2] = compCrvRear.PointAtEnd;
+                lockPts1[3] = compCrvRear.PointAtEnd;
+                lockPts1[4] = compCrvRear.PointAtEnd;
+
+                lockPts1[0].Transform(txp_l2); lockPts1[0].Transform(typ_l2);
+                lockPts1[1].Transform(txn_l2); lockPts1[1].Transform(typ_l2);
+                lockPts1[2].Transform(txn_l2); lockPts1[2].Transform(tyn_l2);
+                lockPts1[3].Transform(txp_l2); lockPts1[3].Transform(tyn_l2);
+                lockPts1[4] = lockPts1[0];
+
+                double l_t2;
+                compCrvRear.LengthParameter(compCrvRear.GetLength() - lockLen, out l_t2);
+                Curve crvLockRear = compCrvRear.Split(l_t2)[1];
+                Curve lockRect2 = new Polyline(lockPts1).ToNurbsCurve();
+                lockRect2.Rotate(1.5 * Math.Asin(sliderW / innerRadius), compCrvRear.TangentAtEnd, compCrvRear.PointAtEnd);
+                var lockBrep2 = sweep.PerformSweep(crvLockRear, lockRect2)[0];
+                lockBrep2 = lockBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                //lockBrep2.Flip();
+                //myDoc.Objects.AddBrep(lockBrep2);
+                //myDoc.Views.Redraw();
+                lockBrep2.Flip();
+                obj.LockList.Add(lockBrep2);
+                //Guid lockID2 = myDoc.Objects.AddBrep(lockBrep2, red_attributes);
+            }
+            #endregion
+
             myDoc.Views.Redraw();
         }
         private void generateTwistSupport(Plane startSuf, Plane endSuf, Curve centerCrv, out Brep StopperBlock, out Brep cylindShaft, ref OnduleUnit obj)
@@ -2020,44 +2318,43 @@ namespace OndulePlugin
             Guid stopperBrepID = myDoc.Objects.AddBrep(stopperBrep, red_attributes);
             obj.InnerStructureIDs.Add(stopperBrepID);
 
-            if(obj.TwistAngle != 0)
-            {
-                // Add the arc sliding mechanism to constrain the twist angle to a certain max angle
-                Point3d[] sliderStopperPts = new Point3d[5];
-                double sliderW = 1;
-                double sliderH = cylinBaseSideRadius + gap_bearing_stopper + 2;
-                Transform txp_rect = Transform.Translation(stopperPln.XAxis * (sliderW / 2));
-                Transform typ_rect = Transform.Translation(stopperPln.YAxis * sliderH);
-                Transform txn_rect = Transform.Translation(stopperPln.XAxis * -(sliderW / 2));
-                Transform tyn_rect = Transform.Translation(stopperPln.YAxis * 0);
+            //if(obj.TwistAngle != 0)
+            //{
+            // Add the arc sliding mechanism to constrain the twist angle to a certain max angle
+            Point3d[] sliderStopperPts = new Point3d[5];
+            double sliderW = 1;
+            double sliderH = cylinBaseSideRadius + gap_bearing_stopper + 2;
+            Transform txp_rect = Transform.Translation(stopperPln.XAxis * (sliderW / 2));
+            Transform typ_rect = Transform.Translation(stopperPln.YAxis * sliderH);
+            Transform txn_rect = Transform.Translation(stopperPln.XAxis * -(sliderW / 2));
+            Transform tyn_rect = Transform.Translation(stopperPln.YAxis * 0);
 
-                sliderStopperPts[0] = cylinCrvAll.PointAtEnd;
-                sliderStopperPts[1] = cylinCrvAll.PointAtEnd;
-                sliderStopperPts[2] = cylinCrvAll.PointAtEnd;
-                sliderStopperPts[3] = cylinCrvAll.PointAtEnd;
-                sliderStopperPts[4] = cylinCrvAll.PointAtEnd;
+            sliderStopperPts[0] = cylinCrvAll.PointAtEnd;
+            sliderStopperPts[1] = cylinCrvAll.PointAtEnd;
+            sliderStopperPts[2] = cylinCrvAll.PointAtEnd;
+            sliderStopperPts[3] = cylinCrvAll.PointAtEnd;
+            sliderStopperPts[4] = cylinCrvAll.PointAtEnd;
 
-                sliderStopperPts[0].Transform(txp_rect); sliderStopperPts[0].Transform(typ_rect);
-                sliderStopperPts[1].Transform(txn_rect); sliderStopperPts[1].Transform(typ_rect);
-                sliderStopperPts[2].Transform(txn_rect); sliderStopperPts[2].Transform(tyn_rect);
-                sliderStopperPts[3].Transform(txp_rect); sliderStopperPts[3].Transform(tyn_rect);
-                sliderStopperPts[4] = sliderStopperPts[0];
+            sliderStopperPts[0].Transform(txp_rect); sliderStopperPts[0].Transform(typ_rect);
+            sliderStopperPts[1].Transform(txn_rect); sliderStopperPts[1].Transform(typ_rect);
+            sliderStopperPts[2].Transform(txn_rect); sliderStopperPts[2].Transform(tyn_rect);
+            sliderStopperPts[3].Transform(txp_rect); sliderStopperPts[3].Transform(tyn_rect);
+            sliderStopperPts[4] = sliderStopperPts[0];
 
-                Curve sliderRect = new Polyline(sliderStopperPts).ToNurbsCurve();
+            Curve sliderRect = new Polyline(sliderStopperPts).ToNurbsCurve();
 
-                double ttt = 0;
-                stopperCrv.LengthParameter(stopperCrv.GetLength()*1/4, out ttt);
+            var sliderBrep = sweep.PerformSweep(stopperCrv, sliderRect)[0];
+            sliderBrep = sliderBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-                Plane midPtPln = new Plane(stopperCrv.PointAt(ttt), stopperCrv.TangentAt(ttt));       
-               
-                var sliderBrep = sweep.PerformSweep(stopperCrv, sliderRect)[0];
-                sliderBrep = sliderBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-                Transform scaleT = Transform.Scale(midPtPln, 1,1,0.7);
-                sliderBrep.Transform(scaleT);
+            double ttt = 0;
+            stopperCrv.LengthParameter(stopperCrv.GetLength() * 1 / 4, out ttt);
+            Plane midPtPln = new Plane(stopperCrv.PointAt(ttt), stopperCrv.TangentAt(ttt));
+            Transform scaleT = Transform.Scale(midPtPln, 1,1,0.5);
+            sliderBrep.Transform(scaleT);
 
-                Guid sliderBlockID = myDoc.Objects.AddBrep(sliderBrep, red_attributes);
-                obj.InnerStructureIDs.Add(sliderBlockID);
-            }
+            Guid sliderBlockID = myDoc.Objects.AddBrep(sliderBrep, red_attributes);
+            obj.InnerStructureIDs.Add(sliderBlockID);
+            //}
 
             StopperBlock = stopperBrep;
             //myDoc.Views.Redraw();
@@ -2098,7 +2395,8 @@ namespace OndulePlugin
                 arcOpeningPts[4] = cylinCrvAll.PointAtEnd;
                 arcOpeningPts[5] = cylinCrvAll.PointAtEnd;
 
-                double arcOffset = 2.2;
+                //double arcOffset = 2.2;
+                double arcOffset = 1.8;
                 double arcOffsetH = wallOuterRadius + 10 * gap_bearing_stopper;
 
                 Transform txp_A = Transform.Translation(stopperPln.XAxis * -(arcOffset / 2));
@@ -2108,7 +2406,7 @@ namespace OndulePlugin
                 Transform txp_B_P = Transform.Translation(stopperPln.XAxis * 0);
                 Transform typ_B_P = Transform.Translation(stopperPln.YAxis * arcOffsetH);
                 Transform txp_C = Transform.Translation(stopperPln.XAxis * (arcOffset / 2));
-                Transform typ_C = Transform.Translation(stopperPln.YAxis * (arcOffsetH));
+                Transform typ_C = Transform.Translation(stopperPln.YAxis * arcOffsetH);
                 Transform txp_D = Transform.Translation(stopperPln.XAxis * (arcOffset / 2));
                 Transform typ_D = Transform.Translation(stopperPln.YAxis * 0);
 
@@ -2129,7 +2427,11 @@ namespace OndulePlugin
                 var slot1Brep1 = sweep.PerformSweep(stopperCrv, slot1)[0];
                 slot1Brep1 = slot1Brep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
-                
+                double tttt = 0;
+                stopperCrv.LengthParameter(stopperCrv.GetLength() * 1 / 4, out tttt);
+                Plane midPtPln1 = new Plane(stopperCrv.PointAt(tttt), stopperCrv.TangentAt(tttt));
+                Transform scaleT1 = Transform.Scale(midPtPln1, 1, 1, 0.9);
+                slot1Brep1.Transform(scaleT1);
 
                 if (obj.TwistAngle <= 90)
                 {
@@ -2163,7 +2465,62 @@ namespace OndulePlugin
                     }
                 }
 
-                
+                // Add the block for the lock
+                obj.LockList.Clear();
+
+                double lockLen = 1.4;
+                double lockW = sliderW + 2*gap_bearing_stopper;
+                double lockH = sliderH + 2 * gap_bearing_stopper;
+
+                Point3d[] twistLockPts = new Point3d[5];
+             
+                Transform txp_lock = Transform.Translation(stopperPln.XAxis * (lockW / 2));
+                Transform typ_lock = Transform.Translation(stopperPln.YAxis * lockH);
+                Transform txn_lock = Transform.Translation(stopperPln.XAxis * -(lockW / 2));
+                Transform tyn_lock = Transform.Translation(stopperPln.YAxis * 0);
+
+                twistLockPts[0] = cylinCrvAll.PointAtEnd;
+                twistLockPts[1] = cylinCrvAll.PointAtEnd;
+                twistLockPts[2] = cylinCrvAll.PointAtEnd;
+                twistLockPts[3] = cylinCrvAll.PointAtEnd;
+                twistLockPts[4] = cylinCrvAll.PointAtEnd;
+
+                twistLockPts[0].Transform(txp_lock); twistLockPts[0].Transform(typ_lock);
+                twistLockPts[1].Transform(txn_lock); twistLockPts[1].Transform(typ_lock);
+                twistLockPts[2].Transform(txn_lock); twistLockPts[2].Transform(tyn_lock);
+                twistLockPts[3].Transform(txp_lock); twistLockPts[3].Transform(tyn_lock);
+                twistLockPts[4] = twistLockPts[0];
+
+                Curve twistLockRect = new Polyline(twistLockPts).ToNurbsCurve();
+
+                double lock_t;
+                Curve lockCurveTraj = cylinCrv.DuplicateCurve();
+                lockCurveTraj.LengthParameter(lockCurveTraj.GetLength() - lockLen, out lock_t);  // the height is currently 3. It should be confined with the limit from the test
+                Curve lockCrv = lockCurveTraj.Split(lock_t)[1];
+                Curve lockCurveTraj_part2 = stopperCrv.DuplicateCurve();
+                double lock_t_part2;
+                double l = lockCurveTraj_part2.GetLength();
+                lockCurveTraj_part2.LengthParameter(0.4, out lock_t_part2);
+                Curve lockCrv_part2 = lockCurveTraj_part2.Split(lock_t_part2)[0];
+              
+
+                var twistLockBrep1 = sweep.PerformSweep(lockCrv, twistLockRect)[0];
+                twistLockBrep1 = twistLockBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                twistLockBrep1.Flip();
+
+                var twistLockBrep2 = sweep.PerformSweep(lockCrv_part2, twistLockRect)[0];
+                twistLockBrep2 = twistLockBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                List<Brep> lockBreps = new List<Brep>();
+                lockBreps.Add(twistLockBrep1);
+                lockBreps.Add(twistLockBrep2);
+                var twistLockBrep = Brep.CreateBooleanUnion(lockBreps, myDoc.ModelAbsoluteTolerance)[0];
+
+                //Guid twistLockID = myDoc.Objects.AddBrep(twistLockBrep);
+                obj.LockList.Add(twistLockBrep);
+
+                //myDoc.Views.Redraw();
+
             }
             else
             {
@@ -2208,11 +2565,32 @@ namespace OndulePlugin
 
                 var bearingWalls = Brep.CreateBooleanDifference(bearingWall, cutoutUnion, myDoc.ModelAbsoluteTolerance);
 
-                foreach (Brep bWall in bearingWalls)
+                if (bearingWalls != null)
                 {
-                    Guid bWallID = myDoc.Objects.AddBrep(bWall, red_attributes);
-                    obj.InnerStructureIDs.Add(bWallID);
+                    foreach (Brep bWall in bearingWalls)
+                    {
+                        Guid bWallID = myDoc.Objects.AddBrep(bWall, red_attributes);
+                        obj.InnerStructureIDs.Add(bWallID);
+                    }
                 }
+                else
+                {
+                    //cutoutUnion.Clear();
+                    //slotBrep1.Flip();
+                    //slotBrep2.Flip();
+                    //slotBrep3.Flip();
+                    //cutoutUnion.Add(slotBrep1);
+                    //cutoutUnion.Add(slotBrep2);
+                    //cutoutUnion.Add(slotBrep3);
+
+                    var bearingWalls_new = Brep.CreateBooleanIntersection(bearingWall, cutoutUnion, myDoc.ModelAbsoluteTolerance);
+                    foreach (Brep bWall in bearingWalls_new)
+                    {
+                        Guid bWallID = myDoc.Objects.AddBrep(bWall, red_attributes);
+                        obj.InnerStructureIDs.Add(bWallID);
+                    }
+                }
+
             }
             #endregion
 
@@ -2430,11 +2808,25 @@ namespace OndulePlugin
 
             var linearWalls = Brep.CreateBooleanDifference(sliderWalls, cutoutUnion, myDoc.ModelAbsoluteTolerance);
 
-            foreach (Brep linearWall in linearWalls)
+            if(linearWalls != null)
             {
-                Guid linearWallID = myDoc.Objects.AddBrep(linearWall, red_attributes);
-                obj.InnerStructureIDs.Add(linearWallID);
+                foreach (Brep linearWall in linearWalls)
+                {
+                    Guid linearWallID = myDoc.Objects.AddBrep(linearWall, red_attributes);
+                    obj.InnerStructureIDs.Add(linearWallID);
+                }
             }
+            else
+            {
+                var linearWalls_new = Brep.CreateBooleanIntersection(sliderWalls, cutoutUnion, myDoc.ModelAbsoluteTolerance);
+
+                foreach (Brep linearWall in linearWalls_new)
+                {
+                    Guid linearWallID = myDoc.Objects.AddBrep(linearWall, red_attributes);
+                    obj.InnerStructureIDs.Add(linearWallID);
+                }
+            }
+            
             #endregion
 
             #endregion
@@ -2559,109 +2951,118 @@ namespace OndulePlugin
                         Sphere innerBall = new Sphere(chainCrv.PointAtStart, jointRadius + gap);
                         Sphere outerBall = new Sphere(chainCrv.PointAtStart, jointRadius + gap + holderThickness);
 
-                        Curve nextChainCrv = segments.ElementAt(idx + 1);
-                        double t;
-                        double retrackedDis;
-                        if(obj.BendAngle != 0)
+                        if(segments.Count() != 1)
                         {
-                            double an = obj.BendAngle / 2;
-                            if (((jointRadius + gap) * Math.Sin(an)) >= (gap + rodRadius) && Math.Sin(an) <= (jointRadius / (jointRadius + gap)))
+                            Curve nextChainCrv = segments.ElementAt(idx + 1);
+                            double t;
+                            double retrackedDis;
+                            if (obj.BendAngle != 0)
                             {
-                                retrackedDis = Math.Cos(an) * (jointRadius + gap) + 0.2;
+                                double an = obj.BendAngle / 2;
+                                if (((jointRadius + gap) * Math.Sin(an)) >= (gap + rodRadius) && Math.Sin(an) <= (jointRadius / (jointRadius + gap)))
+                                {
+                                    retrackedDis = Math.Cos(an) * (jointRadius + gap) + 0.2;
+                                }
+                                else
+                                {
+                                    retrackedDis = Math.Sqrt((jointRadius + gap) * (jointRadius + gap) - jointRadius * jointRadius) + 0.2;
+                                }
                             }
                             else
                             {
                                 retrackedDis = Math.Sqrt((jointRadius + gap) * (jointRadius + gap) - jointRadius * jointRadius) + 0.2;
                             }
+
+                            nextChainCrv.LengthParameter(nextChainCrv.GetLength() - retrackedDis, out t);
+                            Curve capCrv = nextChainCrv.Split(t)[1];
+                            Curve capLeftoverCrv = nextChainCrv.Split(t)[0];
+                            Plane capPln = new Plane(capCrv.PointAtStart, capCrv.TangentAtStart);
+
+                            Circle removeCir = new Circle(capPln, capCrv.PointAtStart, jointRadius + gap + holderThickness);
+                            var removeBrep = sweep.PerformSweep(capLeftoverCrv, removeCir.ToNurbsCurve())[0];
+                            removeBrep = removeBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                            var removeBrepDup = removeBrep.DuplicateBrep();
+
+                            var outerBalls = Brep.CreateBooleanIntersection(outerBall.ToBrep(), removeBrep, myDoc.ModelAbsoluteTolerance);
+                            var innerBalls = Brep.CreateBooleanIntersection(innerBall.ToBrep(), removeBrepDup, myDoc.ModelAbsoluteTolerance);
+                            var shells = Brep.CreateBooleanDifference(outerBalls[0], innerBalls[0], myDoc.ModelAbsoluteTolerance);
+
+
+                            #region Add openings on the holder for support removal
+                            Point3d[] sliderWallPts = new Point3d[5];
+                            double slotW = 1 + gap * 2;
+                            double slotH = jointRadius + gap + 2 * holderThickness;
+                            Plane cutoutPln = new Plane(chainCrv.PointAtStart, chainCrv.TangentAtStart);
+                            double ttt;
+                            chainCrv.LengthParameter(jointRadius, out ttt);
+                            Curve cutoutPath = chainCrv.Split(ttt)[0];
+                            Transform txp_r1 = Transform.Translation(cutoutPln.XAxis * (slotW / 2));
+                            Transform typ_r1 = Transform.Translation(cutoutPln.YAxis * slotH);
+                            Transform txn_r1 = Transform.Translation(cutoutPln.XAxis * -(slotW / 2));
+                            Transform tyn_r1 = Transform.Translation(cutoutPln.YAxis * 0);
+
+                            sliderWallPts[0] = chainCrv.PointAtStart;
+                            sliderWallPts[1] = chainCrv.PointAtStart;
+                            sliderWallPts[2] = chainCrv.PointAtStart;
+                            sliderWallPts[3] = chainCrv.PointAtStart;
+                            sliderWallPts[4] = chainCrv.PointAtStart;
+
+                            sliderWallPts[0].Transform(txp_r1); sliderWallPts[0].Transform(typ_r1);
+                            sliderWallPts[1].Transform(txn_r1); sliderWallPts[1].Transform(typ_r1);
+                            sliderWallPts[2].Transform(txn_r1); sliderWallPts[2].Transform(tyn_r1);
+                            sliderWallPts[3].Transform(txp_r1); sliderWallPts[3].Transform(tyn_r1);
+                            sliderWallPts[4] = sliderWallPts[0];
+
+                            Curve slotRect1 = new Polyline(sliderWallPts).ToNurbsCurve();
+                            var slotBrep1 = sweep.PerformSweep(cutoutPath, slotRect1)[0];
+                            slotBrep1 = slotBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                            Curve slotRect2 = slotRect1;
+                            slotRect2.Rotate((2 * Math.PI) / 3, chainCrv.TangentAtStart, chainCrv.PointAtStart);
+                            var slotBrep2 = sweep.PerformSweep(cutoutPath, slotRect2)[0];
+                            slotBrep2 = slotBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                            Curve slotRect3 = slotRect2;
+                            slotRect3.Rotate((2 * Math.PI) / 3, chainCrv.TangentAtStart, chainCrv.PointAtStart);
+                            var slotBrep3 = sweep.PerformSweep(cutoutPath, slotRect3)[0];
+                            slotBrep3 = slotBrep3.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+
+                            List<Brep> cutoutUnion = new List<Brep>();
+                            cutoutUnion.Add(slotBrep1);
+                            cutoutUnion.Add(slotBrep2);
+                            cutoutUnion.Add(slotBrep3);
+
+                            var linearWalls = Brep.CreateBooleanDifference(shells, cutoutUnion, myDoc.ModelAbsoluteTolerance);
+
+                            foreach (Brep linearWall in linearWalls)
+                            {
+                                Guid linearWallID = myDoc.Objects.AddBrep(linearWall, red_attributes);
+                                obj.InnerStructureIDs.Add(linearWallID);
+                            }
+                            #endregion
+
+                            // Add the rod
+                            chainCrv.LengthParameter(jointRadius + gap + holderThickness / 2, out t);
+                            Curve rodTrajectory = chainCrv.Split(t)[1];
+
+                            //myDoc.Objects.AddCurve(rodTrajectory, red_attributes);
+                            //myDoc.Views.Redraw();
+
+                            Plane rodPln = new Plane(rodTrajectory.PointAtStart, rodTrajectory.TangentAtStart);
+                            Curve cylinCircle = new Circle(rodPln, rodTrajectory.PointAtStart, rodRadius).ToNurbsCurve();
+                            var cylinBreps = sweep.PerformSweep(rodTrajectory, cylinCircle);
+                            Brep cylinBrep = cylinBreps[0];
+                            cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
+                            Guid cylinBrepID = myDoc.Objects.AddBrep(cylinBrep, red_attributes);
+                            obj.InnerStructureIDs.Add(cylinBrepID);
                         }
                         else
                         {
-                            retrackedDis = Math.Sqrt((jointRadius + gap) * (jointRadius + gap) - jointRadius * jointRadius) + 0.2;
+                            // Print an error
+
                         }
-                       
-                        nextChainCrv.LengthParameter(nextChainCrv.GetLength() - retrackedDis, out t);
-                        Curve capCrv = nextChainCrv.Split(t)[1];
-                        Curve capLeftoverCrv = nextChainCrv.Split(t)[0];
-                        Plane capPln = new Plane(capCrv.PointAtStart, capCrv.TangentAtStart);
-
-                        Circle removeCir = new Circle(capPln, capCrv.PointAtStart, jointRadius + gap + holderThickness);
-                        var removeBrep = sweep.PerformSweep(capLeftoverCrv, removeCir.ToNurbsCurve())[0];
-                        removeBrep = removeBrep.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-
-                        var removeBrepDup = removeBrep.DuplicateBrep();
-
-                        var outerBalls = Brep.CreateBooleanIntersection(outerBall.ToBrep(), removeBrep, myDoc.ModelAbsoluteTolerance);
-                        var innerBalls = Brep.CreateBooleanIntersection(innerBall.ToBrep(), removeBrepDup, myDoc.ModelAbsoluteTolerance);
-                        var shells = Brep.CreateBooleanDifference(outerBalls[0], innerBalls[0], myDoc.ModelAbsoluteTolerance);
-
-
-                        #region Add openings on the holder for support removal
-                        Point3d[] sliderWallPts = new Point3d[5];
-                        double slotW = 1 + gap * 2;
-                        double slotH = jointRadius + gap + 2 * holderThickness;
-                        Plane cutoutPln = new Plane(chainCrv.PointAtStart, chainCrv.TangentAtStart);
-                        double ttt;
-                        chainCrv.LengthParameter(jointRadius, out ttt);
-                        Curve cutoutPath = chainCrv.Split(ttt)[0];
-                        Transform txp_r1 = Transform.Translation(cutoutPln.XAxis * (slotW / 2));
-                        Transform typ_r1 = Transform.Translation(cutoutPln.YAxis * slotH);
-                        Transform txn_r1 = Transform.Translation(cutoutPln.XAxis * -(slotW / 2));
-                        Transform tyn_r1 = Transform.Translation(cutoutPln.YAxis * 0);
-
-                        sliderWallPts[0] = chainCrv.PointAtStart;
-                        sliderWallPts[1] = chainCrv.PointAtStart;
-                        sliderWallPts[2] = chainCrv.PointAtStart;
-                        sliderWallPts[3] = chainCrv.PointAtStart;
-                        sliderWallPts[4] = chainCrv.PointAtStart;
-
-                        sliderWallPts[0].Transform(txp_r1); sliderWallPts[0].Transform(typ_r1);
-                        sliderWallPts[1].Transform(txn_r1); sliderWallPts[1].Transform(typ_r1);
-                        sliderWallPts[2].Transform(txn_r1); sliderWallPts[2].Transform(tyn_r1);
-                        sliderWallPts[3].Transform(txp_r1); sliderWallPts[3].Transform(tyn_r1);
-                        sliderWallPts[4] = sliderWallPts[0];
-
-                        Curve slotRect1 = new Polyline(sliderWallPts).ToNurbsCurve();
-                        var slotBrep1 = sweep.PerformSweep(cutoutPath, slotRect1)[0];
-                        slotBrep1 = slotBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-
-                        Curve slotRect2 = slotRect1;
-                        slotRect2.Rotate((2 * Math.PI) / 3, chainCrv.TangentAtStart, chainCrv.PointAtStart);
-                        var slotBrep2 = sweep.PerformSweep(cutoutPath, slotRect2)[0];
-                        slotBrep2 = slotBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-
-                        Curve slotRect3 = slotRect2;
-                        slotRect3.Rotate((2 * Math.PI) / 3, chainCrv.TangentAtStart, chainCrv.PointAtStart);
-                        var slotBrep3 = sweep.PerformSweep(cutoutPath, slotRect3)[0];
-                        slotBrep3 = slotBrep3.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
-
-                        List<Brep> cutoutUnion = new List<Brep>();
-                        cutoutUnion.Add(slotBrep1);
-                        cutoutUnion.Add(slotBrep2);
-                        cutoutUnion.Add(slotBrep3);
-
-                        var linearWalls = Brep.CreateBooleanDifference(shells, cutoutUnion, myDoc.ModelAbsoluteTolerance);
-
-                        foreach (Brep linearWall in linearWalls)
-                        {
-                            Guid linearWallID = myDoc.Objects.AddBrep(linearWall, red_attributes);
-                            obj.InnerStructureIDs.Add(linearWallID);
-                        }
-                        #endregion
-
-                        // Add the rod
-                        chainCrv.LengthParameter(jointRadius + gap + holderThickness / 2, out t);
-                        Curve rodTrajectory = chainCrv.Split(t)[1];
-
-                        //myDoc.Objects.AddCurve(rodTrajectory, red_attributes);
-                        //myDoc.Views.Redraw();
-
-                        Plane rodPln = new Plane(rodTrajectory.PointAtStart, rodTrajectory.TangentAtStart);
-                        Curve cylinCircle = new Circle(rodPln, rodTrajectory.PointAtStart, rodRadius).ToNurbsCurve();
-                        var cylinBreps = sweep.PerformSweep(rodTrajectory, cylinCircle);
-                        Brep cylinBrep = cylinBreps[0];
-                        cylinBrep = cylinBrep.CapPlanarHoles(myDoc.ModelRelativeTolerance);
-                        Guid cylinBrepID = myDoc.Objects.AddBrep(cylinBrep, red_attributes);
-                        obj.InnerStructureIDs.Add(cylinBrepID);
+                        
                     }
                     else if(idx == segments.Count() - 1)
                     {
@@ -2772,11 +3173,16 @@ namespace OndulePlugin
 
                         var linearWalls = Brep.CreateBooleanDifference(shells, cutoutUnion, myDoc.ModelAbsoluteTolerance);
 
-                        foreach (Brep linearWall in linearWalls)
+                        if(linearWalls != null)
                         {
-                            Guid linearWallID = myDoc.Objects.AddBrep(linearWall, red_attributes);
-                            obj.InnerStructureIDs.Add(linearWallID);
+                            foreach (Brep linearWall in linearWalls)
+                            {
+                                Guid linearWallID = myDoc.Objects.AddBrep(linearWall, red_attributes);
+                                obj.InnerStructureIDs.Add(linearWallID);
+                            }
                         }
+                        
+
                         #endregion
 
                         // Add the rod
@@ -3334,6 +3740,98 @@ namespace OndulePlugin
                 }
                 
             }
+
+
+            #region Compute the segment with a consistent curvature
+            // Find the continous curve with a consistent curvature
+
+            double rangeCurvatureThreshold = 50;
+
+            // Curve discontinuity exists in the medial curves
+            double totalLen = obj.SelectedSeg.GetLength();
+            double unitLen = 5;
+            List<double> curvatureList = new List<double>();
+
+            for (int i = 0; i < totalLen / unitLen; i++)
+            {
+                double len_param;
+                obj.SelectedSeg.LengthParameter(i * unitLen, out len_param);
+                double curr_curvature = obj.SelectedSeg.CurvatureAt(len_param).Length;
+
+                curvatureList.Add(curr_curvature);
+            }
+
+            // Based on the recorded curvatures at the *num_seg* points along the medial axis,
+            // we find the longest curve to replace the medial axis.
+            List<int> flags = new List<int>();
+            double pre_curvature = curvatureList.ElementAt(0);
+            for (int idx = 0; idx < curvatureList.Count; idx++)
+            {
+                double curr_curvature = curvatureList.ElementAt(idx);
+                if (curr_curvature / pre_curvature >= 1 / rangeCurvatureThreshold
+                    && curr_curvature / pre_curvature <= rangeCurvatureThreshold)
+                {
+                    continue;
+                }
+                else
+                {
+                    pre_curvature = curr_curvature;
+                    flags.Add(idx);
+                }
+            }
+            flags.Add(curvatureList.Count - 1);
+
+            int max_span_len = 0;
+            int pre_pos = 0;
+            int start_pos = -1; // the start position of the longest span in flags, including the start position
+            int end_pos = -1;   // the end position of the longest span in flags, excluding the end position
+
+            foreach (int flag_pos in flags)
+            {
+                int span_len = flag_pos - pre_pos;
+                if (span_len >= max_span_len)
+                {
+                    max_span_len = span_len;
+                    start_pos = pre_pos;
+                    end_pos = flag_pos;
+
+                }
+                pre_pos = flag_pos;
+            }
+
+            // Cut the medial axis into the new curve with a more consistent curvature
+            double new_MA_start_param, new_MA_end_param;
+            obj.SelectedSeg.LengthParameter(start_pos * unitLen, out new_MA_start_param);
+            if (end_pos == curvatureList.Count - 1)
+                obj.SelectedSeg.LengthParameter(end_pos * unitLen, out new_MA_end_param);
+            else
+                obj.SelectedSeg.LengthParameter((end_pos - 1) * unitLen, out new_MA_end_param);
+
+            Curve c1;
+            Curve effectiveMA;
+            if (start_pos == 0)
+            {
+                Curve c_candidate1 = obj.SelectedSeg.Split(new_MA_end_param)[0];
+                Curve c_candidate2 = obj.SelectedSeg.Split(new_MA_end_param)[1];
+                if (c_candidate1.GetLength() >= c_candidate2.GetLength())
+                {
+                    effectiveMA = c_candidate1;
+                }
+                else
+                {
+                    effectiveMA = c_candidate2;
+                }
+            }
+            else
+            {
+                c1 = obj.SelectedSeg.Split(new_MA_start_param)[1];
+                effectiveMA = c1.Split(new_MA_end_param)[0];
+            }
+
+            obj.SelectedSeg = effectiveMA;
+            #endregion
+
+
 
             myDoc.Objects.Hide(obj.MAID, true);
             myDoc.Objects.Delete(this.selectedSegmentID, true);

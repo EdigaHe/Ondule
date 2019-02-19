@@ -43,6 +43,9 @@ namespace OndulePlugin
         private List<Guid> _innerStructureIDList = new List<Guid>();// Record the IDs of the inner constraint structure
         private List<Guid> _preservedBrepsIDList = new List<Guid>();// Record the IDs of the preserved breps
         private bool _isFreeformOnly;
+        private List<Brep> _lockList = new List<Brep>();
+        private List<Brep> _innerStructureWithoutLockList = new List<Brep>();     // used for revoking back to structure without locks
+
         public OnduleUnit()
         {
             this._ID = -1;
@@ -60,6 +63,12 @@ namespace OndulePlugin
             this._segID = new Guid();
             this._coilNum = -1;
             this._isFreeformOnly = false;
+            this._lockList = new List<Brep>();
+        }
+        public List<Brep> innerStrctureWithLockBreps
+        {
+            get { return this._innerStructureWithoutLockList; }
+            set { this._innerStructureWithoutLockList = value; }
         }
         public double Stiffness
         {
@@ -70,6 +79,11 @@ namespace OndulePlugin
         {
             get { return this._isFreeformOnly; }
             set { this._isFreeformOnly = value; }
+        }
+        public List<Brep> LockList
+        {
+            get { return this._lockList; }
+            set { this._lockList = value; }
         }
 
         public int ConstraintType

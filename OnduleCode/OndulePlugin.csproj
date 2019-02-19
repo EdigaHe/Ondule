@@ -123,6 +123,7 @@
   <ItemGroup>
     <Content Include="MetroFramework.txt" />
     <Content Include="Resources\ball.cur" />
+    <Content Include="Resources\twistingAnnotation.png" />
     <None Include="Resources\split_h.png" />
     <None Include="Resources\split_v.png" />
     <None Include="Resources\TwistLock_default.png" />
