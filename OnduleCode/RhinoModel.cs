@@ -2139,8 +2139,9 @@ namespace OndulePlugin
             #region Add the lock blocks for the prismatic joint
             obj.LockList.Clear();
 
-            double lockLen = 4;
-            double lockW = sliderW + gap * 2;
+            double lockLen = 3.8;
+            double lockW = sliderW + gap * 4;
+            double lockWHook = sliderW + gap;
             double lockH = sliderH;
 
             if (tensionCrv.GetLength() > lockLen)
@@ -2148,6 +2149,7 @@ namespace OndulePlugin
                 // Creat the first lock block
                 Plane lockFrontPln = new Plane(tensionCrv.PointAtEnd, tensionCrv.TangentAtEnd);
 
+                // Lock part
                 Point3d[] lockPts = new Point3d[5];
                 Transform txp_l1 = Transform.Translation(lockFrontPln.XAxis * (lockW / 2));
                 Transform typ_l1 = Transform.Translation(lockFrontPln.YAxis * lockH);
@@ -2166,19 +2168,49 @@ namespace OndulePlugin
                 lockPts[3].Transform(txp_l1); lockPts[3].Transform(tyn_l1);
                 lockPts[4] = lockPts[0];
 
+                // Hook part
+                Point3d[] hookPts = new Point3d[5];
+                Transform txp_h = Transform.Translation(lockFrontPln.XAxis * (lockWHook / 2));
+                Transform typ_h = Transform.Translation(lockFrontPln.YAxis * lockH);
+                Transform txn_h = Transform.Translation(lockFrontPln.XAxis * -(lockWHook / 2));
+                Transform tyn_h = Transform.Translation(lockFrontPln.YAxis * 0);
+
+                hookPts[0] = tensionCrv.PointAtEnd;
+                hookPts[1] = tensionCrv.PointAtEnd;
+                hookPts[2] = tensionCrv.PointAtEnd;
+                hookPts[3] = tensionCrv.PointAtEnd;
+                hookPts[4] = tensionCrv.PointAtEnd;
+
+                hookPts[0].Transform(txp_h); hookPts[0].Transform(typ_h);
+                hookPts[1].Transform(txn_h); hookPts[1].Transform(typ_h);
+                hookPts[2].Transform(txn_h); hookPts[2].Transform(tyn_h);
+                hookPts[3].Transform(txp_h); hookPts[3].Transform(tyn_h);
+                hookPts[4] = hookPts[0];
+
                 double l_t1;
+                double l_h_t1;
 
                 tensionCrv.LengthParameter(tensionCrv.GetLength() - lockLen, out l_t1);
+                tensionCrv.LengthParameter(tensionCrv.GetLength() - lockLen - 0.4, out l_h_t1);
+
                 Curve crvLockFront = tensionCrv.Split(l_t1)[1];
+                Curve crvLockFrontHook = tensionCrv.Split(l_h_t1)[1];
                 Curve lockRect1 = new Polyline(lockPts).ToNurbsCurve();
-                lockRect1.Rotate(1.5 * Math.Asin(sliderW / innerRadius), tensionCrv.TangentAtEnd, tensionCrv.PointAtEnd);
+                Curve lockHookRect1 = new Polyline(hookPts).ToNurbsCurve();
+
+                lockRect1.Rotate(1 * Math.Asin(sliderW / innerRadius), tensionCrv.TangentAtEnd, tensionCrv.PointAtEnd);
+                lockHookRect1.Rotate(2 * Math.Asin(sliderW / innerRadius), tensionCrv.TangentAtEnd, tensionCrv.PointAtEnd);
                 var lockBrep1 = sweep.PerformSweep(crvLockFront, lockRect1)[0];
+                var lockHookBrep1 = sweep.PerformSweep(crvLockFrontHook, lockHookRect1)[0];
                 lockBrep1 = lockBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                lockHookBrep1 = lockHookBrep1.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
                 //myDoc.Objects.AddBrep(lockBrep1);
                 //myDoc.Views.Redraw();
                 lockBrep1.Flip();
+                lockHookBrep1.Flip();
                 obj.LockList.Add(lockBrep1);
+                obj.LockList.Add(lockHookBrep1);
                 //Guid lockID1 = myDoc.Objects.AddBrep(lockBrep1, red_attributes);
             }
 
@@ -2205,19 +2237,51 @@ namespace OndulePlugin
                 lockPts1[3].Transform(txp_l2); lockPts1[3].Transform(tyn_l2);
                 lockPts1[4] = lockPts1[0];
 
+                // Hook part
+                Point3d[] hookPts = new Point3d[5];
+                Transform txp_h = Transform.Translation(lockRearPln.XAxis * (lockWHook / 2));
+                Transform typ_h = Transform.Translation(lockRearPln.YAxis * lockH);
+                Transform txn_h = Transform.Translation(lockRearPln.XAxis * -(lockWHook / 2));
+                Transform tyn_h = Transform.Translation(lockRearPln.YAxis * 0);
+
+                hookPts[0] = compCrvRear.PointAtEnd;
+                hookPts[1] = compCrvRear.PointAtEnd;
+                hookPts[2] = compCrvRear.PointAtEnd;
+                hookPts[3] = compCrvRear.PointAtEnd;
+                hookPts[4] = compCrvRear.PointAtEnd;
+
+                hookPts[0].Transform(txp_h); hookPts[0].Transform(typ_h);
+                hookPts[1].Transform(txn_h); hookPts[1].Transform(typ_h);
+                hookPts[2].Transform(txn_h); hookPts[2].Transform(tyn_h);
+                hookPts[3].Transform(txp_h); hookPts[3].Transform(tyn_h);
+                hookPts[4] = hookPts[0];
+
                 double l_t2;
+                double l_h_t2;
+
                 compCrvRear.LengthParameter(compCrvRear.GetLength() - lockLen, out l_t2);
+                compCrvRear.LengthParameter(compCrvRear.GetLength() - lockLen - 0.4, out l_h_t2);
+
                 Curve crvLockRear = compCrvRear.Split(l_t2)[1];
+                Curve crvLockHookRear = compCrvRear.Split(l_h_t2)[1];
+
                 Curve lockRect2 = new Polyline(lockPts1).ToNurbsCurve();
-                lockRect2.Rotate(1.5 * Math.Asin(sliderW / innerRadius), compCrvRear.TangentAtEnd, compCrvRear.PointAtEnd);
+                Curve lockHookRect2 = new Polyline(hookPts).ToNurbsCurve();
+
+                lockRect2.Rotate(1* Math.Asin(sliderW / innerRadius), compCrvRear.TangentAtEnd, compCrvRear.PointAtEnd);
+                lockHookRect2.Rotate(2 * Math.Asin(sliderW / innerRadius), compCrvRear.TangentAtEnd, compCrvRear.PointAtEnd);
                 var lockBrep2 = sweep.PerformSweep(crvLockRear, lockRect2)[0];
                 lockBrep2 = lockBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
+                var lockHookBrep2 = sweep.PerformSweep(crvLockHookRear, lockHookRect2)[0];
+                lockHookBrep2 = lockHookBrep2.CapPlanarHoles(myDoc.ModelAbsoluteTolerance);
 
                 //lockBrep2.Flip();
                 //myDoc.Objects.AddBrep(lockBrep2);
                 //myDoc.Views.Redraw();
                 lockBrep2.Flip();
+                lockHookBrep2.Flip();
                 obj.LockList.Add(lockBrep2);
+                obj.LockList.Add(lockHookBrep2);
                 //Guid lockID2 = myDoc.Objects.AddBrep(lockBrep2, red_attributes);
             }
             #endregion
